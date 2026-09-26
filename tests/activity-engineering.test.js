@@ -21,7 +21,7 @@ test('MongoDB engineer example is explicitly synthetic and uses three separate w
   assert.match(sources.find(x => x.kind === 'meeting-note').text, /p95 latency is 180 ms and timeout rate is 0.6%/);
   assert.match(sources.find(x => x.kind === 'constraint').text, /Do not run database writes or create indexes/);
   const samples = engineeringSamples(now);
-  assert.equal(samples.length, 720);
+  assert.equal(samples.length, 1128);
   assert.ok(samples.every(x => x.source === 'seed' && x.title.startsWith('Example:')));
 });
 
@@ -33,15 +33,19 @@ test('engineering history produces a weekly routine without replacing other acti
     const activity = await new ActivityStore(client.db('engineering_demo_test'), { timeZone: 'America/New_York' }).initialize({searchIndexes:false});
     await activity.ingest('test', 'other-device', [{ts:new Date(),app:'Terminal',title:'Unrelated fixture',source:'collector'}]);
     const result = await seedEngineeringHistory(activity, {workspace:'test'});
-    assert.equal(result.samples,720);
-    assert.equal(result.sessions,12);
+    assert.equal(result.samples,1128);
+    assert.equal(result.sessions,14);
     assert.equal(result.routines.length,1);
     assert.equal(result.routines[0].cadence,'weekly');
     assert.equal(result.routines[0].dayCount,3);
     assert.equal(result.routines[0].source,'seed');
+    const today = await activity.timeline('test', {day: activity.today()});
+    assert.equal(today.sessions.length,2);
+    assert.deepEqual(today.sessions.map(s => s.app), ['zoom.us','Notion']);
+    assert.ok(today.sessions.every(s => s.source === 'seed' && s.title.startsWith('Example:')));
     assert.equal((await seedEngineeringHistory(activity,{workspace:'test'})).skipped,true);
     await seedEngineeringHistory(activity,{workspace:'test',reset:true});
-    assert.equal(await activity.sessions.countDocuments({device:ENGINEERING_SAMPLE_DEVICE}),12);
+    assert.equal(await activity.sessions.countDocuments({device:ENGINEERING_SAMPLE_DEVICE}),14);
     assert.equal(await activity.events.countDocuments({source:'collector'}),1);
   } finally {await client.close();await mongo.stop();}
 });

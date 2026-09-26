@@ -52,7 +52,7 @@ Prepare the history in a separate demo database:
 node --env-file=.env server/activity/engineering-seed.js --database offload_engineering_demo
 ```
 
-Then run the local app against that database by setting `MONGODB_DATABASE=offload_engineering_demo`. The seed script deliberately ignores the shared database name in `.env`. It inserts 720 synthetic samples and derives 12 sessions over three separate weeks, producing one weekly app-sequence pattern. Raw samples older than seven days still expire normally; derived sessions retain the labeled example history.
+Then run the local app against that database by setting `MONGODB_DATABASE=offload_engineering_demo`. The seed script deliberately ignores the shared database name in `.env`. It inserts 1,128 synthetic samples and derives 14 sessions: a four-step sequence across three separate weeks plus today’s example meeting and notes. This produces one weekly app-sequence pattern and a useful Today view. Raw samples older than seven days still expire normally; derived sessions retain the labeled example history.
 
 The default is idempotent. `--reset` replaces only `source: seed` records on the dedicated `example-mongodb-engineer` device. It preserves unrelated recorded and sample activity. The script uses local embeddings, starts no collector and makes no paid model calls.
 
