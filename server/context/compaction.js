@@ -77,6 +77,7 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
       signal?.throwIfAborted();
       const beforeChars = units.reduce((n, u) => n + u.text.length, 0);
       const metrics = {source: scorer.name, beforeChars, afterChars: beforeChars, budgetChars, retained: units.length, archived: 0, duplicateOmissions: 0, decisionCalls: 0, cacheHits: 0, inputTokens: 0, outputTokens: 0, reportedCost: 0, costKnown: true, usageKnown: true, errors: [], status: 'under_budget'};
+      try {
       if (beforeChars <= budgetChars) return {units, decisions: [], metrics};
       const evidenceKey = contextEvidenceKey(units), currentEvidence = contextEvidenceWindow(units);
       const stateKey = hash(JSON.stringify({goal, revision, evidenceKey, scorer: scorer.name, scorerPolicy: scorer.policyVersion || null, policy: POLICY_VERSION}));
@@ -139,8 +140,8 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
           }
           await writeBatch(decisions, decisionWrites);
         } catch (error) {
-          signal?.throwIfAborted();
           metrics.usageKnown = false; metrics.costKnown = false;
+          signal?.throwIfAborted();
           // Do not persist errors or cache a failed request as a decision.
           metrics.errors.push(/^Jev HTTP \d+$/.test(error.message) ? error.message : 'Jev unavailable');
           break;
@@ -155,6 +156,10 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
       const audit = scored.map(s => ({id: s.unit.id, digest: s.digest, probability: s.probability, distribution: s.probability === null ? null : {keep: s.probability, omit: 1 - s.probability}, kept: retained.includes(s), duplicateOf: s.duplicateOf, reason: s.protectedReason || (s.duplicateOf ? 'identical_read' : null) || (s.probability === null ? 'uncertain' : 'jev')}));
       if (metrics.status === 'needs_review') throw new ContextBudgetError({...metrics, decisions: audit});
       return {units: retained.map(s => s.unit), decisions: audit, metrics};
+      } catch(error) {
+        if(error && typeof error==='object') {error.metrics ||= metrics;throw error;}
+        throw Object.assign(new Error('Context selection stopped.'),{cause:error,metrics});
+      }
     },
     async read({runId, id, part = 0, digest}) {
       if (typeof id !== 'string' || id.length > 200 || (digest !== undefined && (typeof digest !== 'string' || !/^[a-f0-9]{64}$/.test(digest))) || !Number.isInteger(part) || part < 0) throw Error('Invalid context part.');

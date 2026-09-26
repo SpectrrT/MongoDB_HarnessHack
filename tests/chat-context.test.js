@@ -56,17 +56,16 @@ test('native chat compacts real file reads, preserves protocol and recovers exac
   } finally {await fs.rm(root,{recursive:true,force:true});}
 });
 
-test('denied writes and unfinished exchanges are protected when read-only data is omitted',async()=>{
+test('denied writes stay protected, instructions stay intact, and malformed exchanges stop',async()=>{
   let received;
   const compactor={async select({units}) {received=units;return {units,metrics:{}};}};
   const chat=createChatContext({compactor,owner:'one',runId:'protected',goal:'Draft',messages:[{role:'user',content:'Do not publish.'}]});
   chat.append({role:'assistant',tool_calls:[tool('write','write_file',{path:'draft.txt',content:'Draft'})]},[{role:'tool',tool_call_id:'write',content:'The user declined this file change.'}]);
-  chat.append({role:'assistant',tool_calls:[tool('read','read_file',{path:'x'})]},[]);
-  await chat.select();
-  assert.equal(received[0].pinned,'conversation_instruction');
-  assert.equal(received[1].pinned,'failed_or_denied');
-  assert.equal(received[2].pinned,'unfinished_exchange');
-  assert.equal(received[2].complete,false);
+  assert.throws(()=>chat.append({role:'assistant',tool_calls:[tool('read','read_file',{path:'x'})]},[]),/incomplete/);
+  const selected=await chat.select();
+  assert.equal(selected.messages[0].content,'Do not publish.');
+  assert.equal(received[0].pinned,'failed_or_denied');
+  assert.throws(()=>chat.append({role:'assistant',tool_calls:[tool('duplicate','read_file',{path:'x'}),tool('duplicate','read_file',{path:'x'})]},[{role:'tool',tool_call_id:'duplicate',content:'x'},{role:'tool',tool_call_id:'duplicate',content:'x'}]),/malformed/);
 });
 
 test('selector failure stops before another paid chat request and preserves known decision usage',async()=>{
@@ -83,5 +82,46 @@ test('selector failure stops before another paid chat request and preserves know
     await router.complete(auth.state,auth.state,'test');
     await assert.rejects(router.run({owner:'owner',model:'test/model',messages:[{role:'user',text:'Work'}],notes:[],cwd:root}),e=>e.usage.input_tokens===17&&e.usage.output_tokens===3);
     assert.equal(chatCalls,0);
+  } finally {await fs.rm(root,{recursive:true,force:true});}
+});
+
+test('image payloads stay intact outside the tool-history selection budget',async()=>{
+  const messages=[{role:'system',content:'Preserve instructions.'},{role:'user',content:[{type:'text',text:'Describe this image.'},{type:'image_url',image_url:{url:'data:image/png;base64,'+'a'.repeat(40000)}}]}];
+  let decisions=0;
+  const compactor=createContextCompactor({db:createMemoryDb(),scorer:{name:'unused',async score(){decisions++;throw Error('No scoring needed.');}},budgetChars:1000});
+  const chat=createChatContext({compactor,owner:'one',runId:'image',messages,goal:'Describe this image.'});
+  assert.deepEqual((await chat.select()).messages,messages);assert.equal(decisions,0);
+});
+
+test('aborting a later selection batch preserves earlier measured spend and unknown in-flight usage',async()=>{
+  const controller=new AbortController();let calls=0;
+  const compactor=createContextCompactor({db:createMemoryDb(),budgetChars:100,recentCount:0,scorer:{name:'partial',async score({units}) {
+    if(++calls===2){controller.abort();controller.signal.throwIfAborted();}
+    return {scores:units.map(u=>({id:u.id,probability:0.01})),usage:{inputTokens:100,outputTokens:5,cost:0.002}};
+  }}});
+  await assert.rejects(compactor.select({runId:'cancel',goal:'Find the fact',signal:controller.signal,units:Array.from({length:9},(_,i)=>({id:String(i),text:'old background '.repeat(25)+i}))}),e=>{
+    assert.equal(e.name,'AbortError');assert.equal(e.metrics.inputTokens,100);assert.equal(e.metrics.outputTokens,5);
+    assert.equal(e.metrics.reportedCost,0.002);assert.equal(e.metrics.usageKnown,false);assert.equal(e.metrics.decisionCalls,2);return true;
+  });
+});
+
+test('paid malformed replies retain usage and duplicate tool IDs execute no tools',async()=>{
+  const root=await fs.mkdtemp(path.join(os.tmpdir(),'offload-malformed-'));
+  try {
+    for(const duplicate of [false,true]) {
+      let approvals=0;
+      const message={role:'assistant',tool_calls:[tool('same','write_file',{path:'draft.txt',content:'one'}),tool('same','write_file',{path:'draft.txt',content:'two'})]};
+      const fetcher=async url=>{
+        if(url.endsWith('/auth/keys'))return Response.json({key:'sk-or-test-fixture'});
+        if(url.endsWith('/models'))return Response.json({data:[{id:'test/model',architecture:{output_modalities:['text']},supported_parameters:['tools']}]});
+        return Response.json({choices:duplicate?[{message}]:[],usage:{prompt_tokens:123,completion_tokens:7,cost:0.002}});
+      };
+      const router=createOpenRouter({dataDir:root,fetcher}),auth=router.start('owner','http://localhost:5194');
+      await router.complete(auth.state,auth.state,'test');
+      await assert.rejects(router.run({owner:'owner',model:'test/model',messages:[{role:'user',text:'Draft'}],notes:[],cwd:root,onRequest:async()=>{approvals++;return {action:'approve'};}}),e=>{
+        assert.equal(e.usage.input_tokens,123);assert.equal(e.usage.output_tokens,7);assert.equal(e.usage.cost,0.002);assert.equal(e.usage.usageKnown,true);return true;
+      });
+      assert.equal(approvals,0);await assert.rejects(fs.access(path.join(root,'draft.txt')));
+    }
   } finally {await fs.rm(root,{recursive:true,force:true});}
 });

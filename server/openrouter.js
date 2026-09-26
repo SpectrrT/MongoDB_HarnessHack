@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {localTools,executeLocalTool} from './local-tools.js';
-import {createChatContext,contextTools,accountCompaction} from './context/chat.js';
+import {createChatContext,contextTools,accountCompaction,validateToolCalls} from './context/chat.js';
 import {OFFLOAD_IDENTITY} from '../shared/retrieval.js';
 const API='https://openrouter.ai/api/v1';
 export function createOpenRouter({dataDir,fetcher=fetch,compactor=null}) {
@@ -49,11 +49,12 @@ export function createOpenRouter({dataDir,fetcher=fetch,compactor=null}) {
    modelRequestPending=true;
    const r=await fetcher(API+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+key,'X-OpenRouter-Title':'Offload'},body:JSON.stringify({model,messages:prompt,max_tokens:8192,provider:{require_parameters:true},...(entry.tools?{tools:context?[...localTools,...contextTools]:localTools}:{}),...(entry.imageOutput?{modalities:['image','text']}:{}),...(entry.efforts.length?{reasoning:{effort,exclude:true}}:{})}),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(180000)]):AbortSignal.timeout(180000)});
    if(!r.ok)throw Error(r.status===402?'OpenRouter has no credit available for this request.':r.status===429?'OpenRouter is busy. Try again shortly.':'OpenRouter could not complete the request. Try another model.');
-   const result=await r.json(),message=result.choices?.[0]?.message;if(!message)throw Error('The model returned no response.');
+   const result=await r.json(),message=result.choices?.[0]?.message;
    const valid=n=>Number.isFinite(n)&&n>=0;
    usage.usageKnown &&= valid(result.usage?.prompt_tokens)&&valid(result.usage?.completion_tokens);usage.costKnown &&= valid(result.usage?.cost);
    usage.input_tokens+=valid(result.usage?.prompt_tokens)?result.usage.prompt_tokens:0;usage.output_tokens+=valid(result.usage?.completion_tokens)?result.usage.completion_tokens:0;usage.cost+=valid(result.usage?.cost)?result.usage.cost:0;modelRequestPending=false;
-   if(message.tool_calls?.length){history.push(message);const results=[];for(const call of message.tool_calls){const name=call.function?.name;onEvent({id:call.id,type:'toolCall',label:name,status:'running',detail:call.function?.arguments?.slice(0,16000)});let output;try{const args=JSON.parse(call.function.arguments);output=context&&['context_read','context_list'].includes(name)?JSON.stringify(await context.recover(name,args)):await executeLocalTool(name,args,{cwd,onRequest,signal});}catch(e){if(signal?.aborted)throw e;output='Tool error: '+e.message;}onEvent({id:call.id,type:'toolCall',label:name,status:'completed',detail:String(output).slice(0,16000)});const toolResult={role:'tool',tool_call_id:call.id,content:String(output)};history.push(toolResult);results.push(toolResult);}context?.append(message,results);continue;}
+   if(!message)throw Error('The model returned no response.');
+   if(message.tool_calls?.length){validateToolCalls(message);history.push(message);const results=[];for(const call of message.tool_calls){const name=call.function?.name;onEvent({id:call.id,type:'toolCall',label:name,status:'running',detail:call.function?.arguments?.slice(0,16000)});let output;try{const args=JSON.parse(call.function.arguments);output=context&&['context_read','context_list'].includes(name)?JSON.stringify(await context.recover(name,args)):await executeLocalTool(name,args,{cwd,onRequest,signal});}catch(e){if(signal?.aborted)throw e;output='Tool error: '+e.message;}onEvent({id:call.id,type:'toolCall',label:name,status:'completed',detail:String(output).slice(0,16000)});const toolResult={role:'tool',tool_call_id:call.id,content:String(output)};history.push(toolResult);results.push(toolResult);}context?.append(message,results);continue;}
    for(const [i,image] of (message.images||[]).entries()){const data=image.image_url?.url;const match=data?.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/);if(match&&match[2].length<28000000)await fs.writeFile(path.join(cwd,`generated-${crypto.randomUUID()}-${i}.${match[1]}`),Buffer.from(match[2],'base64'),{mode:0o600});}
    const text=typeof message.content==='string'?message.content:message.content?.filter(x=>x.type==='text').map(x=>x.text).join('\n');
    return {text:text||((message.images||[]).length?'Created the image.':'Task finished.'),model,usage};

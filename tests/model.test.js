@@ -89,3 +89,15 @@ test('artifact downloads work from private storage and reject another owner',asy
  assert.equal(response.body.toString(),'verified');
  await request(app).get(route).set('Host','127.0.0.1:5194').set('X-Offload-Client','local').set('X-Test-Owner','other').expect(404);
 });
+
+test('cancelled jobs retain provider usage returned after the cancellation',async()=>{
+ let started;
+ const ready=new Promise(resolve=>{started=resolve;});
+ const app=appWith(({signal})=>new Promise((resolve,reject)=>{
+   started();signal.addEventListener('abort',()=>reject(Object.assign(Error('Stopped'),{usage:{input_tokens:100,output_tokens:5,usageKnown:false}})),{once:true});
+ }));
+ await post(app,'/api/model/jobs',payload).expect(202);await ready;
+ await post(app,`/api/model/jobs/${payload.requestId}/stop`,{}).expect(200);
+ const job=await untilJob(app,payload.requestId,j=>j.usage?.input_tokens===100);
+ assert.equal(job.status,'cancelled');assert.equal(job.usage.output_tokens,5);assert.equal(job.usage.usageKnown,false);
+});

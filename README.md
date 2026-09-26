@@ -70,14 +70,12 @@ live measurements. The implementation adapts state-aware compression principles 
 The actual OpenRouter tool loop now accepts the same selector with `OFFLOAD_COMPACTION=jev` and MongoDB configured.
 User instructions, tool/result pairs, file effects, denied permissions, errors and archive reads stay protected.
 Decision usage is included in the task total, including a failed selection; unknown provider usage remains marked unknown.
-An over-budget protected context stops before the next answer-model request. This opt-in adapter bounds the model
-prompt during a 40-step turn; it does not implement native cross-turn recovery or replace Codex's context system.
+An over-budget protected context stops before the next answer-model request. This opt-in adapter bounds selected tool history during a 40-step turn; initial instructions and images remain intact outside that budget; it does not implement native cross-turn recovery or replace Codex's context system.
 
 A paired scripted-provider test uses real local file tools and seven reads. Both paths recover the exact original key
 (1/1 each). Cumulative serialized model prompts fall from **111,805 to 45,148 characters (59.62%)**, including one extra
 archive-recovery call. Model requests rise from **8 to 9**, and selection uses **15 scripted decision calls**. These are
-measured prompt characters and a correctness test, not paid-model token savings. Three new native-context tests cover
-recovery/protocol/owner isolation, protected denial/incomplete exchanges, and provider-call prevention after overflow.
+measured prompt characters and a correctness test, not paid-model token savings. Native-context tests cover recovery, protocol, owner isolation, protected denials, images and provider-call prevention after overflow. Cancellation preserves 105 already-reported fixture tokens; a malformed paid reply preserves its 130 reported tokens instead of recording zero; duplicate tool IDs execute zero tools.
 Run `node scripts/benchmark-native-context.mjs docs/evidence/native-context-paired.json`.
 [Raw paired evidence](docs/evidence/native-context-paired.json) and [integration details](docs/native-context.md).
 
