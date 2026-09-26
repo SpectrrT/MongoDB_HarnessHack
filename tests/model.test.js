@@ -9,7 +9,7 @@ import {mountModel} from '../server/model.js';
 import {retrieveNotes,modelPrompt} from '../shared/retrieval.js';
 import {createWorkspace,transition} from '../shared/workspace.js';
 const payload={requestId:'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',model:'working-model',messages:[{role:'user',text:'Who are you?'}],notes:[]};
-function appWith(run,dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'offload-model-test-'))){const app=express();app.use(express.json());app.use((req,res,next)=>{req.workspaceKey=req.get('X-Test-Owner')||'one';next();});mountModel(app,{dataDir,enabled:true,run,status:async()=>({connected:true,models:[{id:'working-model',efforts:['low','high']}]})});return app;}
+function appWith(run,dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'offload-model-test-')),options={}){const app=express();app.use(express.json());app.use((req,res,next)=>{req.workspaceKey=req.get('X-Test-Owner')||'one';next();});mountModel(app,{dataDir,enabled:true,run,status:async()=>({connected:true,models:[{id:'working-model',efforts:['low','high']}]}),...options});return app;}
 const post=(app,path,body,owner='one')=>request(app).post(path).set('Host','127.0.0.1:5194').set('X-Offload-Client','local').set('X-Test-Owner',owner).send(body);
 test('model requests require local host, valid origin and explicit client header',async()=>{
  const app=appWith(async()=>({text:'ok'}));
@@ -113,6 +113,35 @@ test('artifact downloads work from private storage and reject another owner',asy
  const response=await request(app).get(route).set('Host','127.0.0.1:5194').set('X-Offload-Client','local').expect(200);
  assert.equal(response.body.toString(),'verified');
  await request(app).get(route).set('Host','127.0.0.1:5194').set('X-Offload-Client','local').set('X-Test-Owner','other').expect(404);
+});
+
+test('persisted native reports and artifacts load without an unrelated idle database lookup',async t=>{
+ const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'offload-local-artifact-'));t.after(()=>fs.rmSync(dataDir,{recursive:true,force:true}));
+ const id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',artifactId='ffffffff-ffff-4fff-8fff-ffffffffffff';
+ const folder=path.join(dataDir,'agent-jobs','one',id),cwd=path.join(dataDir,'work');
+ fs.mkdirSync(path.join(folder,'files'),{recursive:true});fs.mkdirSync(cwd);
+ fs.writeFileSync(path.join(folder,'files',artifactId),'snapshot report');fs.writeFileSync(path.join(cwd,'report.json'),'{"verified":true}');
+ const saved={id,status:'completed',createdAt:Date.now()-1000,cwd,result:{text:'Ready',agent:{artifacts:[{id:artifactId,name:'report.txt'}]}}};
+ fs.writeFileSync(path.join(folder,'job.json'),JSON.stringify(saved));
+ let idleCalls=0;const unavailable=async()=>{idleCalls++;throw Error('Atlas unavailable');};
+ const app=appWith(async()=>{throw Error('Must not rerun');},dataDir,{idleExecution:{getJob:unavailable,getArtifact:unavailable}});
+ assert.equal((await get(app,id).expect(200)).body.status,'completed');
+ const download=url=>request(app).get(url).set('Host','127.0.0.1:5194').set('X-Offload-Client','local');
+ assert.equal((await download(`/api/model/jobs/${id}/artifacts/${artifactId}`).expect(200)).body.toString(),'snapshot report');
+ assert.equal((await download(`/api/model/jobs/${id}/download?path=report.json`).expect(200)).body.toString(),'{"verified":true}');
+ fs.writeFileSync(path.join(folder,'job.json'),JSON.stringify({...saved,status:'running'}));
+ const interrupted=(await get(app,id).expect(200)).body;assert.equal(interrupted.status,'failed');assert.match(interrupted.error,/restarted/);
+ fs.writeFileSync(path.join(folder,'job.json'),'invalid JSON');await get(app,id).expect(404);
+ assert.equal(idleCalls,0);
+});
+
+test('missing native jobs still use owner-scoped idle job and artifact fallback',async t=>{
+ const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'offload-idle-fallback-'));t.after(()=>fs.rmSync(dataDir,{recursive:true,force:true}));
+ const calls=[],id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+ const app=appWith(async()=>({text:'unused'}),dataDir,{idleExecution:{getJob:async(owner,jobId)=>{calls.push(['job',owner,jobId]);return {id:jobId,status:'completed',result:{text:'Sleep draft'}};},getArtifact:async(owner,jobId,artifactId)=>{calls.push(['artifact',owner,jobId,artifactId]);return {name:'draft.txt',content:'Sleep draft'};}}});
+ assert.equal((await get(app,id).expect(200)).body.result.text,'Sleep draft');
+ const response=await request(app).get(`/api/model/jobs/${id}/artifacts/draft`).set('Host','127.0.0.1:5194').set('X-Offload-Client','local').set('X-Test-Owner','two').expect(200);
+ assert.equal(response.text,'Sleep draft');assert.deepEqual(calls,[['job','one',id],['artifact','two',id,'draft']]);
 });
 
 test('generated report downloads require completed owner jobs and confined generated paths',async()=>{
