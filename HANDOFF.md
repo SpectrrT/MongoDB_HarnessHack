@@ -1,5 +1,7 @@
 # Offload handoff
 
+September 26 product update: see [INTEGRATION.md](INTEGRATION.md) for the `MyName` branch's transition changes and the agreed Atlas, agent memory, Vector Search, and per-user local Codex requirements. The backend descriptions below still describe the mock prototype.
+
 ## Run it
 
 ```sh

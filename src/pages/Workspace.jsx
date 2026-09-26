@@ -37,7 +37,11 @@ import {
   CalendarDays,
   TimerReset,
 } from "lucide-react";
-import { ThinkingOrb } from "thinking-orbs";
+import {
+  ThinkingOrb,
+  ScreenTransition,
+  OrbLoading,
+} from "../components/ScreenTransition";
 import { useWorkspace, download } from "../store";
 import { activeSuggestions } from "../../shared/workspace";
 import { Modal, Empty } from "../components/Modal";
@@ -92,10 +96,7 @@ export default function Workspace() {
   }, []);
   if (!state)
     return (
-      <div className="app-loading">
-        <span className="wordmark">offload</span>
-        <p>{error || "Opening your workspace…"}</p>
-      </div>
+      <OrbLoading label={error || "Opening your workspace…"} />
     );
   if (!state.profile.onboarded) return <Onboarding />;
   const route = location.pathname
@@ -262,7 +263,11 @@ export default function Workspace() {
             </button>
           </div>
         )}
-        <main className={"app-content page-" + (page || "home")}>
+        <ScreenTransition
+          as="main"
+          screenKey={location.pathname}
+          className={"app-content page-" + (page || "home")}
+        >
           {page === "" && (
             <Overview
               onRun={run}
@@ -277,11 +282,11 @@ export default function Workspace() {
           {page === "connections" && <Connections onConnect={setConnect} />}
           {page === "settings" && <SettingsPage />}
           {page === "library" && (
-            <Suspense fallback={<p>Opening component library…</p>}>
+            <Suspense fallback={<OrbLoading compact label="Opening component library…" />}>
               <Gallery />
             </Suspense>
           )}
-        </main>
+        </ScreenTransition>
       </div>
       {suggestions && (
         <Suggestions onClose={() => setSuggestions(false)} onRun={run} />
@@ -321,98 +326,100 @@ function Onboarding() {
           size={64}
         />
         <span className="step-label">{step + 1} / 3</span>
-        {step === 0 ? (
-          <>
-            <h1>
-              A little less
-              <br />
-              on your plate.
-            </h1>
-            <p>First, a name for your workspace.</p>
-            <label>
-              Your first name
-              <input
-                autoFocus
-                value={name}
-                maxLength={60}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && name.trim()) setStep(1);
-                }}
-              />
-            </label>
-            <button
-              className="button"
-              disabled={!name.trim()}
-              onClick={() => setStep(1)}
-            >
-              Continue <ArrowRight size={17} />
-            </button>
-          </>
-        ) : step === 1 ? (
-          <>
-            <h1>
-              What fills
-              <br />
-              your day?
-            </h1>
-            <p>This helps organize your starting workspace.</p>
-            <div className="role-options">
-              {[
-                "Product team",
-                "Engineering",
-                "Design",
-                "Independent work",
-              ].map((x) => (
-                <button
-                  className={role === x ? "selected" : ""}
-                  onClick={() => setRole(x)}
-                  key={x}
-                >
-                  {x}
-                  {role === x && <Check size={16} />}
-                </button>
-              ))}
-            </div>
-            <div className="button-row">
-              <button className="text-button" onClick={() => setStep(0)}>
-                Back
-              </button>
-              <button className="button" onClick={() => setStep(2)}>
+        <ScreenTransition screenKey={step} className="onboard-step">
+          {step === 0 ? (
+            <>
+              <h1>
+                A little less
+                <br />
+                on your plate.
+              </h1>
+              <p>First, a name for your workspace.</p>
+              <label>
+                Your first name
+                <input
+                  autoFocus
+                  value={name}
+                  maxLength={60}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && name.trim()) setStep(1);
+                  }}
+                />
+              </label>
+              <button
+                className="button"
+                disabled={!name.trim()}
+                onClick={() => setStep(1)}
+              >
                 Continue <ArrowRight size={17} />
               </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h1>
-              Your work.
-              <br />
-              Your say.
-            </h1>
-            <p>
-              This is a local demo with sample data. Account connections and
-              agent actions are simulated.
-            </p>
-            <div className="onboard-note">
-              <Shield size={20} />
+            </>
+          ) : step === 1 ? (
+            <>
+              <h1>
+                What fills
+                <br />
+                your day?
+              </h1>
+              <p>This helps organize your starting workspace.</p>
+              <div className="role-options">
+                {[
+                  "Product team",
+                  "Engineering",
+                  "Design",
+                  "Independent work",
+                ].map((x) => (
+                  <button
+                    className={role === x ? "selected" : ""}
+                    onClick={() => setRole(x)}
+                    key={x}
+                  >
+                    {x}
+                    {role === x && <Check size={16} />}
+                  </button>
+                ))}
+              </div>
+              <div className="button-row">
+                <button className="text-button" onClick={() => setStep(0)}>
+                  Back
+                </button>
+                <button className="button" onClick={() => setStep(2)}>
+                  Continue <ArrowRight size={17} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h1>
+                Your work.
+                <br />
+                Your say.
+              </h1>
               <p>
-                No background recording starts here. You choose when to begin a
-                session. You can export or delete your workspace anytime.
+                This is a local demo with sample data. Account connections and
+                agent actions are simulated.
               </p>
-            </div>
-            <div className="button-row">
-              <button className="text-button" onClick={() => setStep(1)}>
-                Back
-              </button>
-              <button className="button" onClick={finish} disabled={busy}>
-                {busy ? "Opening…" : "Open my workspace"}{" "}
-                <ArrowRight size={17} />
-              </button>
-            </div>
-          </>
-        )}
+              <div className="onboard-note">
+                <Shield size={20} />
+                <p>
+                  No background recording starts here. You choose when to begin a
+                  session. You can export or delete your workspace anytime.
+                </p>
+              </div>
+              <div className="button-row">
+                <button className="text-button" onClick={() => setStep(1)}>
+                  Back
+                </button>
+                <button className="button" onClick={finish} disabled={busy}>
+                  {busy ? "Opening…" : "Open my workspace"}{" "}
+                  <ArrowRight size={17} />
+                </button>
+              </div>
+            </>
+          )}
+        </ScreenTransition>
       </div>
       <footer>Your workspace stays on this device.</footer>
     </div>
@@ -637,7 +644,7 @@ function Chat({ id, onNew }) {
       await act("chat", { id: cid, text });
       navigate("/app/chat/" + cid, { replace: true });
     } finally {
-      setTimeout(() => setBusy(false), 600);
+      setBusy(false);
     }
   };
   useEffect(() => {
@@ -688,7 +695,7 @@ function Chat({ id, onNew }) {
               )}
             </div>
           ))}
-          {busy && <ThinkingOrb state="composing" size={20} />}
+          {busy && <OrbLoading compact state="composing" label="Preparing your reply…" />}
           <div ref={end} />
         </div>
       )}
@@ -1067,7 +1074,7 @@ function Sleep() {
           Illustrative steps for an ordinary run and a saved routine. Not
           measured time savings.
         </p>
-        <Suspense fallback={<p>Loading chart…</p>}>
+        <Suspense fallback={<OrbLoading compact label="Loading chart…" state="shaping" />}>
           <ProgressChart />
         </Suspense>
       </div>

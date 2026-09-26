@@ -317,8 +317,47 @@
 .hero-aside {
   animation: offload-rise 0.9s 0.4s var(--ease-out-expo) both;
 }
-.app-content > * {
-  animation: offload-rise 0.38s var(--ease-out-quart) both;
+/* ScreenTransition owns screen motion, avoiding a second animation on children. */
+.app-screen { min-height: 100dvh; }
+.orb-loading { gap: 18px; }
+.orb-loading > p { margin: 0; color: var(--ink-soft); font-size: 13px; }
+.orb-loading.compact {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 18px 0;
+}
+.onboard-step > p {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.85;
+  margin-bottom: 26px;
+}
+.onboard-step > label { margin-bottom: 25px; }
+.onboard-step > .button { width: 100%; }
+.onboard-step > .button-row { justify-content: space-between; }
+.sidebar, .suggestions-panel {
+  animation: offload-panel-in 0.3s var(--ease-out-quart) both;
+}
+@keyframes offload-panel-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal[open] {
+  animation: offload-dialog-in 0.24s var(--ease-out-expo) both;
+}
+.modal[open]::backdrop {
+  animation: offload-panel-in 0.2s ease-out both;
+}
+@keyframes offload-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .suggestions-panel, .modal[open], .modal[open]::backdrop {
+    animation: none;
+  }
 }
 
 /* Phones: 16px inputs stop iOS from zooming on focus */
