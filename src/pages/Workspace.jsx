@@ -1,6 +1,7 @@
 import Harness from "./Harness";
 import Adapt from "./Adapt";
 import Sleep from "./Sleep";
+import Rem from "./Rem";
 import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -39,6 +40,7 @@ import {
   GitPullRequest,
   CalendarDays,
   TimerReset,
+  Sparkles,
 } from "lucide-react";
 import {
   ThinkingOrb,
@@ -68,6 +70,7 @@ const nav = [
   ["tasks", "Tasks", ListTodo],
   ["harness", "Durable handoff", ListTodo],
   ["adapt", "Harness sleep", Moon],
+  ["rem", "REM", Sparkles],
   ["memory", "Memory", Brain],
   ["sleep", "Slow mode", Moon],
   ["connections", "Connections", Plug],
@@ -231,6 +234,7 @@ export default function Workspace() {
           {page === "sleep" && <SlowMode><Sleep /></SlowMode>}
           {page === "harness" && <Harness />}
           {page === "adapt" && <Adapt />}
+          {page === "rem" && <Rem />}
           {page === "connections" && <Connections onConnect={setConnect} />}
           {page === "settings" && <SettingsPage />}
           {page === "library" && (
