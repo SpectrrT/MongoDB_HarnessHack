@@ -89,6 +89,31 @@ if(escaped)display.textContent='isolation-failed';
   noLeaks(result); assert.equal(result.passed, true);
 });
 
+test("an animated value cannot pass while Increment and Reset buttons do nothing", {timeout: 10000}, async t => {
+  const html = '<output data-testid="counter-value">0</output><button>Increment</button><button>Reset</button>' +
+    '<script>let n=0;setInterval(()=>document.querySelector("output").textContent=(++n)%3,25);</script>';
+  const result = await verifyPrototype({kind: "counter", requireReset: true, html});
+  noLeaks(result); assert.equal(result.passed, false);
+  assert.ok(result.observed.some(value => value.stable === false));
+  t.diagnostic(JSON.stringify({fixture: "animated-counter-with-inert-buttons", passed: result.passed, observed: result.observed, cleanup: result.cleanup}));
+});
+
+test("static and dynamically created child documents cannot recover fresh transport globals", {timeout: 15000}, async () => {
+  const embedded = await verifyPrototype({kind: "counter", html: counter() + '<iframe srcdoc="<script>new RTCPeerConnection()</script>"></iframe>'});
+  noLeaks(embedded); assert.equal(embedded.passed, false);
+  assert.equal(embedded.checks.find(check => check.id === "single-document").passed, false);
+  const dynamic = await verifyPrototype({kind: "counter", html: counter({extra: `
+let blocked=0;
+try {document.body.append(document.createElement('iframe'));} catch {blocked++;}
+try {document.body.insertAdjacentHTML('beforeend','<iframe></iframe>');} catch {blocked++;}
+try {document.body.append(document.createElementNS('http://www.w3.org/1999/xhtml','x:iframe'));} catch {blocked++;}
+try {document.implementation.createDocument('http://www.w3.org/1999/xhtml','iframe');} catch {blocked++;}
+if(blocked!==4)display.textContent='fresh-frame-possible';
+`})});
+  noLeaks(dynamic);
+  assert.equal(dynamic.observed.find(value => value.id === "initial-zero").actual, "0");
+});
+
 test("infinite renderer loop times out and the owned browser process group exits", {timeout: 10000}, async t => {
   const result = await verifyPrototype({kind: "counter", html: counter({stall: true}), timeoutMs: 1800});
   noLeaks(result);

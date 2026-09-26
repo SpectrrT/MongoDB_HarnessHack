@@ -11,6 +11,7 @@ export const COUNTER_PROTOTYPE_CONTRACT = Object.freeze({
   initialValue: "0",
   incrementValues: Object.freeze(["1", "2"]),
   resetValue: "0",
+  stableValueMs: 100,
   maxHtmlBytes: 100000,
   defaultTimeoutMs: 8000,
   maxTimeoutMs: 15000,
@@ -18,7 +19,7 @@ export const COUNTER_PROTOTYPE_CONTRACT = Object.freeze({
 
 const CSP = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; " +
   "connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; " +
-  "worker-src 'none'; base-uri 'none'; form-action 'none'";
+  "worker-src 'none'; base-uri 'none'; form-action 'none'; require-trusted-types-for 'script'; trusted-types 'none'";
 const PERMISSIONS = "camera 'none'; microphone 'none'; geolocation 'none'; clipboard-read 'none'; clipboard-write 'none'; " +
   "display-capture 'none'; usb 'none'; serial 'none'; hid 'none'; payment 'none'; fullscreen 'none'";
 const activeBrowsers = new Set();
@@ -42,8 +43,26 @@ function processAlive(pid) {
   catch (error) {if (error.code === "ESRCH") return false; throw error;}
 }
 function disableTransports() {
+  if (globalThis.__sleepPrototypeLocked) return;
+  Object.defineProperty(globalThis, "__sleepPrototypeLocked", {value: true, configurable: false, writable: false});
   for (const name of ["RTCPeerConnection", "webkitRTCPeerConnection", "WebTransport", "Worker", "SharedWorker"])
     Object.defineProperty(globalThis, name, {value: undefined, configurable: false, writable: false});
+  // No nested document may obtain a fresh set of transport constructors. Trusted Types also
+  // blocks string-based HTML/script sinks; static embedded documents are rejected before render.
+  const blocked = new Set(["iframe", "frame", "object", "embed", "portal"]);
+  const isBlocked = name => blocked.has(String(name).split(":").at(-1).toLowerCase());
+  for (const [method, nameIndex] of [["createElement", 0], ["createElementNS", 1]]) {
+    const original = Document.prototype[method];
+    Object.defineProperty(Document.prototype, method, {configurable: false, writable: false, value: function (...args) {
+      if (isBlocked(args[nameIndex])) throw new DOMException("Nested documents are unavailable.", "NotSupportedError");
+      return Reflect.apply(original, this, args);
+    }});
+  }
+  const createDocument = DOMImplementation.prototype.createDocument;
+  Object.defineProperty(DOMImplementation.prototype, "createDocument", {configurable: false, writable: false, value: function (...args) {
+    if (isBlocked(args[1])) throw new DOMException("Nested documents are unavailable.", "NotSupportedError");
+    return Reflect.apply(createDocument, this, args);
+  }});
 }
 
 // Browser choice, launch flags, selectors and behavior are trusted constants. Callers must choose
@@ -124,6 +143,13 @@ export async function verifyPrototype({html, kind, requireReset = false, signal,
         stop("navigation-blocked");
       }
     });
+    const embedded = await bounded(page.evaluate(source => {
+      const inert = document.createElement("template");
+      inert.innerHTML = source;
+      return Boolean(inert.content.querySelector("iframe,frame,object,embed,portal,template"));
+    }, html));
+    if (!check("single-document", !embedded, embedded ? "Embedded documents and templates are outside the counter contract." : "No embedded document or template markup."))
+      throw new VerificationStop("unsupported-markup");
     // The browser enforces sandbox flags from the trusted parent iframe. Generated markup cannot
     // grant itself same-origin, popups, forms, downloads, modals or top-navigation permission.
     // Also bootstrap the srcdoc directly: an isolated cross-process iframe may not receive
@@ -155,14 +181,17 @@ export async function verifyPrototype({html, kind, requireReset = false, signal,
       const expectValue = async (id, expected) => {
         // Allow a short render frame without waiting indefinitely for a broken implementation.
         const until = Math.min(deadline, performance.now() + 350);
-        let actual;
+        let actual, stableSince = null, stable = false;
         do {
           actual = String(await bounded(value.textContent({timeout: remaining()}))).trim();
-          if (actual === expected) break;
+          if (actual === expected) {
+            stableSince ??= performance.now();
+            if (performance.now() - stableSince >= COUNTER_PROTOTYPE_CONTRACT.stableValueMs) {stable = true; break;}
+          } else stableSince = null;
           await bounded(delay(20));
         } while (performance.now() < until);
-        observed.push({id, expected, actual: actual.slice(0, 80)});
-        return check(id, actual === expected, `Expected ${expected}; observed ${actual.slice(0, 80)}.`);
+        observed.push({id, expected, actual: actual.slice(0, 80), stable});
+        return check(id, stable, `Expected stable ${expected}; observed ${actual.slice(0, 80)}${stable ? "." : " without a stable matching interval."}`);
       };
       await expectValue("initial-zero", "0");
       await bounded(increment.click({timeout: remaining()}));
