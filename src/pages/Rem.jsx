@@ -666,8 +666,8 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
     return seen;
   }, [nightEvents]);
 
-  const brief = freshBrief || state.brief;
-  const interrupted = !sleeping && !freshBrief ? interruptedNight(state) : null;
+  const brief = state.brief;
+  const interrupted = !sleeping && !completed ? interruptedNight(state) : null;
 
   const runSleep = async () => {
     setBusy(true);
