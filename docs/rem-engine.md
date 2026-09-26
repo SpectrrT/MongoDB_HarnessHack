@@ -191,7 +191,7 @@ a time. Bodies are validated with zod.
 ## One Sleep (Sep 26): what was folded into REM, and what runs on Atlas
 
 REM is the single Sleep engine. Sleep v2's recall and lessons ideas and the Sleep Lab's recall scenario
-and adversarial attacks now live here; `server/sleep/` is no longer on REM's paths.
+and adversarial attacks now live here; `server/sleep/` has since been removed from the repo.
 
 - **Atlas, verified on the event sandbox (8.0.32).** Search runs in Atlas by default (`REM_ATLAS_SEARCH=0`
   turns it off): `$rankFusion` over the autoEmbed vector index and the Atlas Search index for hybrid recall,
