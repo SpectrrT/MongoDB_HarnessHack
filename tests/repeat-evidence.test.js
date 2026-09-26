@@ -111,3 +111,8 @@ test('a relevant or uncertain shared group retains every member and unrelated gr
     assert.deepEqual(result.scores.map(s=>s.probability),[probability===0.9?0.9:null,probability===0.9?0.9:null,0.02]);
   }
 });
+
+
+test('empty observations remain individual valid records during grouping', () => {
+  assert.deepEqual(retentionGroups(encodeEvidenceRecords([{record:0,text:''},{record:1,text:'Independent fact.'}])),[[0],[1]]);
+});

@@ -92,7 +92,7 @@ export function retentionGroups(encoded) {
     const repeats = segments?.filter(segment => typeof segment !== 'string');
     const repeatedChars = repeats?.reduce((n, segment) => n + (segment.ref === undefined ? segment.text : encoded.dictionary[segment.ref]).length * segment.repeat, 0) || 0;
     const totalChars = typeof record.text === 'string' ? record.text.length : expandRepeatedEvidence(record.text, encoded.dictionary).length;
-    const key = repeatedChars >= totalChars * 0.75 && repeats.length
+    const key = repeats?.length && repeatedChars >= totalChars * 0.75
       ? JSON.stringify(repeats.map(segment => [segment.ref === undefined ? segment.text : encoded.dictionary[segment.ref], segment.repeat])) : null;
     if (key !== null && positions.has(key)) groups[positions.get(key)].push(index);
     else {if (key !== null) positions.set(key, groups.length); groups.push([index]);}
