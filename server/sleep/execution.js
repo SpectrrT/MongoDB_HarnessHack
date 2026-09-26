@@ -100,10 +100,13 @@ export async function sleepExecutionTick(store, executor, { worker = randomUUID(
     if (task.input.browserCheck) {
       await fence();
       if (checkResults.every(check => check.passed)) {
+        const remainingMs=task.input.deadline-store.clock();
+        if(remainingMs<100)return await store.finish(task,'incomplete',{artifacts,checkResults,
+          reason:'deadline',error:'Insufficient time remains for the required offline browser check.',pending:null});
         const verifier = verifyPrototype || (await import('./prototype-checks.js')).verifyPrototype;
         const html = await fs.readFile(path.join(directory,'prototype.html'),'utf8');
         const result = await verifier({ html, kind: task.input.browserCheck, requireReset: true,
-          signal: controller.signal, timeoutMs: Math.max(1,Math.min(8000,task.input.deadline-store.clock())) });
+          signal: controller.signal, timeoutMs: Math.min(8000,remainingMs) });
         checkResults.push({ id:'browser:counter',path:'prototype.html',passed:result.passed===true,
           failed:result.passed===true?[]:['Counter behavior did not pass the fixed browser checks.'],
           verification:result });

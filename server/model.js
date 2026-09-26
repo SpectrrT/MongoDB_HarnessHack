@@ -79,6 +79,8 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
   app.use('/api/model/sleep/:conversationId',(req,res,next)=>{if(!z.string().uuid().safeParse(req.params.conversationId).success)return res.status(400).json({error:'Choose a conversation.'});next();});
   app.get('/api/model/sleep/:conversationId',async(req,res)=>{const execution=await sleepConfiguration(req.workspaceKey);res.json({...await idle.get(req.workspaceKey,req.params.conversationId),configured:execution.configured,execution});});
   app.post('/api/model/sleep/:conversationId',async(req,res)=>{
+    // Revocation cannot depend on valid old context or an available provider.
+    if(req.body?.enabled===false){await idle.set(req.workspaceKey,req.params.conversationId,false);return res.json(await idle.get(req.workspaceKey,req.params.conversationId));}
     const parsed=z.object({enabled:z.boolean(),consent:z.object({scope:z.literal('isolated-local-drafts'),budget:z.number().int().min(1000).max(20000),durationMs:z.number().int().min(1000).max(3600000),offlinePrototypeChecks:z.boolean().default(false)}).strict().optional(),context:z.unknown().optional()}).strict().safeParse(req.body);
     if(!parsed.success)return res.status(400).json({error:'Choose bounded local draft permission and limits.'});
     const body=parsed.data,execution=await sleepConfiguration(req.workspaceKey);if(body.enabled&&!execution.configured)return res.status(503).json({error:'Sleep needs MongoDB and a configured OpenRouter key. It does not use the selected Codex chat account.'});
@@ -93,7 +95,9 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     try{
      await idle.activity(req.workspaceKey);
      for(const job of jobs.values())if(job.owner===req.workspaceKey&&job.background&&job.status==='running')await cancel(job.owner,job.id);
-     const result=await launch(req.workspaceKey,parsed.data);if(result.created)await idle.observe(req.workspaceKey,parsed.data);res.status(result.created?202:200).json(result.job);
+     // Authored stop/continue intent remains authoritative when the provider is unavailable.
+     await idle.observe(req.workspaceKey,parsed.data);
+     const result=await launch(req.workspaceKey,parsed.data);res.status(result.created?202:200).json(result.job);
     }catch(e){res.status(e.status||500).json({error:e.message});}
   });
   app.get('/api/model/jobs/:id',async(req,res)=>{const job=await getJob(req.workspaceKey,req.params.id);if(!job)return res.status(404).json({error:'Run not found.'});res.json(publicJob(job));});

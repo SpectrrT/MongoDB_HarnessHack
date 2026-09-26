@@ -22,7 +22,7 @@ export function createIdleExecution({ store, executor, root, derive, clock = Dat
       'Goal: ' + task.input.title,
       'Hypotheses are unverified: ' + JSON.stringify(task.idle.hypotheses || []).slice(0,1600),
       'File checks: ' + (task.checkResults.length ? task.checkResults.map(c => c.path + ': ' + (c.passed ? 'passed' : c.failed.join(', '))).join('; ') : 'not completed'),
-      ...task.checkResults.filter(c=>c.verification).map(c=>'Offline counter execution: '+JSON.stringify({passed:c.passed,observedStates:c.verification.observedStates,checks:c.verification.checks})),
+      ...task.checkResults.filter(c=>c.verification).map(c=>'Offline counter execution: '+JSON.stringify({passed:c.passed,observedStates:c.verification.observed?.map(state=>state.actual),checks:c.verification.checks})),
       'These checks verify the declared file criteria, not semantic correctness or completion of the broader goal.',
       'Outcome: ' + (task.reason || task.status),
       'Unfinished work: review the candidate and verify it against the original goal before applying it.',
@@ -78,6 +78,10 @@ export function createIdleExecution({ store, executor, root, derive, clock = Dat
       } });
     }
     if (interrupted.has(key)) { await pause(owner, payload.requestId); return { skipped: true, reason: 'User activity paused Sleep.' }; }
+    if(!terminal.has(task.status)&&!(await configuration(owner)).configured){
+      await store.control(owner,task._id,'pause');
+      throw Error('Sleep paused because its OpenRouter connection is unavailable. No new model call was made.');
+    }
     if (!terminal.has(task.status) && !active.has(key)) {
       const controller = new AbortController();
       const work = { controller }; active.set(key, work);

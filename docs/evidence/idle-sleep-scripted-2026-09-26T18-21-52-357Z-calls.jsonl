@@ -1,0 +1,2 @@
+{"number":1,"startedAt":"2026-09-26T18:21:52.659Z","reservedTokens":5512,"status":"started"}
+{"number":1,"startedAt":"2026-09-26T18:21:52.659Z","reservedTokens":5512,"status":"returned","elapsedMs":0,"usage":{"input_tokens":100,"output_tokens":100,"cost":0},"provider":"scripted-fixture","model":"counter-fixture","planParsed":true}

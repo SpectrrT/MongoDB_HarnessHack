@@ -1,0 +1,2 @@
+{"number":1,"startedAt":"2026-09-26T18:26:52.638Z","reservedTokens":5512,"status":"started"}
+{"number":1,"startedAt":"2026-09-26T18:26:52.638Z","reservedTokens":5512,"status":"returned","elapsedMs":6168,"usage":{"input_tokens":621,"output_tokens":725,"cost":0.0014084},"provider":"openrouter","model":"openai/gpt-4.1-mini","planParsed":true}

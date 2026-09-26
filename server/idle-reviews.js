@@ -58,7 +58,10 @@ export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now
       if (row.jobId && ['running','starting'].includes(row.state)) await cancel(owner,row.jobId);
       const previous=row.latest?.messages||[],incoming=p.messages||[];
       let overlap=Math.min(previous.length,incoming.length);
-      while(overlap>0&&!previous.slice(-overlap).every((m,index)=>m.role===incoming[index].role&&m.text===incoming[index].text))overlap--;
+      // A failed foreground request may leave the UI snapshot behind the server.
+      // Do not replay that old prefix as fresh intent after a persisted stop.
+      while(overlap>0&&!previous.some((_message,start)=>start+overlap<=previous.length&&
+        previous.slice(start,start+overlap).every((m,index)=>m.role===incoming[index].role&&m.text===incoming[index].text)))overlap--;
       const messages=[...previous,...incoming.slice(overlap)];
       row.generation++; row.latest = { ...p, messages, images: [], notes: [], folder: '' }; row.nextAt = now() + IDLE_MS;
       row.state = row.enabled ? 'waiting' : 'off'; row.error = null; await save(row);
