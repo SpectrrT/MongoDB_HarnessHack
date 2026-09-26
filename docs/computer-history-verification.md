@@ -39,3 +39,21 @@ The verifier creates only a unique `offload_activity_verify_*` database, uses lo
 - Computer History APIs require the local app, including its explicit mutation header. They are disabled in production server mode.
 
 Focused verification: `node --test tests/activity.test.js tests/rem-access.test.js`. The checks use a real temporary MongoDB server, including native aggregation, source separation, retrieval, deletion and access boundaries. Desktop capture itself has not been activated or claimed as tested against a user's live activity.
+
+## MongoDB engineer example
+
+`shared/mongodb-demo.js` supplies the same clearly labeled example inputs to Computer History and Sleep: three weekly orders-service reviews, followed by example meeting notes. The supplied numbers are p95 latency of 180 ms and a 0.6% timeout rate. They are not measurements from the user's database.
+
+The history follows Atlas metrics, GitHub query code, an issue tracker, and review notes. Its intended next action is a local draft describing staging explain-plan checks, a proposed index rollout, rollback criteria and human review. No index creation, database mutation, issue publication or message sending is authorized by this fixture.
+
+Prepare the history in a separate demo database:
+
+```sh
+node --env-file=.env server/activity/engineering-seed.js --database offload_engineering_demo
+```
+
+Then run the local app against that database by setting `MONGODB_DATABASE=offload_engineering_demo`. The seed script deliberately ignores the shared database name in `.env`. It inserts 720 synthetic samples and derives 12 sessions over three separate weeks, producing one weekly app-sequence pattern. Raw samples older than seven days still expire normally; derived sessions retain the labeled example history.
+
+The default is idempotent. `--reset` replaces only `source: seed` records on the dedicated `example-mongodb-engineer` device. It preserves unrelated recorded and sample activity. The script uses local embeddings, starts no collector and makes no paid model calls.
+
+The separate structured source fixture exports `mongodbDemoSources(now)` for explicit import through Sleep. Its completed meeting note includes the action `Draft an orders query rollout and rollback checklist.` Any generated draft must be labeled as a real model output from example inputs, not observed production work.
