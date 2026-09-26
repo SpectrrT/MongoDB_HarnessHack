@@ -1,12 +1,14 @@
 // /api/activity/*: computer history for the person using this machine. The server listens on
 // loopback only, so the workspace is this computer's user (ACTIVITY_WORKSPACE overrides it).
 import { z } from 'zod';
+import { remAccess } from '../rem-access.js';
 import { workspaceId } from './store.js';
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const MAX_STREAMS = 8;
 
 export function activityRoutes(app, { activity }) {
+  app.use('/api/activity', remAccess({ label: 'Computer history' }));
   const workspace = workspaceId();
   let streams = 0;
   const route = (handler) => async (req, res, next) => {
