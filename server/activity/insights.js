@@ -24,7 +24,7 @@ export const appInfo = (label) => APPS[label] || { name: label, logo: null };
 const clock = (hour, minute = 0) =>
   new Date(Date.UTC(2000, 0, 1, hour, minute)).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 
-export async function findFriction(activity, workspace, { days = 14 } = {}) {
+export async function findFriction(activity, workspace, { days = 28 } = {}) {
   const since = new Date(Date.now() - days * 86400e3);
   const [hot] = await activity.sessions
     .aggregate([
@@ -58,11 +58,12 @@ export async function findFriction(activity, workspace, { days = 14 } = {}) {
       { $set: { dayCount: { $size: '$days' } } },
       { $match: { dayCount: { $gte: 2 } } },
       { $set: { switchesPerDay: { $divide: ['$switches', '$dayCount'] } } },
+      { $match: { $or: [{switchesPerDay:{$gte:4}},{switchesPerDay:{$gte:3},dayCount:{$gte:3}}] } },
       { $sort: { switchesPerDay: -1, seconds: -1 } },
       { $limit: 1 },
     ])
     .toArray();
-  if (!hot || hot.switchesPerDay < 4) return null;
+  if (!hot || (hot.switchesPerDay < 4 && !(hot.switchesPerDay >= 3 && hot.dayCount >= 3))) return null;
 
   const sessions = hot.sessions.flat().sort((a, b) => new Date(a.start) - new Date(b.start));
   const byApp = new Map();
@@ -82,13 +83,15 @@ export async function findFriction(activity, workspace, { days = 14 } = {}) {
   const minutes = sessions.map((s) => s.minute).sort((a, b) => a - b);
   const startMinute = minutes[Math.floor(minutes.length / 4)] ?? 0;
   const dayCount = hot.dayCount;
+  const counts={seed:0,captured:0,unknown:0};
+  for(const session of sessions)counts[session.source==='seed'?'seed':session.source==='collector'?'captured':'unknown']++;
+  const sources=Object.keys(counts).filter(key=>counts[key]>0);
+  const provenance=sources.length>1?'mixed':sources[0]||'unknown';
   return {
     hour: hot._id,
-    windowDays: days,
-    provenance: sessions.every(s => s.source === 'seed') ? 'sample' : sessions.some(s => s.source === 'seed') ? 'mixed' : 'live',
-    sampleSessionCount: sessions.filter(s => s.source === 'seed').length,
-    liveSessionCount: sessions.filter(s => s.source !== 'seed').length,
-    evidence: sessions.slice(-30).map(s => ({ id: String(s.id), timestamp: new Date(s.start).toISOString(), source: s.source, title: s.title, label: s.label })),
+    lookbackDays:days,timeZone:activity.timeZone||'UTC',provenance,sourceCounts:counts,sourceIds:sessions.map(session=>String(session.id)),
+    windowDays:days, sampleSessionCount:counts.seed, liveSessionCount:counts.captured,
+    evidence:sessions.slice(-30).map(s=>({id:String(s.id),timestamp:new Date(s.start).toISOString(),source:s.source,title:s.title,label:s.label})),
     window: `${clock(hot._id, startMinute)}`,
     days: dayCount,
     minutesPerDay: Math.round(hot.seconds / dayCount / 60),
@@ -109,7 +112,7 @@ export async function findFriction(activity, workspace, { days = 14 } = {}) {
       .filter((s) => s.sec >= 30)
       .slice(-14)
       .map((s) => ({ label: s.label, name: appInfo(s.label).name, minutes: Math.max(1, Math.round(s.sec / 60)) })),
-    sample: sessions.some((s) => s.source === 'seed'),
+    sample: sessions.every((s) => s.source === 'seed'),
     sessions: sessions.length,
   };
 }
@@ -118,13 +121,25 @@ export async function findFriction(activity, workspace, { days = 14 } = {}) {
 export function describe(f) {
   const names = f.apps.map((a) => a.name);
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
-  const source = f.provenance === 'sample' ? 'Sample history' : f.provenance === 'mixed' ? 'Mixed live and sample history' : 'Recorded history';
-  return `${source} shows activity across ${list} on ${f.days} dates in the last ${f.windowDays || 14} days, around ${f.window}. Recorded sessions averaged ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches per date in that hour. Window names do not establish what the task was.`;
+  const source = ['sample','seed'].includes(f.provenance) ? 'Sample history' : f.provenance === 'mixed' ? 'Mixed-source history' : f.provenance === 'unknown' ? 'History with unknown provenance' : 'Recorded history';
+  return `${source} shows activity across ${list} on ${f.days} dates in the last ${f.lookbackDays || f.windowDays || 28} days, around ${f.window}. Recorded sessions averaged ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches per date in that hour. Window names do not establish what the task was.`;
 }
 
 export function planWorkflow(f) {
   const has = (label) => f.apps.some((a) => a.label === label);
-  const saves = 'Time saved has not been measured. Compare a completed run with your manual process.';
+  const observation = `Observed: about ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches per recorded day. Time savings have not been measured.`;
+  if(has('cloud.mongodb.com')&&has('github.com')&&/query|index|explain/i.test(f.topTitle||''))return {
+    kind:'engineering',title:'Prepare a database query review',
+    problem:'Repeated activity across Atlas and the source repository suggests a query-review workflow to confirm.',
+    trigger:'Before the next confirmed query review',
+    steps:[
+      {app:'MongoDB Atlas',label:'Collect supplied evidence',detail:'Gather the supplied query shape, baseline metrics and existing issue notes. Mark missing inputs.'},
+      {app:'GitHub',label:'Compare staging plans',detail:'Review owner-provided explain plans against query code. Do not execute queries or create indexes.'},
+      {app:'Offload',label:'Draft rollout and rollback',detail:'Prepare a local checklist with proposed checks and unknown owners or thresholds clearly marked.'},
+      {app:'You',label:'Review the draft',detail:'Confirm the plan and permissions before any database or issue changes.',ask:true},
+    ],proactive:['Prepare review notes from supplied evidence','Suggest next steps after the review'],
+    needs:['Selected query and meeting notes','Permission for a local draft'],observation,executionStatus:'proposal',
+  };
   if (has('mail.google.com') && has('calendar.google.com')) {
     return {
       kind: 'scheduling',
@@ -143,7 +158,8 @@ export function planWorkflow(f) {
         'Review a recurring slot only after checking actual availability',
       ],
       needs: ['Gmail: authorized thread access', 'Google Calendar: authorized availability access', 'Separate approval before sending or booking'],
-      saves,
+      observation,
+      executionStatus:'proposal',
     };
   }
   if (has('Codex') && (has('Code') || has('Terminal') || has('github.com'))) {
@@ -160,7 +176,8 @@ export function planWorkflow(f) {
       ],
       proactive: ['Propose a test schedule after confirming the repository and commands', 'Summarize recorded test results after a real run'],
       needs: ['Local tools: read files and run commands'],
-      saves,
+      observation,
+      executionStatus:'proposal',
     };
   }
   const names = f.apps.map((a) => a.name);
@@ -175,6 +192,7 @@ export function planWorkflow(f) {
     ],
     proactive: ['Choose what a useful summary should contain, then test it on a real example'],
     needs: names.map((n) => `${n}: read`),
-    saves,
+    observation,
+    executionStatus:'proposal',
   };
 }

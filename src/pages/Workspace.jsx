@@ -4,7 +4,8 @@ import {modelRequest} from '../model-api';
 import {PERSONAL_SUGGESTIONS} from '../../shared/personal-suggestions';
 import Session from "../components/Session";
 import Harness from "./Harness";
-import MemoryHub from "./MemoryHub";
+import Sleep from "./Sleep";
+import Rem from "./Rem";
 import HistoryPage from "./History";
 import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from "react";
 import { Link, Navigate, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -21,6 +22,7 @@ import {
   MessageSquare,
   ListTodo,
   Brain,
+  Moon,
   Plug,
   Settings,
   Mic,
@@ -43,6 +45,7 @@ import {
   GitPullRequest,
   CalendarDays,
   TimerReset,
+  Sparkles,
   History as HistoryIcon,
 } from "lucide-react";
 import {
@@ -52,12 +55,13 @@ import {
 } from "../components/ScreenTransition";
 import { useWorkspace, download } from "../store";
 import { activeSuggestions } from "../../shared/workspace";
-import { Modal } from "../components/Modal";
+import { Modal, Empty } from "../components/Modal";
 import PromptBar from "../vendor/beautiful/PromptBar";
 import TaskRows from "../vendor/beautiful/TaskRows";
 import ContextCards from "../vendor/beautiful/ContextCards";
 import LoadingState from "../vendor/beautiful/LoadingState";
 import { Connections, ConnectDialog } from "./Connections";
+import SlowMode from "./SlowMode";
 import { ConnectionLogo } from "../components/ConnectionLogo";
 import LiveChat from "./LiveChat";
 import SidebarNav from "../vendor/beautiful/SidebarNav";
@@ -72,10 +76,12 @@ const Gallery = lazy(() => import("./Gallery"));
 const nav = [
   ["overview", "Overview", Home],
   ["tasks", "Tasks", ListTodo],
-  ["memory", "Memory", Brain],
+  ["sleep", "Sleep", Moon],
   ["history", "Computer history", HistoryIcon],
   ["connections", "Connections", Plug],
 ];
+const date = (x) =>
+  new Date(x).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 export default function Workspace() {
   const { state, act, error, setError } = useWorkspace();
   const [sidebar, setSidebar] = useState(innerWidth > 900),
@@ -130,11 +136,6 @@ export default function Workspace() {
     count = activeSuggestions(state).length;
   const activeSession = state.sessions.find((x) => x.status === "active");
   if (!page) return <Navigate to={"/app/chat" + location.search + location.hash} replace />;
-  if (page === 'sleep' || page === 'rem') {
-    const params = new URLSearchParams(location.search);
-    params.set('tab', page);
-    return <Navigate to={'/app/memory?' + params + location.hash} replace />;
-  }
   const newChat = () => navigate("/app/chat");
   const run = async (id) => {
     const suggestion = PERSONAL_SUGGESTIONS.find(s=>s.id===id) || state.suggestions.find(s => s.id === id);
@@ -157,7 +158,7 @@ export default function Workspace() {
           />
           <div className="beautiful-sidebar beautiful-ui">
             <SidebarNav fill workspaceName="offload" workspaceLogo={null}
-              navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18} data-sleep-destination={key==='memory'?'true':undefined}/>}))}
+              navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18} data-sleep-destination={key==='sleep'?'true':undefined}/>}))}
               activeNav={page} activeTitle={state.conversations.find(c=>c.id===route[1])?.title || null}
               onNewChat={newChat} onCollapse={()=>setSidebar(false)}
               onWorkspaceClick={()=>navigate("/")}
@@ -167,10 +168,9 @@ export default function Workspace() {
               onOpenArchive={()=>navigate('/app/archive')}
               onConversationAction={async(id,action)=>{try{const c=state.conversations.find(c=>c.id===id);
                 if(action==='sleep'){
-                  const messages=c.messages.filter(m=>!m.sleep).map(m=>({role:m.role,text:m.text}));
-                  const context=messages.length?{model:c.pending?.model||c.messages.findLast(m=>m.role==='assistant')?.model||state.settings.modelSelection||'gpt-5.5',provider:state.settings.modelProvider||'codex',effort:state.settings.reasoningEffort||'low',folder:state.settings.agentFolder||'',messages,notes:[]}:undefined;
-                  const consent={scope:'isolated-local-drafts',budget:10000,durationMs:20*60*1000,offlinePrototypeChecks:true};
-                  await modelRequest('sleep/'+id,{enabled:true,consent,...(context?{context}:{})});await act('conversation-sleep',{id,enabled:true});navigate('/app/memory?tab=sleep');
+                  const messages=c.messages.slice(-16).map(m=>({role:m.role,text:m.text.slice(0,20000)}));
+                  const context=messages.length?{model:c.pending?.model||c.messages.findLast(m=>m.role==='assistant')?.model||state.settings.modelSelection||'gpt-5.5',provider:state.settings.modelProvider||'codex',effort:state.settings.reasoningEffort||'low',messages,notes:[]}:undefined;
+                  await modelRequest('sleep/'+id,{enabled:true,...(context?{context}:{})});await act('conversation-sleep',{id,enabled:true});navigate('/app/sleep');
                 }else{
                   if(action==='delete'&&c.pending)await modelRequest('jobs/'+c.pending.id+'/stop',{});
                   if(c.sleepEnabled){await modelRequest('sleep/'+id,{enabled:false});await act('conversation-sleep',{id,enabled:false});}
@@ -238,10 +238,12 @@ export default function Workspace() {
           {page === "overview" && <Overview />}
           {page === "chat" && <LiveChat id={route[1]} onRevealSidebar={()=>setSidebar(true)} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
-          {page === "memory" && <MemoryHub />}
+          {page === "memory" && <Navigate to={"/app/sleep?view=" + ({sleep: "conversations", rem: "rem"}[new URLSearchParams(location.search).get("tab")] || "memory")} replace />}
           {page === "archive" && <ConversationArchive/>}
           {page === "history" && <HistoryPage />}
+          {page === "sleep" && <SlowMode memory={<Memory />} review={<Sleep />} rem={<Rem />} />}
           {page === "harness" && <Harness />}
+          {page === "rem" && <Navigate to="/app/sleep?view=rem" replace />}
           {page === "connections" && <Connections onConnect={setConnect} />}
           {page === "settings" && <SettingsPage />}
           {page === "library" && (
@@ -711,6 +713,85 @@ function PageTitle({ title, description, children }) {
     </div>
   );
 }
+function Memory() {
+  const { state, act } = useWorkspace();
+  const [text, setText] = useState(""),
+    [query, setQuery] = useState(""),
+    [saving, setSaving] = useState(false);
+  const list = state.memory.filter((m) =>
+    (m.text + " " + m.source).toLowerCase().includes(query.toLowerCase()),
+  );
+  const add = async () => {
+    setSaving(true);
+    try {
+      await act("memory", { text });
+      setText("");
+    } catch {
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <div className="standard-page">
+      <PageTitle
+        title="Memory"
+        description="Keep the context. Leave the noise."
+      />
+      <div className="memory-input">
+        <textarea
+          aria-label="New memory"
+          placeholder="A decision, a preference, a detail for next time…"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <button
+          className="button small"
+          disabled={saving || !text.trim()}
+          onClick={add}
+        >
+          {saving ? "Saving…" : "Save memory"} <Plus size={15} />
+        </button>
+      </div>
+      <label className="search-field">
+        <Search size={16} />
+        <input
+          aria-label="Search memories"
+          placeholder="Search your memory"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </label>
+      <div className="memory-list">
+        {list.map((m) => (
+          <article key={m.id}>
+            <div className="memory-meta">
+              <span>
+                {m.source}
+                {m.example ? " · Example" : ""}
+              </span>
+              <span>{date(m.createdAt)}</span>
+              <button
+                className="icon-button"
+                aria-label="Delete memory"
+                onClick={() =>
+                  act("delete-memory", { id: m.id }).catch(() => {})
+                }
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+            <p>{m.text}</p>
+          </article>
+        ))}
+        {!list.length && (
+          <Empty title="No matching memories.">
+            Add a note or try a different search.
+          </Empty>
+        )}
+      </div>
+    </div>
+  );
+}
 function SearchDialog({ onClose, onRun }) {
   const { state } = useWorkspace();
   const [q, setQ] = useState("");
@@ -742,7 +823,7 @@ function SearchDialog({ onClose, onRun }) {
               onClose();
               if (x.type === "Task") onRun(x.id);
               else
-                navigate(x.type === "Memory" ? "/app/memory" : "/app/memory?tab=sleep");
+                navigate("/app/" + (x.type === "Memory" ? "memory" : "sleep"));
             }}
           >
             <span>{x.title}</span>

@@ -47,7 +47,7 @@ export async function windowTitle() {
   return out && out !== 'missing value' ? out : null;
 }
 
-const PRIVATE_MARKER='__OFFLOAD_PRIVATE_WINDOW__';
+const PRIVATE_MARKER='__OFFLOAD_PRIVATE__';
 const chromium = (name) => ({urls}) =>
   `tell application "${name}"\nif (count of windows) = 0 then return ""\n` +
   (name==='Google Chrome'?`if mode of front window is "incognito" then return "${PRIVATE_MARKER}"\n`:'') +
@@ -75,9 +75,13 @@ export async function browserTab(app,{urls=true}={}) {
     return null;
   }
   permissions.windowTitles='available';if(urls)permissions.browserUrls='available';
-  if(out===PRIVATE_MARKER)return {url:null,title:'Private browsing',private:true};
+  return parseBrowserTab(out,{urls});
+}
+
+export function parseBrowserTab(out,{urls=true}={}) {
+  if (out === PRIVATE_MARKER) return { private: true, url: null, title: null };
   if(!urls)return {url:null,title:out||null};
-  const [url, ...title] = out.split('\n');
+  const [url, ...title] = String(out || '').split('\n');
   return { url: url || null, title: title.join(' ').trim() || null };
 }
 
@@ -93,12 +97,10 @@ export async function sample({ titles = true, urls = true, excludedApps = [] } =
   if (excludedApps.some((a) => a.toLowerCase() === front.app.toLowerCase())) return s;
   if (titles || urls) {
     const tab = await readTab(front.app,{urls});
+    if (tab?.private) return { ...s, private: true };
     if (tab) {
-      if(tab.private)s.title='Private browsing';
-      else {
-        if (urls) s.url = tab.url;
-        if (titles) s.title = tab.title;
-      }
+      if (urls) s.url = tab.url;
+      if (titles) s.title = tab.title;
     }
   }
   if (titles && !s.title) s.title = await readTitle();

@@ -3,8 +3,23 @@ import {createJevScorer} from './jev.js';
 const hash = value => createHash('sha256').update(value).digest('hex');
 const PART_CHARS = 16000;
 const PIN = /\b(blocker|blocked|unresolved|must|never|do not|don't|correction|failed|error|reopened|pending|deadline|denied|not authorized|without approval|permission|constraint|required|awaiting|acceptance|prohibited)\b/i;
-const POLICY_VERSION = 'causal-evidence-v2';
+const ASSISTANT_GUARD = /\b(failed|error|reopened|denied|not authorized|not permitted|not allowed|not approved|without approval|permission|prohibited|unauthorized|unapproved|forbidden|approval required|requires approval|awaiting approval)\b/i;
+const NEGATED_EFFECT = /\b(?:do not|don['’]t|must not|cannot|can['’]t|never)\s+(?:[\w'-]+\s+){0,3}(?:send|publish|deploy|delete|remove|purchase|buy|pay|charge|transfer|submit|release|merge|push|upload|execute|run|write|change|modify|grant|install|uninstall)\b/i;
+const POLICY_VERSION = 'causal-evidence-v3-trusted-conversation';
 const STATE_CHARS = 4000;
+const CONVERSATION_ROLES = new Set(['user', 'system', 'developer', 'assistant']);
+const plainRecord = value => value !== null && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype;
+const validConversation = value => plainRecord(value) && value.schemaVersion === 1 && CONVERSATION_ROLES.has(value.role) && Object.keys(value).length === 2 && Object.keys(value).every(key => ['schemaVersion', 'role'].includes(key));
+function completeConversationInstructions(units, policy) {
+  if (!plainRecord(policy) || policy.schemaVersion !== 1 || policy.instructionsComplete !== true || Object.keys(policy).length !== 2 || Object.keys(policy).some(key => !['schemaVersion', 'instructionsComplete'].includes(key)) || !units.every(unit => validConversation(unit.conversation))) return false;
+  const instructions = units.filter(unit => unit.conversation.role !== 'assistant');
+  return instructions.length > 0 && instructions.every(unit => Boolean(unit.pinned));
+}
+function textNeedsProtection(unit, trustedConversation) {
+  // Typed assistant planning is evidence, not new authority. This exception needs
+  // a trusted adapter's complete, explicitly pinned instruction coverage.
+  return trustedConversation && unit.conversation?.role === 'assistant' ? ASSISTANT_GUARD.test(unit.text) || NEGATED_EFFECT.test(unit.text) : PIN.test(unit.text);
+}
 
 // The caller's dedupeKey certifies an identical idempotent observation. Other new
 // evidence invalidates decisions, even when the goal and caller revision did not change.
@@ -14,21 +29,22 @@ export function contextEvidenceKey(units) {
     const identity = unit.dedupeKey ? `read:${unit.dedupeKey}` : `record:${unit.id}:${hash(unit.text)}`;
     if (seen.has(identity)) return [];
     seen.add(identity);
-    return [[identity, unit.pinned || null, unit.complete ?? null]];
+    return [[identity, unit.pinned || null, unit.complete ?? null, unit.conversation || null]];
   })));
 }
 
 // Share bounded current evidence across batches so a late reference can revive an
 // older record. This is context, never an instruction or a generated summary.
-export function contextEvidenceWindow(units, maxChars = STATE_CHARS) {
+export function contextEvidenceWindow(units, maxChars = STATE_CHARS, conversationHistory = null) {
   const seen = new Set(), unique = units.filter(unit => {
     const identity = unit.dedupeKey || unit.id;
     if (seen.has(identity)) return false;
     seen.add(identity); return true;
   });
   const records = []; let chars = 0;
+  const trustedConversation = completeConversationInstructions(unique, conversationHistory);
   // Recent observations and short older facts travel across candidate batches.
-  const candidates = [...unique.slice(-2).reverse(), ...unique.filter(u => u.pinned || PIN.test(u.text)).reverse(), ...unique.filter(u => u.text.length <= 512).reverse()];
+  const candidates = [...unique.slice(-2).reverse(), ...unique.filter(u => u.pinned || textNeedsProtection(u, trustedConversation)).reverse(), ...unique.filter(u => u.text.length <= 512).reverse()];
   const included = new Set();
   for (const unit of candidates) {
     if (included.has(unit.id)) continue;
@@ -56,6 +72,10 @@ function unfinishedProtocol(text) {
   }
   return outstanding.size > 0;
 }
+function containsToolProtocol(text) {
+  if (!text.trimStart().startsWith('[')) return false;
+  try {const messages = JSON.parse(text); return Array.isArray(messages) && messages.some(message => message?.role === 'tool' || message?.tool_calls);} catch {return false;}
+}
 export class ContextBudgetError extends Error {
   constructor(metrics) {
     super('Protected or uncertain context exceeds the budget. Narrow the task or increase the context budget.');
@@ -72,15 +92,16 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
   const archive = db.collection('context_archive'), decisions = db.collection('context_decisions');
   return {
     name: scorer.name,
-    async select({runId, goal, units, revision = "", signal, onProgress}) {
+    async select({runId, goal, units, revision = "", signal, conversationHistory = null, onProgress}) {
       if (typeof runId !== 'string' || !runId || typeof goal !== 'string' || !goal || typeof revision !== 'string' || !Array.isArray(units) || units.some(u => !u || typeof u.id !== 'string' || !u.id || u.id.length > 200 || typeof u.text !== 'string' || (u.dedupeKey != null && typeof u.dedupeKey !== 'string')) || new Set(units.map(u => u.id)).size !== units.length) throw Error('Invalid context records.');
       signal?.throwIfAborted();
       const beforeChars = units.reduce((n, u) => n + u.text.length, 0);
       const metrics = {source: scorer.name, beforeChars, afterChars: beforeChars, budgetChars, retained: units.length, archived: 0, duplicateOmissions: 0, decisionCalls: 0, cacheHits: 0, inputTokens: 0, outputTokens: 0, reportedCost: 0, costKnown: true, usageKnown: true, errors: [], status: 'under_budget'};
       try {
       if (beforeChars <= budgetChars) return {units, decisions: [], metrics};
-      const evidenceKey = contextEvidenceKey(units), currentEvidence = contextEvidenceWindow(units);
-      const stateKey = hash(JSON.stringify({goal, revision, evidenceKey, scorer: scorer.name, scorerPolicy: scorer.policyVersion || null, policy: POLICY_VERSION}));
+      const trustedConversation = completeConversationInstructions(units, conversationHistory);
+      const evidenceKey = contextEvidenceKey(units), currentEvidence = contextEvidenceWindow(units, STATE_CHARS, conversationHistory);
+      const stateKey = hash(JSON.stringify({goal, revision, evidenceKey, conversationHistory, scorer: scorer.name, scorerPolicy: scorer.policyVersion || null, policy: POLICY_VERSION}));
       Object.assign(metrics, {evidenceKey, stateChars: currentEvidence.chars, statePartial: currentEvidence.partial, unscored: 0});
       const scored = [];
       const latestEquivalent = new Map();
@@ -93,7 +114,8 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
           const id = `${recordKey}:${part}`;
           archiveWrites.push({updateOne: {filter: {_id: id}, update: {$setOnInsert: {runId, unitId: unit.id, digest, part, parts, text: unit.text.slice(part * PART_CHARS, (part + 1) * PART_CHARS), createdAt: new Date()}}, upsert: true}});
         }
-        const protectedReason = unit.pinned || (unit.complete === false || unfinishedProtocol(unit.text) ? 'unfinished_exchange' : null) || (index >= units.length - recentCount ? 'recent' : PIN.test(unit.text) ? 'constraint_or_open_loop' : unit.text.length > 8000 ? 'oversize_record' : null);
+        const typedRoleProtection = conversationHistory && (!validConversation(unit.conversation) ? 'unverified_conversation_role' : unit.conversation.role !== 'assistant' ? 'conversation_instruction' : containsToolProtocol(unit.text) ? 'tool_protocol' : null);
+        const protectedReason = unit.pinned || typedRoleProtection || (unit.complete === false || unfinishedProtocol(unit.text) ? 'unfinished_exchange' : null) || (index >= units.length - recentCount ? 'recent' : textNeedsProtection(unit, trustedConversation) ? 'constraint_or_open_loop' : unit.text.length > 8000 ? 'oversize_record' : null);
         const duplicateOf = !protectedReason && unit.dedupeKey && latestEquivalent.get(unit.dedupeKey) !== unit.id ? latestEquivalent.get(unit.dedupeKey) : null;
         const key = hash(JSON.stringify([recordKey, stateKey]));
         scored.push({unit, key, digest, protectedReason, duplicateOf, probability: null, cached: false});

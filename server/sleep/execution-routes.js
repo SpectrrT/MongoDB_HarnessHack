@@ -37,6 +37,7 @@ export function sleepExecutionRoutes(app, { store, root, enabled = false }) {
   }));
   app.get('/api/sleep/tasks/:id/artifacts/:name', handle(async (req, res) => {
     const task = await store.get(req.workspaceKey, req.params.id);
+    if(task&&!await store.validateSource(task))return res.status(409).json({error:'Meeting source changed. This artifact was withdrawn.'});
     const artifact = task?.artifacts.find(a => a.path === req.params.name);
     if (!artifact) return res.status(404).json({ error: 'Artifact not found.' });
     const file = path.join(taskDirectory(root, task), artifact.directory, artifact.path);

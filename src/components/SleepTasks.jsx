@@ -1,27 +1,44 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Moon, Plus, Pause, Play, X, ArrowUpRight } from 'lucide-react';
 import { useWorkspace } from '../store';
 import { Modal } from './Modal';
+import SleepServiceNotice from './SleepServiceNotice';
 
 const deadline = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(8,0,0,0); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16); };
 async function api(url, value) {
   const response = await fetch(url, value ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) } : {});
+  if (!response.headers.get('content-type')?.includes('application/json')) throw Error('Overnight tasks need the local Offload service. Open the local app to assign and run tasks.');
   const result = await response.json(); if (!response.ok) throw Error(result.error || 'Sleep request failed.'); return result;
 }
 const labels = { queued: 'Queued', running: 'Working', approval: 'Approval needed', paused: 'Paused', completed: 'Checks passed', incomplete: 'Incomplete', cancelled: 'Cancelled' };
+const selectedAction = task => /^Selected action:\s*(.+)$/m.exec(task.brief || '')?.[1]?.replace(/^(?:Action(?: item)?|Todo|Follow-up):\s*/i, '').trim();
+const readableTitle = task => {
+  const action = selectedAction(task);
+  if (!action) return task.title;
+  const title = action.replace(/^(?:draft|write|prepare)\s+(?:an?\s+|the\s+)?/i, '').replace(/\.$/, '');
+  return title ? title[0].toUpperCase() + title.slice(1) : task.title;
+};
 export default function SleepTasks() {
   const { state, act } = useWorkspace();
+  const queuedDraft = useLocation().state?.queuedDraft;
   const [tasks, setTasks] = useState([]), [status, setStatus] = useState(null), [draft, setDraft] = useState(null);
   const [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const taskCount = tasks.filter(task => task.status !== 'cancelled').length;
+  const handedOffTask = tasks.find(task => task.id === queuedDraft?.id);
+  const awaitingWorker = queuedDraft && (handedOffTask?.status ?? queuedDraft.status) === 'queued';
+  const [loadError, setLoadError] = useState(''), [checking, setChecking] = useState(false);
   const refresh = async () => {
     const config = await api('/api/sleep/tasks/status'); setStatus(config);
     if (config.configured) setTasks(await api('/api/sleep/tasks'));
+    setLoadError('');
   };
   useEffect(() => {
     let disposed = false;
-    const read = async () => { try { if (!disposed) await refresh(); } catch (e) { if (!disposed) setError(e.message); } };
+    const read = async () => { try { if (!disposed) await refresh(); } catch (e) { if (!disposed) setLoadError(e.message); } };
     void read(); const timer = setInterval(read, 3000); return () => { disposed = true; clearInterval(timer); };
   }, []);
+  const retry = async () => { setChecking(true); try { await refresh(); } catch (e) { setLoadError(e.message); } finally { setChecking(false); } };
   const open = suggestion => {
     setError(''); setDraft({ requestKey: crypto.randomUUID(), title: suggestion?.title || '',
       brief: suggestion ? `${suggestion.reason}\nPrepare a local draft for review. Use only facts in this brief.` : '',
@@ -32,13 +49,17 @@ export default function SleepTasks() {
     catch (e) { setError(e.message); }
   };
   return <div className="standard-page slow-page">
-    <div className="slow-heading"><div><span className="slow-label"><Moon size={14}/> SLEEP</span><h1>Leave it for<br/>the morning.</h1><p>Set a deadline, a token budget and output checks.<br/>Sleep drafts, verifies, and repairs inside a task folder.</p></div><button className="button" onClick={() => open()}><Plus size={16}/> Add a task</button></div>
+    <div className="slow-heading"><div><span className="slow-label"><Moon size={14}/> SLEEP</span><h1>Overnight tasks</h1><p>Assign a local draft with a deadline, token budget and checks.</p></div><button className="button" onClick={() => open()}><Plus size={16}/> Add a task</button></div>
+    {queuedDraft && <p className="suggestion-notice" role="status">Draft task saved. {awaitingWorker && ((status?.enabled ?? queuedDraft.workerEnabled) ? 'Queued for the local Sleep worker.' : 'Waiting for the local Sleep worker to be enabled.')} The original action remains open.</p>}
+    {loadError && <SleepServiceNotice message={loadError} onRetry={retry} busy={checking} />}
     {error && <p role="alert">{error}</p>}
-    <div className="overnight-heading"><h2>Overnight queue</h2><span>{tasks.filter(t => t.status !== 'cancelled').length} tasks</span></div>
-    {!tasks.length && <div className="overnight-empty"><h3>What can wait until morning?</h3><p>Add the facts to work from and a file you can independently check.</p></div>}
+    <div className="overnight-heading"><h2>Overnight queue</h2><span>{status ? `${taskCount} ${taskCount === 1 ? 'task' : 'tasks'}` : 'Waiting for service'}</span></div>
+    {status && !tasks.length && <div className="overnight-empty"><h3>What can wait until morning?</h3><p>Add the facts to work from and a file you can independently check.</p></div>}
     {tasks.map(task => <article className="overnight-task" key={task.id}>
-      <div className="overnight-task-head"><h3>{task.title}</h3><span>{labels[task.status] || task.status}</span></div>
-      <p>{task.brief}</p><div className="overnight-meta"><span>Due {new Date(task.deadline).toLocaleString()}</span><span>{task.tokensUsed.toLocaleString()} / {task.budget.toLocaleString()} tokens</span><span>{task.calls} model calls</span></div>
+      <div className="overnight-task-head"><h3>{readableTitle(task)}</h3><span>{labels[task.status] || task.status}</span></div>
+      <p>{selectedAction(task) || task.brief}</p>
+      {selectedAction(task) && <details className="overnight-instructions"><summary>Draft instructions and sources</summary><pre>{task.brief}</pre></details>}
+      <div className="overnight-meta"><span>Due {new Date(task.deadline).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span><span>{task.tokensUsed.toLocaleString()} / {task.budget.toLocaleString()} tokens</span><span>{task.calls} model {task.calls === 1 ? 'call' : 'calls'}</span></div>
       {task.reason && <p>{task.reason}</p>}
       {task.usageUnknown > 0 && <p>Usage includes {task.usageUnknown} conservative reservations where billed usage was unavailable.</p>}
       {task.checkResults?.map(check => <p key={check.id||check.path}>{check.path}: {check.passed ? 'checks passed' : check.failed.join(', ')}</p>)}
@@ -49,7 +70,7 @@ export default function SleepTasks() {
         <button className="button small ghost" onClick={() => control(task, 'cancel')}><X size={14}/> Cancel task</button>
       </div>}
     </article>)}
-    <p className="runner-note">{status?.configured ? status.enabled ? 'The local Sleep worker is enabled. Keep the server running while it works.' : 'Task storage is connected. Start the Sleep task worker on this computer to execute the queue.' : 'MongoDB task storage is not configured. A connected worker is required to run assigned tasks.'} Completion means the checks you set passed. A draft still needs your judgment.</p>
+    <p className="runner-note">{!status ? 'Worker status is unavailable.' : status.configured ? status.enabled ? 'The local Sleep worker is enabled. Keep the server running while it works.' : 'Task storage is connected. Start the Sleep task worker on this computer to execute the queue.' : 'MongoDB task storage is not configured. A connected worker is required to run assigned tasks.'} Completion means the checks you set passed. A draft still needs your judgment.</p>
     {!!state.overnight?.length && <><div className="overnight-heading"><h2>Previously saved briefs</h2><span>Not assigned to the worker</span></div>{state.overnight.filter(t => t.status !== 'cancelled').map(task => <article className="overnight-task" key={task.id}><h3>{task.title}</h3><p>{task.brief}</p><button className="button small secondary" onClick={() => { open(); setDraft(d => ({...d,title:task.title,brief:task.brief,budget:String(task.budget)})); }}>Add output checks to assign</button><button className="button small ghost" onClick={() => act('overnight',{id:task.id,status:'cancelled'}).catch(e => setError(e.message))}>Dismiss saved brief</button></article>)}</>}
     <div className="overnight-heading"><h2>Ideas for overnight</h2><span>Choose what to queue</span></div>
     {state.suggestions.filter(s => s.status === 'pending').slice(0,4).map(s => <button className="night-suggestion" key={s.id} onClick={() => open(s)}><span><strong>{s.title}</strong><small>{s.reason}</small></span><ArrowUpRight size={18}/></button>)}

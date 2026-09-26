@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { sourceFingerprint } from '../suggestions/action-draft.js';
 import { z } from 'zod';
 import { LeaseLost, RunConflict } from '../harness/store.js';
 
@@ -14,7 +15,7 @@ export const executionInput = z.object({
 
 export class SleepExecutionStore {
   constructor(db, { leaseMs = 30000, clock = Date.now } = {}) {
-    this.tasks = db.collection('sleep_tasks'); this.leaseMs = leaseMs; this.clock = clock;
+    this.db=db; this.tasks = db.collection('sleep_tasks'); this.leaseMs = leaseMs; this.clock = clock;
   }
   async initialize() {
     await this.tasks.createIndex({ workspace: 1, requestKey: 1 }, { unique: true });
@@ -28,6 +29,7 @@ export class SleepExecutionStore {
     const fingerprint = createHash('sha256').update(JSON.stringify(input)).digest('hex');
     const task = { _id: randomUUID(), workspace, requestKey, fingerprint, input, status: 'queued',
       origin: metadata.origin === 'idle' ? 'idle' : 'assigned', ...(metadata.origin === 'idle' ? { idle: metadata.idle } : {}),
+      ...(metadata.sourceContract ? {sourceContract:metadata.sourceContract} : {}),
       runner: 'sleep-file-worker', tokensUsed: 0, tokensReserved: 0, usageUnknown: 0, cost: 0,
       calls: 0, repairs: 0, stalledAttempts: 0, checkpoint: 0, leaseUntil: new Date(0), createdAt: new Date(now), updatedAt: new Date(now),
       grants: input.writeFiles, events: [], artifacts: [], checkResults: [] };
@@ -56,7 +58,21 @@ export class SleepExecutionStore {
     if (!saved) throw new LeaseLost('Sleep worker no longer owns this task.');
     Object.assign(task, saved); return saved;
   }
+  async validateSource(task){
+    const contract=task.sourceContract;if(!contract)return true;
+    const run=await this.db.collection('personal_task_runs').findOne({_id:contract.suggestionRunId,workspace:task.workspace,status:'completed'});
+    const rows=await this.db.collection('personal_events').find({workspace:task.workspace,projectId:contract.projectId,active:true},
+      {sort:{timestamp:1,_id:1},limit:501}).toArray();
+    if(run&&rows.length<=500&&sourceFingerprint(rows)===contract.revision)return true;
+    // Revoked evidence is a terminal state. A stale worker must not retry or publish its draft.
+    await this.tasks.updateOne({_id:task._id,workspace:task.workspace},[{$set:{status:'cancelled',artifacts:[],pending:null,
+      reason:'Meeting source changed or was withdrawn. Create a fresh checklist before drafting.',leaseUntil:new Date(0),updatedAt:new Date(this.clock()),
+      tokensUsed:{$add:['$tokensUsed','$tokensReserved']},tokensReserved:0,
+      usageUnknown:{$add:['$usageUnknown',{$cond:[{$gt:['$tokensReserved',0]},1,0]}]}}},{$unset:['worker','leaseToken']}]);
+    return false;
+  }
   async fence(task) {
+    if(!await this.validateSource(task))throw new LeaseLost('Meeting source was revoked.');
     if (task.input.deadline <= this.clock()) throw new RunConflict('deadline');
     const result = await this.tasks.updateOne(this.guard(task), { $set: { leaseUntil: new Date(this.clock() + this.leaseMs) } });
     if (!result.matchedCount) throw new LeaseLost('Sleep worker no longer owns this task.');
@@ -88,6 +104,7 @@ export class SleepExecutionStore {
   async control(workspace, id, action) {
     const task = await this.get(workspace, id);
     if (!task) return null;
+    if(!await this.validateSource(task))throw new RunConflict('Meeting source changed. This draft was cancelled.');
     if (['completed', 'incomplete', 'cancelled'].includes(task.status)) throw new RunConflict('This task has already ended.');
     if (action === 'resume' && task.status !== 'paused') throw new RunConflict('Only a paused task can resume.');
     if (action === 'approve' && task.status !== 'approval') throw new RunConflict('No file changes await approval.');

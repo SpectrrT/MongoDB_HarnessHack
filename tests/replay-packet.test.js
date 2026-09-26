@@ -19,3 +19,14 @@ test('normalizing chronological packets preserves all supplied model fields and 
   assert.equal(units[0].pinned, 'historical_user_instruction');
   assert.equal(JSON.stringify(source), before);
 });
+
+test('trusted replay role metadata is explicit and preserves exact records and mandatory instructions', () => {
+  const packet = {history: ['user', 'system', 'developer', 'assistant'].map((role, i) => ({id: String(i), role, timestamp: '2026-01-01', text: 'Exact "text"\nwith Unicode café.'}))};
+  const opaque = replayUnits(packet), typed = replayUnits(packet, {typedConversation: true});
+  assert.deepEqual(opaque.map(u => u.text), typed.map(u => u.text));
+  assert.ok(opaque.every(u => u.conversation === undefined));
+  for (const [index, record] of typed.entries()) {
+    assert.deepEqual(record.conversation, {schemaVersion: 1, role: packet.history[index].role});
+    assert.equal(Boolean(record.pinned), index < 3);
+  }
+});

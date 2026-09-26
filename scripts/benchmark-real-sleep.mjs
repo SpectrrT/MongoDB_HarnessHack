@@ -33,12 +33,13 @@ const audit = value('--audit-manifest') ? JSON.parse(await fs.readFile(value('--
 const auditedSpan = audit ? (Date.parse(audit.sourceLastTimestamp) - Date.parse(audit.sourceFirstTimestamp)) / 3600000 : null;
 const brief = JSON.stringify({goal: packet.goal, input: packet.input || {}});
 if (brief.length > 4000) throw Error('Packet current task exceeds the production Sleep brief limit.');
-const units = replayUnits(packet);
+const conversationHistory = args.includes('--typed-conversation') ? {schemaVersion: 1, instructionsComplete: true} : null;
+const units = replayUnits(packet, {typedConversation: Boolean(conversationHistory)});
 const rawChars = units.reduce((n, record) => n + record.text.length, 0);
 const report = {
   schema: 2, createdAt: new Date().toISOString(), id: packet.id, title: packet.title,
   mode: 'Reconstructed offline artifact replay through production Sleep generation, file writing and declared file checks',
-  evaluationPhase: args.includes('--development') ? 'Development configuration after observed failures. Prompt and model changed jointly; no separate causal attribution.' : 'Frozen initial configuration',
+  evaluationPhase: args.includes('--development') ? 'Preregistered development configuration after observed failures. Prompt, model and any opted-in typed-history policy differ from initial frozen trials; no separate causal attribution.' : 'Frozen initial configuration',
   adapter: 'Benchmark-only immutable historical context attachment. Production Sleep has no context compaction/retrieval integration.',
   model, scorerPolicy: createJevScorer().policyVersion, trials, startTrial,
   provenance: {packetSha256: hash(sourceBytes), evaluatorSha256: hash(evaluatorBytes),
@@ -51,10 +52,10 @@ const report = {
     historyRecords: units.length, authoredTextChars: packet.history.reduce((n, record) => n + record.text.length, 0),
     authoredTextCodePoints: packet.history.reduce((n, record) => n + [...record.text].length, 0),
     characterMeasurement: 'Chars and selector budgets use JavaScript UTF-16 code units. Code points are reported separately.', serializedHistoryChars: rawChars},
-  policy: {budgetChars: 16000, recentCount: 2, threshold: 0.25, maxAttempts: 3, tokenBudget: 100000,
+  policy: {budgetChars: 16000, recentCount: 2, threshold: 0.25, conversationHistory, maxAttempts: 3, tokenBudget: 100000,
     maxOutputTokens: packet.limits?.maxOutputTokens || 1800, tools: [], storage: 'Fresh temporary local MongoDB, real driver'},
   disclosure: [...(packet.disclosure || []),
-    'User and system instructions are pinned. The production 16000-character selection budget is unchanged; no artificial context pressure.',
+    'User, system and developer instructions are pinned. The production 16000-character selection budget is unchanged; no artificial context pressure.',
     'Both arms use identical current inputs, model, generation parameters, local file permissions, declared file checks and repair limits.',
     'Private evaluator and future outcomes are never included in model requests. The evaluator runs only after both artifacts in a pair exist; its failures never feed repair.',
     'Production declared file checks assess JSON and existence only. Independent reconstructed criteria decide benchmark success.',
@@ -81,22 +82,47 @@ function summarizeReceipts(receipts) {
     measuredCost: receipts.reduce((n, r) => n + (nonnegative(r.cost) ? r.cost : 0), 0)};
 }
 async function runArm(pair, arm) {
-  const row = {arm, calls: [], startedAt: new Date().toISOString()}, started = performance.now();
+  const row = {arm, calls: [], decisionCalls: [], startedAt: new Date().toISOString()}, started = performance.now();
   pair[arm] = row; await save();
+  const artifactRoot = path.join(privateRoot, `trial-${pair.trial}`, arm);
+  await fs.mkdir(artifactRoot, {recursive: true, mode: 0o700});
+  const decisionFetch = async (url, options) => {
+    const start = performance.now();
+    const receipt = {attempt: row.decisionCalls.length + 1, requestSha256: hash(options.body), requestChars: options.body.length, finished: false};
+    row.decisionCalls.push(receipt); await save();
+    try {
+      const response = await fetch(url, options);
+      receipt.httpStatus = response.status;
+      let body;
+      try {body = await response.clone().json();} catch {}
+      receipt.inputTokens = body?.usage?.input_tokens ?? null;
+      receipt.outputTokens = body?.usage?.output_tokens ?? null;
+      receipt.cost = body?.usage?.cost ?? null;
+      receipt.finished = true;
+      if (body) await fs.writeFile(path.join(artifactRoot, `decision-response-${receipt.attempt}.private.json`), JSON.stringify(body, null, 2) + '\n', {mode: 0o600});
+      return response;
+    } catch (error) {receipt.error = error.name || 'Request failed'; throw error;}
+    finally {receipt.latencyMs = Math.round(performance.now() - start); await save();}
+  };
   let kept = units;
-  const compactor = createContextCompactor({db, scorer: createJevScorer(), budgetChars: report.policy.budgetChars});
+  const compactor = createContextCompactor({db, scorer: createJevScorer({fetchImpl: decisionFetch}), budgetChars: report.policy.budgetChars});
   if (arm === 'compacted') {
     const selectionStarted = performance.now();
     try {
-      const selected = await compactor.select({runId: `real-${randomUUID()}`, goal: packet.goal, units});
+      const selected = await compactor.select({runId: `real-${randomUUID()}`, goal: packet.goal, units, conversationHistory});
       kept = selected.units; row.selection = selected.metrics;
     } catch (error) {
       row.selection = error.metrics; row.status = 'context-needs-review'; row.error = 'Context selection did not fit its unchanged production policy.';
     }
     row.selectionLatencyMs = Math.round(performance.now() - selectionStarted); await save();
   }
+  row.decisionUsage = summarizeReceipts(row.decisionCalls);
   if (row.error) {
-    row.decisionTokens = (row.selection?.inputTokens || 0) + (row.selection?.outputTokens || 0);
+    row.decisionTokens = row.decisionUsage.measuredTokens;
+    row.mainUsage = summarizeReceipts(row.calls);
+    row.measuredTokens = row.decisionUsage.measuredTokens;
+    row.measuredCost = row.decisionUsage.measuredCost;
+    row.costKnown = row.decisionUsage.costKnown;
     row.totalTokens = null; row.elapsedMs = Math.round(performance.now() - started);
     return {row};
   }
@@ -142,8 +168,6 @@ async function runArm(pair, arm) {
     return productionProvider({...options, prompt: expandPrompt(options.prompt)});
   };
   executor.retrySafe = productionProvider.retrySafe;
-  const artifactRoot = path.join(privateRoot, `trial-${pair.trial}`, arm);
-  await fs.mkdir(artifactRoot, {recursive: true, mode: 0o700});
   let result;
   for (let step = 0; step < report.policy.maxAttempts + 1; step++) {
     result = await sleepExecutionTick(armStore, executor, {taskId: task._id, workspace, root: artifactRoot,
@@ -158,8 +182,11 @@ async function runArm(pair, arm) {
   row.declaredChecks = result?.checkResults || [];
   row.runtimeChargedTokens = result?.tokensUsed || 0; row.runtimeUnknownUsage = result?.usageUnknown || 0;
   row.mainUsage = summarizeReceipts(row.calls);
-  const decisionKnown = !row.selection || row.selection.usageKnown === true;
-  row.decisionTokens = row.selection ? row.selection.inputTokens + row.selection.outputTokens : 0;
+  const decisionKnown = row.decisionUsage.known && (!row.selection || row.selection.usageKnown === true);
+  row.decisionTokens = row.decisionUsage.measuredTokens;
+  row.measuredTokens = row.mainUsage.measuredTokens + row.decisionTokens;
+  row.measuredCost = row.mainUsage.measuredCost + row.decisionUsage.measuredCost;
+  row.costKnown = row.mainUsage.costKnown && row.decisionUsage.costKnown;
   row.totalTokens = row.mainUsage.known && decisionKnown ? row.mainUsage.measuredTokens + row.decisionTokens : null;
   const artifact = result?.artifacts?.find(a => a.path === 'artifact.json');
   let privateArtifactPath;
@@ -206,6 +233,8 @@ try {
       checksPassed: rows.reduce((n, row) => n + (row.evaluation?.checksPassed || 0), 0),
       checksTotal: rows.every(row => Number.isFinite(row.evaluation?.checksTotal)) ? rows.reduce((n, row) => n + row.evaluation.checksTotal, 0) : null,
       totalTokens: known ? rows.reduce((n, row) => n + row.totalTokens, 0) : null,
+      measuredTokens: rows.reduce((n, row) => n + row.measuredTokens, 0),
+      providerReportedCostUSD: rows.every(row => row.costKnown) ? rows.reduce((n, row) => n + row.measuredCost, 0) : null,
       decisionTokens: rows.reduce((n, row) => n + (row.decisionTokens || 0), 0),
       decisionCalls: rows.reduce((n, row) => n + (row.selection?.decisionCalls || 0), 0),
       mainCalls: rows.reduce((n, row) => n + row.calls.length, 0),
@@ -214,9 +243,11 @@ try {
   const baseline = aggregate('baseline'), compacted = aggregate('compacted');
   const identicalRequests = report.pairs.every(pair => pair.baseline.calls.length === pair.compacted.calls.length && pair.baseline.calls.every((call, i) => call.requestSha256 === pair.compacted.calls[i].requestSha256));
   const noContextChange = report.pairs.every(pair => pair.compacted.selection?.beforeChars === pair.compacted.selection?.afterChars && pair.compacted.selection?.decisionCalls === 0);
+  const selectionFailed = report.pairs.some(pair => pair.compacted.status === 'context-needs-review');
   report.summary = {baseline, compacted, compactionOnlyRegressions: report.pairs.filter(pair => pair.compactionOnlyRegression).length,
+    artifactAvailabilityRegressions: report.pairs.filter(pair => pair.baseline.artifactSha256 && !pair.compacted.artifactSha256).length,
     comparison: identicalRequests && noContextChange ? 'identical-input generation variation' : 'paired full-context and selected-context requests',
-    savingsAttribution: identicalRequests && noContextChange ? 'No compaction occurred. Token and check differences cannot be attributed to compaction.' : 'Observed paired result only, not a general causal guarantee.',
+    savingsAttribution: selectionFailed ? 'Selection did not fit. Paid partial usage is preserved; there is no completed comparison or savings claim.' : identicalRequests && noContextChange ? 'No compaction occurred. Token and check differences cannot be attributed to compaction.' : 'Observed paired result only, not a general causal guarantee.',
     compactionChangedInputs: !noContextChange,
     tokenSavingsPercent: baseline.totalTokens > 0 && compacted.totalTokens !== null ? Number((100 * (1 - compacted.totalTokens / baseline.totalTokens)).toFixed(2)) : null};
   await save(); console.log(JSON.stringify(report.summary));

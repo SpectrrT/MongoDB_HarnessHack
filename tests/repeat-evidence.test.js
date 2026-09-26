@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {encodeRepeatedEvidence, expandRepeatedEvidence, encodeEvidenceRecords} from '../server/context/repeat-evidence.js';
+import {encodeRepeatedEvidence, expandRepeatedEvidence, encodeEvidenceRecords, retentionGroups} from '../server/context/repeat-evidence.js';
 import {createJevScorer} from '../server/context/jev.js';
 import {createContextCompactor} from '../server/context/compaction.js';
 import {createMemoryDb} from '../rem/db/index.js';
@@ -43,16 +43,16 @@ test('Jev combines up to sixteen bounded candidates and archives unchanged origi
   const compactor = createContextCompactor({db: createMemoryDb(), scorer, budgetChars: 1000, recentCount: 0});
   const selected = await compactor.select({runId: 'bounded', goal: 'Select useful information', units});
   assert.equal(selected.metrics.decisionCalls, 1);
-  assert.equal(Object.keys(request.questions).length, 14);
+  assert.equal(Object.keys(request.questions).length, 1);
+  assert.match(request.questions.keep_0.instructions, /each member's unique text/);
   assert.ok(Buffer.byteLength(JSON.stringify(request)) < 65536);
   for (const [i, record] of request.state.records.entries()) {
-    assert.equal(request.questions[`keep_${i}`].instructions, `Does record ${i} need retention under retentionPolicy?`);
     assert.equal(record.record, i);
-    const decoded = typeof record.text === 'string' ? record.text : {encoding: 'exact-repeat-v1', ...record.text};
+    const decoded = typeof record.text === 'string' ? record.text : {encoding: 'exact-repeat-v1', segments: record.text};
     assert.equal(expandRepeatedEvidence(decoded, request.state.dictionary), units[i].text);
     if (typeof record.text !== 'string') assert.equal(record.text.encoding, undefined);
   }
-  assert.match(request.state.encoding, /exact-repeat-v1/);
+  assert.match(request.state.encoding, /ordered segment array/);
   assert.equal((await compactor.read({runId: 'bounded', id: 'item-0'})).text, units[0].text);
 });
 
@@ -81,4 +81,38 @@ test('batch encoding never expands the wire representation or changes source obj
     assert.ok(JSON.stringify(encoded).length <= JSON.stringify({records}).length);
     assert.deepEqual(encoded.records.map(record => ({...record, text: expandRepeatedEvidence(record.text, encoded.dictionary)})), records);
   }
+});
+
+
+test('shared decision groups preserve every unique suffix and split differing repeat counts', () => {
+  const body = 'Exact repeated observation with enough distinct words to compress without dropping information. ';
+  const records = [
+    {record: 0, text: 'Source A. ' + body.repeat(6) + ' final correction: owner Mei.'},
+    {record: 1, text: 'Source B. ' + body.repeat(6) + ' routine note.'},
+    {record: 2, text: 'Source C. ' + body.repeat(7) + ' routine note.'},
+    {record: 3, text: 'An independent dependency.'},
+  ];
+  const encoded=encodeEvidenceRecords(records);
+  assert.deepEqual(retentionGroups(encoded), [[0,1],[2],[3]]);
+  assert.deepEqual(encoded.records.map(r=>expandRepeatedEvidence(r.text, encoded.dictionary)),records.map(r=>r.text));
+});
+
+test('a relevant or uncertain shared group retains every member and unrelated groups remain separate', async () => {
+  const body = 'Repeated source material shared by multiple records with separate endings. ';
+  const units=[{id:'a',text:body.repeat(6)+' Owner Mei.'},{id:'b',text:body.repeat(6)+' Unrelated ending.'},{id:'c',text:'Other independent evidence.'}];
+  for(const probability of [0.9,null,2]){
+    let request;
+    const scorer=createJevScorer({apiKey:'fixture',fetchImpl:async(_,options)=>{
+      request=JSON.parse(options.body);return Response.json({answers:{keep_0:{noul:probability},keep_1:{noul:0.02}},usage:{input_tokens:100,output_tokens:20}});
+    }});
+    const result=await scorer.score({goal:'Find the owner',units});
+    assert.equal(Object.keys(request.questions).length,2);
+    assert.match(request.questions.keep_0.instructions,/records 0, 1/);
+    assert.deepEqual(result.scores.map(s=>s.probability),[probability===0.9?0.9:null,probability===0.9?0.9:null,0.02]);
+  }
+});
+
+
+test('empty observations remain individual valid records during grouping', () => {
+  assert.deepEqual(retentionGroups(encodeEvidenceRecords([{record:0,text:''},{record:1,text:'Independent fact.'}])),[[0],[1]]);
 });

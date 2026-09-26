@@ -1,3 +1,33 @@
+CURRENT INTEGRATED DEMO (September 26, 4 p.m. Eastern)
+
+Local homepage: http://127.0.0.1:5269/#benchmark-title
+Local Next actions: http://127.0.0.1:5269/app/sleep?view=suggestions
+The local service uses the isolated offload_engineering_demo database. Computer History has today's
+example meeting and notes plus three weekly query reviews. Capture is disabled; these are supplied examples.
+
+Three-minute flow:
+0:00 Show the homepage and explain that Offload keeps useful context while preserving source records.
+0:20 Open Sleep > Next actions > Try an example > Load sample notes. Choose the meeting follow-up's
+     Start once, then Draft this. Queue the bounded local draft. The configured model generates real files.
+0:50 Return to the homepage graphs while generation runs. Gray is the reference harness; black adds Offload.
+     Astra retains 36/36 passing checks with fewer tokens. Opus uses fewer tokens per correct answer but
+     misses two format checks. Hover for exact values. The linked report retains all earlier failed trials.
+1:30 Return to Overnight tasks. Review both exact proposed files and approve the local writes.
+     Completion means the declared file checks passed. It does not mean a database index was changed.
+2:10 Open Computer History. Show today's meeting/notes, then the three-week routine. The history-driven
+     proposal can be saved, but that alone does not execute it. Next actions is the separate draft executor.
+2:40 Close on the produced checklist and source references. A prepared Example workflow is available on
+     the homepage if a live provider is unavailable; it remains labeled as a prepared example.
+
+Keep the local server running. Do not reset a shared engine or enable capture during this demonstration.
+The static public website hosts graphs, evidence and the example; local APIs are not publicly exposed.
+GitHub visibility and the one-minute submission video remain organizer actions, not automatic deployment.
+
+HISTORICAL REM DEMO NOTES FOLLOW. These use scripted fixture tools and simulated days. References below
+to emails and exactly-once effects mean the tested fixture-provider case, not real Gmail delivery or a
+general guarantee for external providers. Earlier local ports, workspace inventories and unmerged notes
+are historical snapshots and do not describe the integrated local preview above.
+
 OFFLOAD x REM: DEMO KIT (Sat Sep 26, 2:55 PM)
 
 Rules to respect: show only what was built during the event, Atlas must be core, the repo must be public,
@@ -31,7 +61,17 @@ suggestions learned from real history. Only demo these if they are merged and gr
 
 2. THREE-MINUTE LIVE DEMO (REM page, server on Atlas; the header shows "MongoDB Atlas · rem")
 
-Before judging: run day 1 once (it takes about 30 s on Atlas). DO NOT press Reset during the demo.
+Before judging (10 minutes ahead):
+- Start the app on Atlas: `PORT=5294 VITE_PORT=5293 npm run dev`, then open http://127.0.0.1:5293. On Ryan's Mac an
+  old dev server holds ports 5193 and 5194, so the default ports fail or show the old app.
+- The REM page header must read "MongoDB Atlas · rem · search atlas-auto". Without Atlas, History and Sleep show
+  "Connect MongoDB" cards instead of data.
+- Computer history shows the data of the computer's user name. On Atlas only the sample weeks for `tensae` (150
+  sessions) and `floydkorzan` (80) exist, all labeled seed; on Ryan's Mac start with `ACTIVITY_WORKSPACE=tensae` in
+  front of the command above, or History is empty. Say it is a sample week if asked.
+- Connect a model (OpenRouter key) so the chat box is not disabled.
+- Open on the REM page. Do not open on Overview or Tasks: they are near empty on a fresh workspace.
+- Run day 1 once (about 30 s on Atlas). DO NOT press Reset engine during the demo.
 Measured on Atlas today: run 4 to 6 s, reconnect 10 to 15 s, Sleep 31 to 43 s, morning run about 15 s.
 
 0:00  Hook. "Agents fail long jobs two ways: they declare victory early, and they repeat yesterday's mistakes.
@@ -39,8 +79,9 @@ Measured on Atlas today: run 4 to 6 s, reconnect 10 to 15 s, Sleep 31 to 43 s, m
       held-out test set, in the morning it asks once for anything new."
 0:20  Day. Drive access expires mid-run: the run pauses, asks once, and resumes from its checkpoint the moment
       Drive reconnects (an Atlas change stream). The email went out exactly once: the effects ledger is a unique
-      index written in the same transaction as the checkpoint. The reviewer flags two problems: an external
-      recipient and a leaked customer name.
+      index written in the same transaction as the checkpoint. The run ends "incomplete", on purpose: the
+      completion gate refuses to call it done because the checks found an external recipient and a leaked
+      customer name. Say this out loud; silent, it looks like a bug.
 0:55  Night. Press Sleep and narrate the phases as they light up (30 to 45 s):
       Replay; Merge (near-duplicate memories folded into one, contradictions resolved, noise dropped);
       Distill (repeated work becomes a tested skill); Rehearse (harder versions of work it already passes);
@@ -51,7 +92,7 @@ Measured on Atlas today: run 4 to 6 s, reconnect 10 to 15 s, Sleep 31 to 43 s, m
       Accepted: "never include customer names", "send only to internal recipients".
       Rejected: cheap-model routing, because it broke a held-out task (Product review). That is the
       no-regression gate working. Show the harness diff v0 -> v1, then the one ask: "Want me to send the
-      brief myself next time?" Run the same task again: done, no leak.
+      brief myself next time?" Run the same task again: now it is done, with no leak.
 2:30  The curve (5 simulated days on Atlas): passed 2/4 -> 4/4, collateral 3 -> 0, interventions 4 -> 0,
       cost per day down about 90%, memory stays small and exact (32 items vs 120 without sleep,
       duplicates 0 vs 0.64, precision 1.0 vs 0.4). 10 emails, 0 duplicates, 4 crashes reconciled.

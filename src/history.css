@@ -590,3 +590,8 @@
   .history-page .hx-status { align-items:flex-start; }
   .history-page .hx-status-row { flex-wrap:wrap; }
 }
+.hx-setup .button-row { margin-top:18px; }
+.hx-setup-details { margin-top:18px; color:var(--ink-soft); font-size:13px; }
+.hx-setup-details summary { cursor:pointer; }
+.hx-setup-details p { margin-top:10px; }
+.hx-handoff a { text-decoration:underline; text-underline-offset:3px; }

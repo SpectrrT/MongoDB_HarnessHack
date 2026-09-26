@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import request from 'supertest';
 import {createActivityCollector} from '../server/activity/collector.js';
-import {sample} from '../server/activity/capture.js';
+import {parseBrowserTab,sample} from '../server/activity/capture.js';
 import {normalizeSample} from '../server/activity/store.js';
 import {activityRoutes} from '../server/activity/routes.js';
 
@@ -91,11 +91,15 @@ test('unsupported platforms and unconfigured stores never start capture',async()
 });
 
 test('capture respects excluded apps and title-only scope without querying URLs',async()=>{
+ assert.deepEqual(parseBrowserTab('Engineering notes',{urls:false}),{url:null,title:'Engineering notes'});
+ assert.deepEqual(parseBrowserTab('__OFFLOAD_PRIVATE__',{urls:false}),{private:true,url:null,title:null});
+ assert.deepEqual(parseBrowserTab('https://example.com/page\nEngineering notes'),{url:'https://example.com/page',title:'Engineering notes'});
  let browserReads=0,titleReads=0;
  const readers={frontmostApp:async()=>({app:'Google Chrome',bundleId:'com.google.Chrome'}),idleSeconds:async()=>0,browserTab:async(app,options)=>{browserReads++;assert.equal(options.urls,false);return {title:'Engineering notes',url:null};},windowTitle:async()=>{titleReads++;return 'Window';}};
  const titles=await sample({titles:true,urls:false},readers);assert.equal(titles.title,'Engineering notes');assert.equal(titles.url,null);
  const excluded=await sample({titles:true,urls:true,excludedApps:['Google Chrome']},readers);assert.equal(excluded.title,null);assert.equal(excluded.url,null);assert.equal(browserReads,1);assert.equal(titleReads,0);
  const privateSample=await sample({titles:false,urls:true},{...readers,browserTab:async()=>({private:true,title:'Private browsing',url:null})});
+ assert.equal(privateSample.private,true);assert.equal(privateSample.title,null);assert.equal(titleReads,0);
  const normalized=normalizeSample(privateSample,{captureTitles:false,captureUrls:true,excludedApps:[]});assert.equal(normalized.private,true);assert.equal(normalized.title,null);assert.equal(normalized.url,null);
 });
 
@@ -117,5 +121,5 @@ test('collector API requires explicit local app requests and preserves the store
  await action({action:'start',workspace:'other-owner'}).expect(400);assert.equal(starts,0);
  const started=await action({action:'start'}).expect(200);assert.equal(started.body.collector.running,true);
  await action({action:'pause'}).expect(200);assert.equal(pauses,1);
- await request(app).post('/api/activity/settings').send({collectorEnabled:true}).expect(400);
+ await request(app).post('/api/activity/settings').set('X-Offload-Client','local').send({collectorEnabled:true}).expect(400);
 });

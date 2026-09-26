@@ -9,6 +9,7 @@ import { SAMPLE_DEVICE, seedSampleWeek } from '../server/activity/seed.js';
 import { createApp } from '../server/index.js';
 import express from 'express';
 import { mountModel } from '../server/model.js';
+import { parseBrowserTab } from '../server/activity/capture.js';
 import { historyContext } from '../server/activity/context.js';
 import { findFriction, planWorkflow, describe } from '../server/activity/insights.js';
 
@@ -40,16 +41,20 @@ test('computer history on MongoDB', async (t) => {
         url: 'https://www.example.com/a/b',
         domain: 'example.com',
       });
+      assert.deepEqual(parseBrowserTab('__OFFLOAD_PRIVATE__'), { private: true, url: null, title: null });
+      assert.deepEqual(parseBrowserTab('https://example.com/page\nNormal title'), { url: 'https://example.com/page', title: 'Normal title' });
       assert.deepEqual(cleanUrl('file:///Users/me/notes.txt'), { url: null, domain: null });
       const s = await make();
       await s.ingest('me', 'mac', [
         { ts: at(0), app: '1Password', title: 'Bank login' },
         { ts: at(0.1), app: 'Google Chrome', title: 'New Incognito Tab', url: 'https://example.com/private' },
+        { ts: at(0.15), app: 'Google Chrome', private: true, title: 'A normal-looking private tab', url: 'https://example.com/secret' },
         { ts: at(0.2), app: 'Google Chrome', title: 'Invoice for jane.doe@example.com', url: 'https://mail.google.com/mail/u/0/?id=1' },
       ]);
       const rows = await s.events.find({}, { sort: { ts: 1 } }).toArray();
       assert.deepEqual(rows.map((r) => [r.app, r.title, r.url, r.private]), [
         ['1Password', null, null, true],
+        ['Google Chrome', null, null, true],
         ['Google Chrome', null, null, true],
         ['Google Chrome', 'Invoice for [email]', 'https://mail.google.com/mail/u/0/', false],
       ]);
@@ -92,6 +97,84 @@ test('computer history on MongoDB', async (t) => {
       assert.equal(second.length, 4);
       assert.equal(second[3]._id, first[3]._id);
       assert.equal(second[3].durationSec, 600);
+    });
+
+    await t.test('different pages and local dates remain distinct sessions', async () => {
+      const s = await make();
+      const midnight = new Date('2026-09-22T04:00:00Z');
+      await s.ingest('me', 'mac', [
+        { ts: new Date(+midnight - 5000), app: 'Google Chrome', title: 'Untitled', url: 'https://docs.google.com/document/a' },
+        { ts: midnight, app: 'Google Chrome', title: 'Untitled', url: 'https://docs.google.com/document/a' },
+        { ts: new Date(+midnight + 5000), app: 'Google Chrome', title: 'Untitled', url: 'https://docs.google.com/document/b' },
+      ]);
+      await s.sessionize('me', 'mac', { from: new Date(+midnight - 5000), to: new Date(+midnight + 10000) });
+      const rows = await s.sessions.find({}).sort({ start: 1 }).toArray();
+      assert.equal(rows.length, 3);
+      assert.deepEqual(rows.map(r => r.day), ['2026-09-21', '2026-09-22', '2026-09-22']);
+      assert.equal((await s.stats('me', { day: '2026-09-22' })).totalSec, 10);
+    });
+
+    await t.test('seeded evidence never increases a recorded routine or search count', async () => {
+      const s = await make({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+      const seeded = await seedSampleWeek(s, { workspace: 'me' });
+      const rows = await s.sessions.find({ workspace: 'me' }).toArray();
+      await s.sessions.insertMany(rows.map(r => ({ ...r, _id: `recorded:${r._id}`, device: 'mac', source: 'collector' })));
+      const routines = await s.routines('me');
+      assert.equal(routines.length, seeded.routines.length * 2);
+      assert.ok(routines.every(r => r.dayCount === 5 && r.count === 5));
+      assert.deepEqual([...new Set(routines.map(r => r.source))].sort(), ['collector', 'seed']);
+      const hits = (await s.search('me', 'weekly brief')).results.filter(r => /Weekly brief/.test(r.title));
+      assert.equal(hits.length, 2);
+      assert.deepEqual(hits.map(r => r.count), [5, 5]);
+      await s.sessions.deleteMany({ workspace: 'me' });
+      assert.deepEqual(await s.routines('me'), [], 'stale cached routines cannot outlive their source evidence');
+    });
+
+    await t.test('collapsing adjacent app visits preserves duration and rejects long routines', async () => {
+      const s = await make();
+      const base = new Date(); base.setHours(9, 0, 0, 0);
+      const sessions = [];
+      for (let day = 1; day <= 4; day++) {
+        for (const [index, [minute, duration, app]] of [[0, 5, 'Mail'], [5, 5, 'Code'], [10, 65, 'Code']].entries()) {
+          const start = new Date(+base - day * 86400e3 + minute * 60e3);
+          sessions.push({ _id: `${day}:${index}`, workspace: 'me', device: 'mac', source: 'collector',
+            start, end: new Date(+start + duration * 60e3), durationSec: duration * 60,
+            day: start.toISOString().slice(0, 10), hour: 9, weekday: 1, app, label: app,
+            title: `File ${index}`, idle: false, activeShare: 1 });
+        }
+      }
+      await s.sessions.insertMany(sessions);
+      assert.deepEqual(await s.routines('me'), [], '75 minutes of work must not become a 10-minute routine');
+    });
+
+    await t.test('weekly cadence requires three matching weekdays and consistent local hours', async () => {
+      const s = await make();
+      const monday = new Date(); monday.setUTCHours(13, 0, 0, 0);
+      monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
+      const rows = [];
+      for (const week of [1, 2, 3]) for (const [step, app] of ['Mail', 'Docs'].entries()) {
+        const start = new Date(+monday - week * 7 * 86400e3 + step * 180000);
+        rows.push({ _id: `${week}:${step}`, workspace: 'me', device: 'mac', source: 'collector',
+          start, end: new Date(+start + 180000), durationSec: 180, day: start.toISOString().slice(0,10),
+          hour: 9, weekday: 1, label: app, app, title: 'Weekly work', idle: false, activeShare: 1 });
+      }
+      await s.sessions.insertMany(rows);
+      const routines = await s.routines('me');
+      assert.equal(routines.length, 1);
+      assert.equal(routines[0].cadence, 'weekly');
+      assert.equal(routines[0].dayCount, 3);
+      assert.equal(routines[0].timeZone, TZ);
+      await s.sessions.updateMany({ _id: /^1:/ }, { $set: { hour: 16 } });
+      assert.equal((await s.routines('me'))[0].cadence, 'repeated', 'inconsistent hours are not a weekly time pattern');
+    });
+
+    await t.test('a failed embedding provider still permits keyword retrieval', async () => {
+      const s = await make({ embedder: { ...embedder, embedQuery: async () => { throw new Error('provider unavailable'); } } });
+      await s.ingest('me', 'mac', span(0, 3, { app: 'Code', title: 'Orchid release notes' }));
+      await s.sessionize('me', 'mac', { from: at(0), to: at(5) });
+      const found = await s.search('me', 'Orchid release');
+      assert.equal(found.mode, 'local');
+      assert.equal(found.results[0].title, 'Orchid release notes');
     });
 
     await t.test('stats: time per app, switches and focus blocks, without away time', async () => {
@@ -150,6 +233,8 @@ test('computer history on MongoDB', async (t) => {
       const gone = await s.forget('me', { from, to });
       assert.ok(gone.deletedSessions > 10 && gone.deletedEvents > 1000);
       assert.equal(await s.sessions.countDocuments({ day: day.day }), 0);
+      assert.ok(gone.deletedRoutines > 0);
+      assert.equal(await s.routinesCollection.countDocuments({ workspace: 'me' }), 0);
     });
 
     await t.test('API: off without MongoDB; timeline, search, settings and routines with it', async () => {
@@ -164,19 +249,22 @@ test('computer history on MongoDB', async (t) => {
       assert.equal(status.configured, true);
       assert.equal(status.search, 'local');
       assert.equal(status.devices[0].device, SAMPLE_DEVICE);
+      await request(api).get('/api/activity/status').set('Host', 'attacker.example').expect(403);
+      await request(api).get('/api/activity/status').set('Origin', 'https://attacker.example').expect(403);
+      await request(api).post('/api/activity/settings').send({ paused: true }).expect(403);
       const day = (await s.sessions.findOne({}, { sort: { start: -1 } })).day;
       const timeline = (await request(api).get(`/api/activity/timeline?day=${day}`).expect(200)).body;
       assert.ok(timeline.sessions.length > 10 && !('vectors' in timeline.sessions[0]));
       await request(api).get('/api/activity/timeline?day=yesterday').expect(400);
       assert.ok((await request(api).get('/api/activity/search?q=pull%20requests').expect(200)).body.results.length);
-      assert.equal((await request(api).post('/api/activity/settings').send({ paused: true }).expect(200)).body.paused, true);
-      await request(api).post('/api/activity/settings').send({ paused: 'yes' }).expect(400);
+      assert.equal((await request(api).post('/api/activity/settings').set('X-Offload-Client', 'local').send({ paused: true }).expect(200)).body.paused, true);
+      await request(api).post('/api/activity/settings').set('X-Offload-Client', 'local').send({ paused: 'yes' }).expect(400);
       const routines = (await request(api).get('/api/activity/routines').expect(200)).body.routines;
       assert.equal(routines.length, seeded.routines.length);
-      await request(api).post(`/api/activity/routines/${encodeURIComponent(routines[0]._id)}`).send({ decision: 'later' }).expect(400);
-      const decided = (await request(api).post(`/api/activity/routines/${encodeURIComponent(routines[0]._id)}`).send({ decision: 'approve' }).expect(200)).body;
+      await request(api).post(`/api/activity/routines/${encodeURIComponent(routines[0]._id)}`).set('X-Offload-Client', 'local').send({ decision: 'later' }).expect(400);
+      const decided = (await request(api).post(`/api/activity/routines/${encodeURIComponent(routines[0]._id)}`).set('X-Offload-Client', 'local').send({ decision: 'approve' }).expect(200)).body;
       assert.equal(decided.routine.status, 'approved');
-      await request(api).post('/api/activity/forget').send({ from: '2026-09-21T10:00:00Z', to: '2026-09-20T10:00:00Z' }).expect(400);
+      await request(api).post('/api/activity/forget').set('X-Offload-Client', 'local').send({ from: '2026-09-21T10:00:00Z', to: '2026-09-20T10:00:00Z' }).expect(400);
     });
     await t.test('chat: the model gets matching computer history, labeled when it is sample data', async () => {
       const s = await make({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
@@ -228,9 +316,9 @@ test('computer history on MongoDB', async (t) => {
       assert.ok(plan.steps.some((step) => step.ask), 'the plan asks once before sending');
       assert.match(plan.problem, /confirm the task/);
       const api = createApp({ serveStatic: false, activity: s });
-      const body = (await request(api).post('/api/activity/workflow').send({}).expect(200)).body;
+      const body = (await request(api).post('/api/activity/workflow').set('X-Offload-Client','local').send({}).expect(200)).body;
       assert.equal(body.workflow.title, plan.title);
-      assert.equal((await request(api).post('/api/activity/workflows').send(body.workflow).expect(201)).body.status, 'saved');
+      assert.equal((await request(api).post('/api/activity/workflows').set('X-Offload-Client','local').send(body.workflow).expect(201)).body.status, 'saved-proposal');
       assert.equal(await s.db.collection('activity_workflows').countDocuments(), 1);
     });
   } finally {

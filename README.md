@@ -19,14 +19,31 @@ both problem statements: recursive harnessing (the harness edits its own rules, 
 long-horizon engineering (durable execution, plus memory that gets smaller and more precise as it grows, judged by hard
 metrics).
 
+## Matched SDK comparisons (September 26, 2026)
+
+The homepage now shows two flat graphs using the site fonts and neutral palette. Every bar links to reproducible receipts through one methods report. These compare a configured OpenAI Agents SDK reference with Offload's context selection, using identical models, task inputs, tools and budgets within each pair.
+
+| Model | Paired runs | SDK tokens | Offload all-in tokens | Exact checks, SDK / Offload |
+| --- | ---: | ---: | ---: | --- |
+| GPT-6 Astra | 3 | 80,092 | 77,523 | 36/36 / 36/36 |
+| Claude Opus 5.5 | 3 | 198,171 | 172,491 | 36/36 / 34/36 |
+
+The first graph divides all consumed tokens by answers passing the unchanged exact content and format checks. The second graph measures source-context characters kept per step, not total request tokens. Hover or tap a bar to see its measured value, passing-check count and individual trial values. Selector and retrieval overhead count. These are repeated development fixtures, not unseen tasks or general reasoning scores.
+
+The v14 selector reduces Astra's measured token overhead. The three fixed Opus JSON-mode trials still contain two Offload formatting failures: JSON mode did not reliably prevent prose after a correct object. Earlier selectors, prompted-JSON runs and all 25 rate-limit responses remain in the report. No result was discarded for losing. All-in dollar savings remain unknown because selector prices are absent.
+
+Astra uses a verified Responses tool adapter in both arms. Opus and GPT-4o-mini use a matched Chat Completions protocol. This compares configured SDK loops, not complete Codex or Claude Code products. [All trials](docs/evidence/reference-summary.json), [methods](scripts/agents-reference/README.md), and [public report](public/evidence/benchmark-report.html).
+
+The app now groups REM and Memory under Sleep, preserves old URLs, and keeps live execution separate from the static hosted preview. A completed local chat job is acknowledged only after its final checkpoint write finishes.
+
 ## Sleep: measured context compaction (September 26, 2026)
 
 Sleep now selects useful tool history with **Jev probabilities**, archives omitted records in **MongoDB**, and recovers
 original evidence by run-scoped id. It preserves complete tool exchanges and detected constraints, reuses decisions
 when the task state is unchanged, and removes identical read-only results without a model call. This is integrated
-before planner/executor calls in the REM runtime and displayed under **Sleep > Context memory**.
+before planner/executor calls in the REM runtime and displayed under **Sleep > Memory > Context memory**.
 
-**Latest complete development result: 17.69% fewer total tokens on evolving tasks, including Jev and recovery.**
+**Earlier same-harness development result: 17.69% fewer total tokens on evolving tasks, including Jev and recovery.**
 Full context uses 39,196 tokens; Offload uses 32,264. Offload passes 12/12 exact JSON checks, versus 11/12 for full
 context. The baseline failure is an extra `reason` field in an otherwise correct answer. The same GPT-4o-mini model,
 three synthetic tasks and twelve chronological stages are used on both paths. These inputs were used during
@@ -57,6 +74,29 @@ establishes universal savings, calibrated probabilities, or billion-token perfor
 [latest repeated receipt](docs/evidence/jev-context-repeated-schema-v9.json),
 [all versions and adverse results](docs/context-evolving-evidence.md), and
 [research and configuration](docs/sleep-context-compaction.md).
+
+### Personal histories: artifact generation improved, task quality still incomplete
+
+Frozen replay tasks use authorized pre-cutoff Codex and Claude messages, actual Sleep file execution and independent
+criteria hidden from the models. The original research attempt produced no artifacts on either path after 18 calls
+and 105,645 tokens. A strict output-format clarification now produces each artifact in one call. However, three
+GPT-4o-mini trials per path still yield **0/3 fully passing research artifacts and 0/3 onboarding artifacts**. Research
+scores 63/93 versus 64/93 criteria; onboarding 19/36 versus 18/36. All twelve files are hash-verified, but valid files
+are not equivalent to completed tasks.
+
+These smaller histories fit under the compaction threshold. Paired provider request hashes are identical and Jev
+makes zero calls, so their small token differences are generation variation, not compaction benefits. Those twelve
+calls consume 67,927 tokens, additional to the failed original batch and a 5,868-token diagnostic. All are retained.
+The full 145-message onboarding variant naturally reaches 67,208 serialized characters. Its original protection
+policy keeps 31,287, exceeding the 16,000-character budget before scoring. The harness now detects that impossible
+floor before spending any Jev calls, while preserving the exact archived source. No successful full-history result
+is claimed from this admission check. [Conditions, failures and receipts](docs/personal-session-evidence.md).
+
+A later one-pair development pilot jointly changes the task contract and answer model to production Sleep's
+GPT-4.1-mini. Research improves to **29/31 on both paths**, onboarding to **10/12 versus 9/12**. Neither fully passes.
+The complete personal experiment ledger is **43 calls, 258,093 tokens and $0.0435863**, including every failed attempt.
+These are measured quality improvements under a joint configuration change, not isolated prompt effects or compaction
+savings. [Raw ledger](docs/evidence/personal-replay-experiment-ledger.json).
 
 ### Bounded memory and actual restart recovery
 
@@ -510,3 +550,11 @@ records before their existing TTL can remove them. Previously deleted records ca
 The landing page shows measured evidence directly below the hero headline and links its receipt. Personal-history
 artifact replay is a separate evaluation using frozen pre-return context and private checkers. It does not compare
 historical cumulative session tokens against a small reconstructed artifact. Failed protocol trials remain in the ledger.
+
+## Minimal comparison presentation
+
+The homepage now uses two flat graphs: total model tokens (including selection and recovery) and exact checks passed. The underlying measurements are unchanged: changing-task development replay 39,196 versus 32,264 tokens and 11/12 versus 12/12 checks; repeated-snapshot replay 26,640 versus 9,052 tokens and 20/20 on both paths. Both use GPT-4o-mini. The sole changing-task baseline failure was an extra JSON field, not an incorrect owner or readiness fact. Repeated snapshots favor reuse and are not independent task trials. No new performance experiment was run for this presentation change.
+
+`public/evidence/benchmark-report.html` retains detailed methods, failed personal replays, and raw-receipt links outside the presentation flow. Regenerate it with `node scripts/build-benchmark-report.mjs` after updating `src/data/benchmark-evidence.json`. New verified comparisons can populate `presentationComparisons`, `presentationDescription`, and `presentationMethod`; do not reuse old method text for a different experiment.
+
+The full trusted-role onboarding replay also failed: the reference passed 9/12 checks with 20,811 tokens; Offload spent 33,285 selection tokens and retained 67,081 of 67,208 characters, above its unchanged 16,000-character budget. It produced no answer. See [the preserved failure](docs/evidence/personal-onboarding-full-typed-development-v1.json).

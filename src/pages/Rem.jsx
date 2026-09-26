@@ -1,6 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ChevronRight, Plug } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, ChevronRight, Plug, Sun, Moon, Sunrise, RefreshCw, FlaskConical } from "lucide-react";
 import { Modal } from "../components/Modal";
+import { ThinkingOrb } from "../components/ScreenTransition";
+import LoadingState from "../vendor/beautiful/LoadingState";
+import { useWorkspace } from "../store";
+import { resolveTheme } from "../../shared/themes";
+import "../rem.css";
 
 // REM: day (durable runs) -> night (consolidate + evolve) -> morning (brief, diff, asks).
 // Every number on this page comes from GET /api/rem/state, POST /api/rem/run|sleep|simulate,
@@ -33,20 +38,20 @@ const PHASES = ["Replay", "Merge", "Distill", "Rehearse", "Evolve", "Calibrate",
 const METRIC_ORDER = ["tasks", "passed", "passRate", "collateral", "cost", "steps", "interventions", "latencyMs"];
 const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", incomplete: "is-blocked", failed: "is-cancelled" };
 
-const get = async (url) => {
-  const r = await fetch(url);
-  const v = await r.json();
-  if (!r.ok) throw Error(v?.error || "Request failed.");
-  return v;
+const readResponse = async (response) => {
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw Error("REM needs the local Offload service. This website does not host the engine. Open the local app to run tasks and review results.");
+  }
+  const value = await response.json();
+  if (!response.ok) throw Error(value?.error || "Request failed.");
+  return value;
 };
-const post = async (url, body) => {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Offload-Client": "local" }, body: JSON.stringify(body ?? {}) });
-  const v = await r.json();
-  if (!r.ok) throw Error(v?.error || "Request failed.");
-  return v;
-};
+const get = async (url) => readResponse(await fetch(url));
+const post = async (url, body) => readResponse(await fetch(url, {
+  method: "POST", headers: { "Content-Type": "application/json", "X-Offload-Client": "local" }, body: JSON.stringify(body ?? {}),
+}));
 const pct = (x) => `${Math.round((x ?? 0) * 100)}%`;
-const money = (x) => `$${(x ?? 0).toFixed(4)}`;
+const money = (x) => Number.isFinite(x) ? `$${x.toFixed(4)}` : "n/a";
 const LABEL_OVERRIDES = { latencyMs: "Latency" };
 const label = (key) =>
   LABEL_OVERRIDES[key] || key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
@@ -77,14 +82,29 @@ const fmtDelta = (d) =>
       }${Math.round(d.costDelta * 100)}% cost${d.flips?.length ? `, flips ${d.flips.join(", ")}` : ""}`
     : "n/a";
 
+function PolicyValue({ value }) {
+  if (value == null) return <span>Not set</span>;
+  if (Array.isArray(value)) return <span>{value.length ? value.join(", ") : "None"}</span>;
+  if (typeof value === "object") return <dl className="rem-policy-values">{Object.entries(value).map(([key, item]) =>
+    <div key={key}><dt>{label(key)}</dt><dd><PolicyValue value={item} /></dd></div>)}</dl>;
+  return <span>{typeof value === "boolean" ? (value ? "Enabled" : "Disabled") : String(value)}</span>;
+}
+
+function Disclosure({ title, children, open = false }) {
+  return <details className="rem-disclosure" open={open}><summary>{title}</summary><div className="rem-disclosure-body">{children}</div></details>;
+}
+
 function useRemEvents() {
   const [events, setEvents] = useState([]);
   const [hello, setHello] = useState(null);
+  const [connected, setConnected] = useState(false);
+  const [resetVersion, setResetVersion] = useState(0);
   useEffect(() => {
     const es = new EventSource("/api/rem/stream");
     const onHello = (e) => {
       try {
         setHello(JSON.parse(e.data));
+        setConnected(true);
       } catch {}
     };
     const onChange = (e) => {
@@ -93,34 +113,43 @@ function useRemEvents() {
         setEvents((prev) => [...prev.slice(-499), { ...data, at: Date.now() }]);
       } catch {}
     };
-    const onReset = () => setEvents([]);
+    const onReset = () => { setEvents([]); setResetVersion((value) => value + 1); };
+    es.onerror = () => setConnected(false);
     es.addEventListener("hello", onHello);
     es.addEventListener("change", onChange);
     es.addEventListener("reset", onReset);
     return () => es.close();
   }, []);
-  return { events, hello };
+  return { events, hello, connected, resetVersion };
 }
 
 function FitnessTable({ title, before, after }) {
+  const [selected, setSelected] = useState("heldOut");
   if (!before && !after) return null;
   const splits = [
     ["train", "Train"],
     ["heldOut", "Held-out"],
     ["all", "All"],
-  ];
+  ].filter(([key]) => before?.[key] || after?.[key]);
+  const activeSplit = splits.some(([key]) => key === selected) ? selected : splits[0]?.[0];
   return (
-    <div className="rem-table-wrap">
+    <div className="rem-fitness">
+      <div className="rem-split-picker" role="group" aria-label={`${title} data split`}>
+        {splits.filter(([key]) => before?.[key] || after?.[key]).map(([key, name]) =>
+          <button key={key} aria-pressed={activeSplit === key} onClick={() => setSelected(key)}>{name}</button>)}
+      </div>
+      <div className="rem-table-wrap" tabIndex={0} role="region" aria-label={title}>
       <table className="rem-table">
+        <caption>{title}</caption>
         <thead>
           <tr>
-            <th>{title}</th>
+            <th scope="col">Metric</th>
             <th>Before</th>
             <th>After</th>
           </tr>
         </thead>
         <tbody>
-          {splits.map(([key, name]) => {
+          {splits.filter(([key]) => key === activeSplit).map(([key, name]) => {
             const b = before?.[key],
               a = after?.[key];
             if (!b && !a) return null;
@@ -142,6 +171,7 @@ function FitnessTable({ title, before, after }) {
           })}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
@@ -206,7 +236,7 @@ function GenomeView({ genome }) {
         <ul>
           {Object.entries(genome.contextPolicy).map(([k, v]) => (
             <li key={k}>
-              {label(k)}: {policyValue(v)}
+              <span>{label(k)}</span>: <PolicyValue value={v} />
             </li>
           ))}
         </ul>
@@ -325,6 +355,7 @@ function Lineage({ lineage }) {
 }
 
 function AsksList({ asks, onDecide, busy }) {
+  const [answers, setAnswers] = useState({});
   if (!asks?.length) return <p className="muted">No open asks.</p>;
   return (
     <div className="rem-asks">
@@ -332,13 +363,16 @@ function AsksList({ asks, onDecide, busy }) {
         <article key={a._id} className="rem-ask">
           <p>{a.text}</p>
           {a.validation?.reason && <p className="muted">{a.validation.reason}</p>}
+          {a.kind === "owner" && <label className="rem-answer" htmlFor={`answer-${a._id}`}>Owner name
+            <input id={`answer-${a._id}`} value={answers[a._id] || ""} maxLength={80} disabled={busy} onChange={(event) => setAnswers((previous) => ({ ...previous, [a._id]: event.target.value }))} placeholder="Who owns this item?" />
+          </label>}
           <span className="muted">
-            {a.kind}
+            {label(a.kind.replaceAll(".", " "))}
             {a.risk ? ` · risk: ${a.risk}` : ""}
           </span>
           <div className="button-row">
-            <button className="button small" disabled={busy} onClick={() => onDecide(a._id, "approve")}>
-              Approve
+            <button className="button small" disabled={busy || (a.kind === "owner" && !answers[a._id]?.trim())} onClick={() => onDecide(a._id, "approve", a.kind === "owner" ? answers[a._id].trim() : undefined)}>
+              {a.kind === "owner" ? "Save answer" : "Approve"}
             </button>
             <button className="button small secondary" disabled={busy} onClick={() => onDecide(a._id, "deny")}>
               Deny
@@ -404,10 +438,14 @@ function RunLog({ events }) {
   );
 }
 
-function ControlsBar({ state, busy, setBusy, setError, reload, onReset, compact = false }) {
+function ControlsBar({ state, busy, setBusy, setError, reload, onReset }) {
+  const [simulating, setSimulating] = useState(false);
   const [days, setDays] = useState(3);
   const [simResult, setSimResult] = useState(null);
+  const validDays = Number.isInteger(Number(days)) && Number(days) >= 1 && Number(days) <= 10;
   const simulate = async () => {
+    if (!validDays || busy) return;
+    setSimulating(true);
     setBusy(true);
     setError("");
     setSimResult(null);
@@ -419,32 +457,27 @@ function ControlsBar({ state, busy, setBusy, setError, reload, onReset, compact 
       setError(e.message);
     } finally {
       setBusy(false);
+      setSimulating(false);
     }
   };
   return (
-    <div className="rem-controls">
-      <span className="status-label">Harness v{state.harness.version}</span>
-      {state.engine?.database?.startsWith("atlas:") && (
-        <span className="status-label">MongoDB Atlas · {state.engine.database.slice(6)} · search {state.engine.search}</span>
-      )}
-      <span className="muted">
-        Day {state.day} · {state.week}
-      </span>
-      <RemDisclosure compact={compact} title="Engine controls">
+    <details className="rem-demo-tools">
+      <summary><FlaskConical size={16} aria-hidden="true" /> Simulation tools <span>Run several days or reset the shared engine</span></summary>
+      <div className="rem-controls">
       <div className="button-row">
         <label className="rem-select">
           Simulate
-          <input type="number" min="1" max="10" value={days} onChange={(e) => setDays(e.target.value)} aria-label="Days to simulate" />
+          <input type="number" min="1" max="10" value={days} onChange={(e) => setDays(e.target.value)} aria-label="Days to simulate" aria-invalid={!validDays} disabled={busy} />
           days
         </label>
-        <button className="button secondary small" disabled={busy} onClick={simulate}>
-          Run simulated days
+        <button className="button secondary small" disabled={busy || !validDays} onClick={simulate}>
+          {simulating ? "Simulating..." : "Run simulated days"}
         </button>
         <button className="button secondary small" disabled={busy} onClick={onReset}>
           Reset engine
         </button>
       </div>
-      </RemDisclosure>
+      {!validDays && <p className="muted" role="status">Choose a whole number from 1 to 10.</p>}
       {simResult && (
         <div className="rem-sim-result">
           <p className="muted">Simulated to day {simResult.day}.</p>
@@ -478,24 +511,23 @@ function ControlsBar({ state, busy, setBusy, setError, reload, onReset, compact 
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </details>
   );
 }
 
-function RemDisclosure({ compact, title, open = false, children }) {
-  return compact ? <details className="rem-compact-section" open={open || undefined}><summary>{title}</summary><div className="rem-compact-details">{children}</div></details> : <>{children}</>;
-}
-
-function DayPanel({ state, events, busy, setBusy, setError, reload, compact = false }) {
+function DayPanel({ state, events, busy, setBusy, setError, reload }) {
   const [taskId, setTaskId] = useState(TASKS[0][0]);
   const [activeRunId, setActiveRunId] = useState(null);
   const [lastRun, setLastRun] = useState(null);
+  const [running, setRunning] = useState(false);
 
   const runLog = useMemo(() => (activeRunId ? events.filter((e) => e.runId === activeRunId) : []), [events, activeRunId]);
   const liveRun = state.runs.find((r) => r.runId === activeRunId);
   const shown = liveRun || lastRun;
 
   const run = async () => {
+    setRunning(true);
     setBusy(true);
     setError("");
     try {
@@ -507,6 +539,7 @@ function DayPanel({ state, events, busy, setBusy, setError, reload, compact = fa
       setError(e.message);
     } finally {
       setBusy(false);
+      setRunning(false);
     }
   };
   const toggleConnection = async (provider, next) => {
@@ -527,17 +560,16 @@ function DayPanel({ state, events, busy, setBusy, setError, reload, compact = fa
   return (
     <section className="rem-section" aria-label="Day">
       <div className="section-line">
-        <h2>{compact ? "Run a task" : "Day: run a task"}</h2>
+        <h2>Day: run a task</h2>
         <span>{state.week}</span>
       </div>
-      {!compact && <p className="muted">
-        Runs execute through the durable harness: a checkpoint after every step, exactly-once effects, and a pause if account access
-        expires mid-run.
-      </p>}
+      <p className="muted">
+        Choose a task, follow its progress, and inspect the result. The harness saves its place after each step.
+      </p>
       <div className="rem-day-controls button-row">
         <label className="rem-select">
           Task
-          <select value={taskId} onChange={(e) => setTaskId(e.target.value)}>
+          <select disabled={busy} value={taskId} onChange={(e) => setTaskId(e.target.value)}>
             {TASKS.map(([id, title]) => (
               <option key={id} value={id}>
                 {title}
@@ -546,9 +578,11 @@ function DayPanel({ state, events, busy, setBusy, setError, reload, compact = fa
           </select>
         </label>
         <button className="button" disabled={busy} onClick={run}>
-          {busy ? "Running..." : "Run"}
+          {running ? "Running..." : "Run"}
         </button>
       </div>
+      <Disclosure title="Test account access">
+      <p className="muted">Fixture connections for this engine. Expire one to test pause and resume.</p>
       <div className="rem-connections">
         {state.connections.map((c) => (
           <span key={c.provider} className={"connection-state " + (c.tokenState === "valid" ? "is-connected" : "is-expired")}>
@@ -559,8 +593,8 @@ function DayPanel({ state, events, busy, setBusy, setError, reload, compact = fa
           </span>
         ))}
       </div>
-      <RemDisclosure compact={compact} title={`Run details · ${state.runs.length} runs`} open={!!activeRunId}>
-      {compact && <p className="muted">Runs checkpoint every step, apply effects once, and pause if account access expires.</p>}
+      </Disclosure>
+      {running && <div className="beautiful-ui rem-loading"><LoadingState label="Running the task" variant="Dots" /></div>}
       {activeRunId && (
         <div className="rem-live-run">
           <div className="section-line">
@@ -599,7 +633,7 @@ function DayPanel({ state, events, busy, setBusy, setError, reload, compact = fa
       </div>
       <div className="rem-run-rows">
         {recent.map((r) => (
-          <button key={r.runId} className="rem-run-row" onClick={() => setActiveRunId(r.runId)}>
+          <button key={r.runId} className="rem-run-row" aria-pressed={activeRunId === r.runId} onClick={() => { setActiveRunId(r.runId); setLastRun(r); }}>
             <div>
               <strong>{r.title}</strong>
               <small>
@@ -613,19 +647,18 @@ function DayPanel({ state, events, busy, setBusy, setError, reload, compact = fa
         ))}
         {!recent.length && <p className="muted">No runs yet. Pick a task and click Run.</p>}
       </div>
-      </RemDisclosure>
     </section>
   );
 }
 
-function NightPanel({ state, events, busy, setBusy, setError, reload, compact = false }) {
+function NightPanel({ state, events, busy, setBusy, setError, reload }) {
   const [sleeping, setSleeping] = useState(false);
   const [nightStart, setNightStart] = useState(0);
-  const [freshBrief, setFreshBrief] = useState(null);
+  const [completed, setCompleted] = useState(false);
 
   const nightEvents = useMemo(
-    () => (sleeping || freshBrief ? events.filter((e) => e.at >= nightStart && PHASE_BY_COLLECTION[e.collection]) : []),
-    [events, nightStart, sleeping, freshBrief],
+    () => (sleeping || completed ? events.filter((e) => e.at >= nightStart && PHASE_BY_COLLECTION[e.collection]) : []),
+    [events, nightStart, sleeping, completed],
   );
   const phasesSeen = useMemo(() => {
     const seen = new Set(["Replay"]);
@@ -633,18 +666,18 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
     return seen;
   }, [nightEvents]);
 
-  const brief = freshBrief || state.brief;
-  const interrupted = !sleeping && !freshBrief ? interruptedNight(state) : null;
+  const brief = state.brief;
+  const interrupted = !sleeping && !completed ? interruptedNight(state) : null;
 
   const runSleep = async () => {
     setBusy(true);
     setSleeping(true);
     setError("");
     setNightStart(Date.now());
-    setFreshBrief(null);
+    setCompleted(false);
     try {
-      const { brief } = await post("/api/rem/sleep");
-      setFreshBrief(brief);
+      await post("/api/rem/sleep");
+      setCompleted(true);
       await reload();
     } catch (e) {
       setError(e.message);
@@ -657,20 +690,19 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
   return (
     <section className="rem-section" aria-label="Night">
       <div className="section-line">
-        <h2>{compact ? "Consolidate and improve" : "Night: consolidate and evolve"}</h2>
+        <h2>Night: consolidate and evolve</h2>
         <span>night {brief?.night ?? (interrupted ? `${interrupted.night}, interrupted` : "none yet")}</span>
       </div>
-      <RemDisclosure compact={compact} title="Memory and skills">
       <p className="muted">
-        One consolidation run: replay the day, merge memories, distill repeated work into a skill, evolve the harness against the
-        gym, then queue asks.
+        Turn the day’s work into useful memory. Test proposed improvements before accepting them, and queue anything that needs your approval.
       </p>
-      <p className="muted">
-        Memory: {state.memory.active} active, {state.memory.retired} retired, {state.memory.episodes} episodes ({state.memory.unconsolidated}{" "}
-        unconsolidated).
-      </p>
+      <div className="rem-memory-strip">
+        <span><strong>{state.memory.active}</strong> active memories</span>
+        <span><strong>{state.memory.unconsolidated}</strong> episodes to review</span>
+        <span><strong>{state.memory.archivedEpisodes ?? 0}</strong> archived episodes</span>
+      </div>
       {!!state.skills.length && (
-        <div className="rem-skills-catalog">
+        <details className="rem-skills-catalog"><summary>Saved skills ({state.skills.length})</summary>
           <span className="rem-eyebrow">Skills catalog</span>
           <ul>
             {state.skills.map((s) => (
@@ -680,14 +712,14 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       )}
-      </RemDisclosure>
       <button className="button" disabled={busy} onClick={runSleep}>
-        {sleeping ? "Sleeping..." : compact ? "Run sleep cycle" : "Sleep"}
+        {sleeping ? "Sleeping..." : "Sleep"}
       </button>
+      {sleeping && <div className="beautiful-ui rem-loading"><LoadingState label="Reviewing the day" variant="Orbit" /></div>}
       {sleeping && (
-        <ol className="rem-phases">
+        <ol className="rem-phases" aria-label="Observed night phases">
           {PHASES.map((p) => (
             <li key={p} className={phasesSeen.has(p) ? "is-active" : ""}>
               {p}
@@ -704,30 +736,24 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
           ))}
         </div>
       )}
-      <RemDisclosure compact={compact && !!brief} title="Night results" open={!!freshBrief}>
       {!sleeping && brief && (
         <div className="rem-brief">
           <p className="muted">
             Harness v{brief.harness.from} to v{brief.harness.to}.
           </p>
-          <div className="section-line">
-            <h3>Replay</h3>
-          </div>
+          <div className="rem-phase-grid">
+          <article className="rem-phase-card"><span className="rem-eyebrow">01 / Review</span><h3>Replay</h3>
           <p>
             {brief.replay.episodes} episodes from {brief.replay.runs.length} run{brief.replay.runs.length === 1 ? "" : "s"}; pass rate{" "}
             {pct(brief.replay.passRate)}, collateral {brief.replay.collateral}, interventions {brief.replay.interventions}.
           </p>
-          <div className="section-line">
-            <h3>Merge</h3>
-          </div>
+          </article><article className="rem-phase-card"><span className="rem-eyebrow">02 / Remember</span><h3>Merge</h3>
           <p>
             {brief.merge.episodesIn} episodes to {brief.merge.facts} facts to {brief.merge.memoriesAfter} active memories (
             {brief.merge.created} new, {brief.merge.folded} folded in). {brief.merge.contradictionsResolved} contradictions resolved,{" "}
             {brief.merge.retired} retired, {brief.merge.noiseDropped} noise dropped, {brief.merge.expiring} set to expire.
           </p>
-          <div className="section-line">
-            <h3>Distill</h3>
-          </div>
+          </article><article className="rem-phase-card"><span className="rem-eyebrow">03 / Learn</span><h3>Distill</h3>
           {brief.distill.skills.length ? (
             brief.distill.skills.map((s) => (
               <p key={s.name}>
@@ -736,14 +762,22 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
               </p>
             ))
           ) : (
-            <p className="muted">No repeated work distilled this night.</p>
+            <p className="muted">No new skill found in this review.</p>
           )}
-          <div className="section-line">
-            <h3>Evolve</h3>
+          </article>
+          {brief.rehearse && <article className="rem-phase-card"><span className="rem-eyebrow">04 / Stress-test</span><h3>Rehearse</h3>
+            <p>{brief.rehearse.tried} variations tested. {brief.rehearse.held} passed, {brief.rehearse.broke.length} exposed new failures.</p>
+            <p className="muted">Level {brief.rehearse.level}. {brief.rehearse.kept} unresolved challenges retained.</p></article>}
+          {brief.calibration && <article className="rem-phase-card"><span className="rem-eyebrow">05 / Check the judge</span><h3>Calibrate</h3>
+            <p>Completion threshold: {brief.calibration.threshold.to ?? brief.calibration.threshold.from} ({brief.calibration.threshold.status}).</p>
+            <p className="muted">Held-out checks without the answer key: {brief.calibration.blind.heldOut.falseAccepts} unfinished runs accepted; {brief.calibration.blind.heldOut.falseRejects} completed runs rejected.</p></article>}
           </div>
+          <div className="section-line"><h3>Evolve</h3><span>{brief.evolve.edits.length} proposed edits</span></div>
+          <Disclosure title="Inspect proposed changes and validation">
           <PatternsList patterns={brief.evolve.patterns} />
           <EditsList edits={brief.evolve.edits} />
-          <FitnessTable title="Shadow-harness comparison" before={brief.evolve.baseline} after={brief.evolve.fitness} />
+          </Disclosure>
+          <p className="muted">Compare before and after results in Morning.</p>
           {!!brief.evolve.skipped?.length && <p className="muted">Skipped: {brief.evolve.skipped.map((s) => s.description).join("; ")}.</p>}
           <div className="section-line">
             <h3>Asks queued</h3>
@@ -768,7 +802,6 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
         </p>
       )}
       {!sleeping && !brief && !interrupted && <p className="muted">No night has run yet.</p>}
-      </RemDisclosure>
     </section>
   );
 }
@@ -776,11 +809,11 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
 function MorningPanel({ state, busy, setBusy, setError, reload }) {
   const brief = state.brief;
   const current = state.harness.lineage.find((v) => v.version === state.harness.version);
-  const decide = async (id, decision) => {
+  const decide = async (id, decision, answer) => {
     setBusy(true);
     setError("");
     try {
-      const result = await post(`/api/rem/asks/${id}`, { decision });
+      const result = await post(`/api/rem/asks/${encodeURIComponent(id)}`, { decision, ...(answer ? { answer } : {}) });
       await reload();
       if (result.ask?.validation && !result.ask.validation.passed) setError(result.ask.validation.reason);
     } catch (e) {
@@ -794,6 +827,11 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
       <div className="section-line">
         <h2>Morning: brief, diff, and asks</h2>
       </div>
+      <div className="section-line">
+        <h3>Open asks</h3>
+        <span>{state.asks.length}</span>
+      </div>
+      <AsksList asks={state.asks} onDecide={decide} busy={busy} />
       {!brief && <p className="muted">No morning brief yet. Sleep once to see one.</p>}
       {brief && (
         <>
@@ -818,9 +856,11 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
             <h3>Before / after on the gym</h3>
           </div>
           <FitnessTable title="Whole gym" before={brief.evolve.baseline} after={brief.evolve.fitness} />
-          <RemSelfCheck brief={brief} />
+          <Disclosure title="Rehearsal and calibration details"><div className="rem-table-wrap"><RemSelfCheck brief={brief} /></div></Disclosure>
           {brief.verified && (
+            <div className="rem-table-wrap" tabIndex={0} role="region" aria-label="Verified work costs">
             <table className="rem-table">
+              <caption>Cost per verified result</caption>
               <thead><tr><th>Verified work</th><th>Verified</th><th>Cost</th><th>Cost per verified success</th><th>Tokens per verified success</th></tr></thead>
               <tbody>
                 {["gymBefore", "gymAfter", "day"].filter((k) => brief.verified[k]).map((k) => {
@@ -838,9 +878,11 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </>
       )}
+      <Disclosure title="Current harness settings">
       <div className="section-line">
         <h3>Genome: current harness</h3>
         <span>v{state.harness.version}</span>
@@ -862,27 +904,38 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
         </>
       )}
       <GenomeView genome={state.harness.genome} />
+      </Disclosure>
+      <Disclosure title="Harness version history">
       <div className="section-line">
         <h3>Lineage</h3>
         <span>{state.harness.lineage.length} version{state.harness.lineage.length === 1 ? "" : "s"}</span>
       </div>
       <Lineage lineage={state.harness.lineage} />
-      <div className="section-line">
-        <h3>Open asks</h3>
-        <span>{state.asks.length}</span>
-      </div>
-      <AsksList asks={state.asks} onDecide={decide} busy={busy} />
+      </Disclosure>
+
     </section>
   );
 }
 
-export default function Rem({ compact = false }) {
-  const { events, hello } = useRemEvents();
+const VIEWS = [
+  { id: "day", name: "Day", detail: "Run a task", Icon: Sun },
+  { id: "night", name: "Night", detail: "Review and improve", Icon: Moon },
+  { id: "morning", name: "Morning", detail: "Results and approvals", Icon: Sunrise },
+];
+
+export default function Rem() {
+  const { state: workspace } = useWorkspace();
+  const orbTheme = resolveTheme(workspace.settings.theme, matchMedia("(prefers-color-scheme: dark)").matches, workspace.settings.themeCustom).mode;
+  const { events, hello, connected, resetVersion } = useRemEvents();
   const [state, setState] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const requestId = React.useRef(0);
+  const [view, setView] = useState("day");
+  const [localReset, setLocalReset] = useState(0);
+  const requestId = useRef(0);
+  const tabs = useRef([]);
 
   const load = useCallback(async () => {
     const id = ++requestId.current;
@@ -893,13 +946,7 @@ export default function Rem({ compact = false }) {
       if (id === requestId.current) setError(e.message);
     }
   }, []);
-  useEffect(() => {
-    load();
-  }, [load]);
-  useEffect(() => {
-    if (hello) load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hello?.day, hello?.harness]);
+  useEffect(() => { load(); }, [load, hello, resetVersion]);
   // Refresh after a quiet point in the live stream, including work from another browser.
   useEffect(() => {
     if (!events.length) return;
@@ -908,67 +955,70 @@ export default function Rem({ compact = false }) {
   }, [events, load]);
   useEffect(() => () => { requestId.current += 1; }, []);
 
+  const refresh = async () => {
+    setError("");
+    setRefreshing(true);
+    try { await load(); } finally { setRefreshing(false); }
+  };
   const doReset = async () => {
     setConfirmReset(false);
     setBusy(true);
     setError("");
     try {
       await post("/api/rem/reset");
+      setLocalReset((value) => value + 1);
       await load();
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
   };
-
+  const focusTab = (event, index) => {
+    const direction = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+    const next = event.key === "Home" ? 0 : event.key === "End" ? VIEWS.length - 1 : direction ? (index + direction + VIEWS.length) % VIEWS.length : null;
+    if (next == null) return;
+    event.preventDefault();
+    setView(VIEWS[next].id);
+    tabs.current[next]?.focus();
+  };
+  const panelProps = { state, events, busy, setBusy, setError, reload: load };
   return (
-    <div className={compact ? "rem-page rem-compact" : "standard-page rem-page"}>
-      {!compact && <div className="page-title">
-        <div>
-          <h1>REM</h1>
-          <p>Replay, evolve, merge. The engine's day, night and morning, straight from the harness.</p>
+    <div className="standard-page rem-page">
+      <div className="page-title rem-title">
+        <div><span className="rem-eyebrow">REPLAY · EVOLVE · MERGE</span><h1>REM</h1>
+          <p>A day of work. A night of learning.<br />A harness ready for what comes next.</p></div>
+        <div className="rem-title-orb" aria-hidden="true"><ThinkingOrb theme={orbTheme} state={busy ? "weaving" : "breathing"} size={64} /></div>
+      </div>
+      <div className="rem-toolbar">
+        <div className="rem-engine-status">
+          {state && <><span className="status-label">Harness v{state.harness.version}</span><span>Day {state.day} · {state.week}</span></>}
+          <span className="rem-stream-status"><i className={connected ? "connected" : ""} />{connected ? "Live updates" : "Reconnecting updates"}</span>
         </div>
-      </div>}
-      {error && (
-        <p role="alert" className="error-text">
-          {error}
-        </p>
-      )}
-      {!state ? (
-        <p className="muted">Loading the harness...</p>
-      ) : (
+        <button className="button secondary small" disabled={busy || refreshing} onClick={refresh}><RefreshCw size={14} aria-hidden="true" />{refreshing ? "Refreshing..." : "Refresh"}</button>
+      </div>
+      {error && <div className="rem-error" role="alert"><AlertTriangle size={18} aria-hidden="true" /><div><strong>Could not complete the request</strong><p>{error}</p><p>{state ? "Your last loaded results are kept below. Use Refresh to try again." : "Once the local service is running, open its address to continue."}</p></div></div>}
+      {!state ? (!error && <div className="beautiful-ui rem-loading"><LoadingState label="Loading the harness" variant="Dots" /></div>) : (
         <>
-          {compact && <dl className="rem-compact-summary">
-            <div><dt>Engine memories</dt><dd>{state.memory.active}</dd></div>
-            <div><dt>Skills</dt><dd>{state.skills.length}</dd></div>
-            <div><dt>Needs review</dt><dd>{state.asks.length}</dd></div>
-          </dl>}
-          <ControlsBar state={state} busy={busy} setBusy={setBusy} setError={setError} reload={load} onReset={() => setConfirmReset(true)} compact={compact} />
-          <DayPanel state={state} events={events} busy={busy} setBusy={setBusy} setError={setError} reload={load} compact={compact} />
-          <NightPanel state={state} events={events} busy={busy} setBusy={setBusy} setError={setError} reload={load} compact={compact} />
-          <RemDisclosure compact={compact} title={`Harness and morning review${state.asks.length ? ` · ${state.asks.length} asks` : ''}`} open={state.asks.length > 0}>
-          <MorningPanel state={state} busy={busy} setBusy={setBusy} setError={setError} reload={load} />
-          </RemDisclosure>
+          {state.engine?.database?.startsWith("atlas:") && <p className="rem-source-note">MongoDB Atlas · {state.engine.database.slice(6)} · search {state.engine.search}</p>}
+          <p className="rem-source-note">{state.engine?.model === "scripted" ? "Scripted model · fixture tasks" : `Model: ${state.engine?.model || "Unavailable"} · fixture tasks`}. Results below come from this engine, including failed checks.</p>
+          <div className="rem-overview" aria-label="Engine overview">
+            <div><span>Active memories</span><strong>{state.memory.active}</strong><small>{state.memory.unconsolidated} episodes awaiting review</small></div>
+            <div><span>Saved skills</span><strong>{state.skills.length}</strong><small>Reusable patterns from prior work</small></div>
+            <div><span>Needs your approval</span><strong>{state.asks.length}</strong><button onClick={() => { setView("morning"); tabs.current[2]?.focus(); }}>Review asks <ChevronRight size={13} aria-hidden="true" /></button></div>
+          </div>
+          <div className="rem-tabs" role="tablist" aria-label="REM cycle">
+            {VIEWS.map(({ id, name, detail, Icon }, index) => <button key={id} ref={(el) => { tabs.current[index] = el; }} id={`rem-tab-${id}`} role="tab" aria-selected={view === id} aria-controls={`rem-panel-${id}`} tabIndex={view === id ? 0 : -1} onKeyDown={(event) => focusTab(event, index)} onClick={() => setView(id)}><Icon size={17} aria-hidden="true" /><span>{name}<small>{detail}</small></span>{id === "morning" && state.asks.length > 0 && <b>{state.asks.length}</b>}</button>)}
+          </div>
+          <div key={`${resetVersion}-${localReset}`}>
+            {VIEWS.map(({ id }) => <div key={id} id={`rem-panel-${id}`} role="tabpanel" aria-labelledby={`rem-tab-${id}`} tabIndex={0} hidden={view !== id}>
+              {id === "day" ? <DayPanel {...panelProps} /> : id === "night" ? <NightPanel {...panelProps} /> : <MorningPanel {...panelProps} />}
+            </div>)}
+            <ControlsBar {...panelProps} onReset={() => setConfirmReset(true)} />
+          </div>
         </>
       )}
-      {confirmReset && (
-        <Modal title="Reset the REM engine?" onClose={() => setConfirmReset(false)}>
-          <p>
-            {state?.engine?.database?.startsWith("atlas:")
-              ? `This permanently deletes the shared engine's runs, memories and harness history from the ${state.engine.database.slice(6)} database on Atlas, then starts again at v0. Every browser using this engine is affected. There is no undo.`
-              : "This clears the in-memory engine's runs, memories and harness history, then starts again at v0. There is no undo."}
-          </p>
-          <div className="button-row">
-            <button className="button secondary" onClick={() => setConfirmReset(false)}>
-              Cancel
-            </button>
-            <button className="button" disabled={busy} onClick={doReset}>
-              Reset engine
-            </button>
-          </div>
-        </Modal>
-      )}
+      {confirmReset && <Modal title="Reset the REM engine?" onClose={() => setConfirmReset(false)}>
+        <p>This permanently clears the shared engine’s runs, memories, archives and harness history, including stored database records, and starts again at v0. Every browser using this engine is affected.</p>
+        <div className="button-row"><button className="button secondary" onClick={() => setConfirmReset(false)}>Cancel</button><button className="button" disabled={busy} onClick={doReset}>Reset engine</button></div>
+      </Modal>}
     </div>
   );
 }

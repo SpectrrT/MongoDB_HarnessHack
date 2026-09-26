@@ -6,19 +6,22 @@ export const eventSchema = z.object({
   sourceId: identifier, sessionId: identifier, projectId: identifier,
   projectTitle: z.string().trim().min(1).max(120), timestamp: z.iso.datetime({ offset: true }),
   text: z.string().trim().min(1).max(4000),
-  kind: z.enum(['request', 'constraint', 'correction', 'commitment', 'decision']).default('request'),
+  kind: z.enum(['request', 'constraint', 'correction', 'commitment', 'decision', 'meeting-note', 'routine']).default('request'),
+  meeting: z.object({id: identifier, title: z.string().trim().min(1).max(120),
+    startsAt: z.iso.datetime({offset:true}), endsAt: z.iso.datetime({offset:true}),
+    status: z.enum(['scheduled','completed','cancelled'])}).strict().refine(value => +new Date(value.endsAt) > +new Date(value.startsAt), 'Meeting end must follow its start.').optional(),
   origin: z.enum(['claude', 'codex', 'user']).default('user'),
   locator: z.string().max(240).default('User import'),
 }).strict();
 const SECRET = /(?:Bearer\s+[\w.-]{12,}|sk-[\w-]{15,}|AIza[\w-]{15,}|mongodb(?:\+srv)?:\/\/|(?:password|api[_ -]?key|access[_ -]?token)\s*[:=]\s*\S+)/i;
 export function normalizeEvent(raw) {
   const event = eventSchema.parse(raw);
-  if (SECRET.test(event.text) || SECRET.test(event.locator)) throw Error('Source contains a possible credential. Remove it before importing.');
+  if (SECRET.test(event.text) || SECRET.test(event.locator) || SECRET.test(event.meeting?.title || '')) throw Error('Source contains a possible credential. Remove it before importing.');
   if (/<(?:system-reminder|task-notification|local-command|pasted_content)/i.test(event.text)) throw Error('Import a user request, not pasted system or tool content.');
   const normalized = event.text.toLowerCase().replace(/\s+/g, ' ').trim();
   const family = /\b(?:find|recover|remember|review|pull|context|look|go through)\b.{0,100}\b(?:sessions?|conversations?)\b|\b(?:find|recover|review|pull|look)\b.{0,60}\b(?:previous|prior|our|that|last)\s+chat\b|\b(?:session|conversation)\b.{0,100}\b(?:find|context|remember|done)\b/i.test(normalized) ? 'recover-context' : null;
   const protectedRecord = event.kind !== 'request' || /\b(must|never|do not|don't|correction|unresolved|pending|permission|deadline)\b/i.test(event.text);
-  return { ...event, family, protectedRecord, textHash: digest(normalized), timestamp: new Date(event.timestamp) };
+  return { ...event, family, protectedRecord, textHash: digest(event.meeting ? [normalized, event.meeting] : normalized), timestamp: new Date(event.timestamp) };
 }
 
 // Streaming-friendly adapters emit only authored user text. Tool results and compacted summaries are excluded.
