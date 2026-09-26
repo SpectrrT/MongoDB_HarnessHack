@@ -9,7 +9,7 @@ export function suggestionRoutes(app,{suggestions}) {
       next(error);
     }
   };
-  app.get('/api/suggestions/status',(req,res)=>res.json({configured:!!suggestions,workflow:'recover-context'}));
+  app.get('/api/suggestions/status',(req,res)=>res.json({configured:!!suggestions,workflow:'recover-context',workflows:['recover-context','meeting-prep','meeting-followup','weekly-routine']}));
   app.get('/api/suggestions',handle(async(req,res)=>res.json(await suggestions.list(req.workspaceKey))));
   app.post('/api/suggestions/import',handle(async(req,res)=>{
     const {events}=z.object({events:z.array(eventSchema).min(1).max(500)}).strict().parse(req.body);
@@ -26,6 +26,10 @@ export function suggestionRoutes(app,{suggestions}) {
   app.delete('/api/suggestions/sources/:id',handle(async(req,res)=>res.json({removed:await suggestions.forget(req.workspaceKey,req.params.id)})));
   app.get('/api/suggestions/runs/:id',handle(async(req,res)=>{
     const run=await suggestions.run(req.workspaceKey,req.params.id);
+    if(!run)return res.status(404).json({error:'Run not found.'});res.json(run);
+  }));
+  app.post('/api/suggestions/runs/:id/cancel',handle(async(req,res)=>{
+    const run=await suggestions.cancel(req.workspaceKey,req.params.id);
     if(!run)return res.status(404).json({error:'Run not found.'});res.json(run);
   }));
   app.get('/api/suggestions/artifacts/:id',handle(async(req,res)=>{

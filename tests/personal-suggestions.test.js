@@ -170,3 +170,116 @@ test('HTTP routes keep separate visitors isolated and download the checked artif
  const file=await owner.get(`/api/suggestions/artifacts/${started.body.run._id}`).expect(200);
  assert.match(file.headers['content-disposition'],/attachment/);assert.match(file.text,/Source ID:/);
 });
+
+const meetingEvent=(id,options={})=>event(id,'Agenda: Launch review.\nAction: Ryan to draft the release brief.\nDecision: Keep billing changes out of this release.',{
+ kind:'meeting-note',timestamp:'2026-09-26T11:00:00Z',locator:'https://example.com/meeting-notes',
+ meeting:{id:'launch-review',title:'Launch review',startsAt:'2026-09-26T13:00:00Z',endsAt:'2026-09-26T14:00:00Z',status:'scheduled'},...options});
+
+test('one explicitly saved upcoming meeting produces a source-checked local brief without model calls',async()=>{
+ const f=await fixture({compactor:{name:'must-not-call',select:()=>{throw Error('No paid model required for this draft');}}}),s=f.service;
+ await s.importEvents('owner',[meetingEvent('agenda')]);
+ const list=await s.list('owner');assert.equal(list.suggestions.length,1);
+ const item=list.suggestions[0];assert.equal(item.kind,'meeting-prep');assert.equal(item.evidence[0].locator,'https://example.com/meeting-notes');
+ const started=await s.decide('owner',item._id,'accept');assert.equal(started.run.status,'completed');assert.equal(started.run.receipts.length,4);
+ const file=await s.getArtifact('owner',started.run._id);assert.match(file.text,/Launch review/);assert.match(file.text,/Meeting actions have not been executed/);
+ assert.match(file.text,/Source ID:/);assert.equal(started.run.outputs.context.metrics.decisionCalls,0);
+ const again=await s.decide('owner',item._id,'accept');assert.equal(again.run._id,started.run._id);
+ assert.equal(await f.db.collection('personal_task_runs').countDocuments(),1);
+ assert.equal((await s.list('other')).suggestions.length,0);
+});
+
+test('completed meeting extracts only labeled action lines and never marks them executed',async()=>{
+ const f=await fixture(),s=f.service;
+ const meeting={id:'launch-review',title:'Launch review',startsAt:'2026-09-26T10:00:00Z',endsAt:'2026-09-26T11:00:00Z',status:'completed'};
+ await s.importEvents('owner',[meetingEvent('notes',{meeting,text:'We discussed lunch.\nAction: Ryan to draft the release brief.\nTodo: Confirm the owner.\nMaybe send something someday.'})]);
+ const item=(await s.list('owner')).suggestions[0];assert.equal(item.kind,'meeting-followup');
+ const {run}=await s.decide('owner',item._id,'accept');assert.equal(run.status,'completed');
+ assert.equal(run.outputs.draft.actionItems.length,2);assert.ok(run.outputs.draft.actionItems.every(item=>item.status==='not_started'));
+ const artifact=await s.getArtifact('owner',run._id);assert.match(artifact.text,/- \[ \] Action: Ryan/);assert.doesNotMatch(artifact.text,/- \[x\]/);
+ assert.match(artifact.text,/Maybe send something someday/,'all source notes remain available');
+});
+
+test('meeting corrections, cancellations and stale timing invalidate suggestions and prior drafts',async()=>{
+ const f=await fixture(),s=f.service;await s.importEvents('owner',[meetingEvent('initial')]);
+ const item=(await s.list('owner')).suggestions[0];const {run}=await s.decide('owner',item._id,'accept');
+ await s.importEvents('owner',[meetingEvent('cancel',{timestamp:'2026-09-26T11:30:00Z',meeting:{...meetingEvent('x').meeting,status:'cancelled'}})]);
+ assert.equal((await s.list('owner')).suggestions.length,0);
+ await assert.rejects(s.getArtifact('owner',run._id),/Source evidence or meeting timing changed/);
+ const g=await fixture();await g.service.importEvents('owner',[meetingEvent('initial')]);
+ const pending=(await g.service.list('owner')).suggestions[0];g.advance(2);
+ assert.equal((await g.service.list('owner')).suggestions.length,0);
+ await assert.rejects(g.service.decide('owner',pending._id,'accept'),/expired/);
+});
+
+test('weekly routine needs three separate weeks, does not treat duplicate sessions as repetitions, and never schedules itself',async()=>{
+ const f=await fixture(),s=f.service;
+ const routine=(id,date)=>event(id,'Prepare the weekly launch brief.',{kind:'routine',timestamp:date});
+ await s.importEvents('owner',[routine('week1','2026-09-07T13:00:00Z'),routine('week1-copy','2026-09-07T13:00:00Z'),routine('week2','2026-09-14T13:00:00Z')]);
+ assert.equal((await s.list('owner')).suggestions.length,0);
+ await s.importEvents('owner',[routine('week3','2026-09-21T13:00:00Z')]);
+ const item=(await s.list('owner')).suggestions[0];assert.equal(item.kind,'weekly-routine');assert.equal(item.sourceIds.length,3);
+ const {run}=await s.decide('owner',item._id,'accept');assert.equal(run.status,'completed');
+ assert.match((await s.getArtifact('owner',run._id)).text,/No recurring task has been scheduled/);
+ assert.match((await s.getArtifact('owner',run._id)).text,/Times are shown in UTC/);
+});
+
+test('new source corrections stop an already accepted context task, and cancellation fences a stale worker',async()=>{
+ const f=await fixture(),s=f.service;await s.importEvents('owner',evidence());
+ const item=(await s.openProject('owner','harness')).suggestion;const {run}=await s.decide('owner',item._id,'accept');
+ await s.importEvents('owner',[event('later','Correction: The release is cancelled.',{kind:'correction',timestamp:'2026-09-26T11:00:00Z'})]);
+ await s.workOnce('worker');assert.equal((await s.run('owner',run._id)).status,'failed');
+ const g=await fixture();await g.service.importEvents('owner',evidence());
+ const next=(await g.service.openProject('owner','harness')).suggestion;const accepted=await g.service.decide('owner',next._id,'accept');
+ const claimed=await g.service.runs.claim('stale-worker');
+ assert.equal(await g.service.cancel('other',accepted.run._id),null);
+ assert.equal((await g.service.cancel('owner',accepted.run._id)).status,'cancelled');
+ await assert.rejects(g.service.runs.commit(claimed,'context',{fabricated:true}),/Stale worker/);
+ assert.equal(await g.service.getArtifact('owner',accepted.run._id),null);
+});
+
+test('meeting sources validate chronological times and immutable metadata',async()=>{
+ assert.throws(()=>normalizeEvent(meetingEvent('bad',{meeting:{...meetingEvent('x').meeting,endsAt:'2026-09-26T12:00:00Z'}})),/Meeting end/);
+ const f=await fixture();const original=meetingEvent('agenda');await f.service.importEvents('owner',[original]);
+ await assert.rejects(f.service.importEvents('owner',[{...original,meeting:{...original.meeting,status:'cancelled'}}]),/different content/);
+});
+
+test('concurrent starts commit one meeting artifact and later corrections replace the action checklist',async()=>{
+ const f=await fixture(),s=f.service;
+ const meeting={id:'launch-review',title:'Launch review',startsAt:'2026-09-26T10:00:00Z',endsAt:'2026-09-26T11:00:00Z',status:'completed'};
+ await s.importEvents('owner',[meetingEvent('old',{meeting,text:'Action: Draft an email for Pat.'}),meetingEvent('new',{meeting,timestamp:'2026-09-26T11:30:00Z',text:'Correction: Do not contact Pat.\nAction: Prepare a local checklist only.'})]);
+ const item=(await s.list('owner')).suggestions[0];
+ const starts=await Promise.all([s.decide('owner',item._id,'accept'),s.decide('owner',item._id,'accept')]);
+ const id=starts.find(result=>result.run)?.run._id;
+ await s.decide('owner',item._id,'accept');
+ const run=await s.run('owner',id);assert.equal(run.status,'completed');assert.equal(run.receipts.length,4);
+ assert.equal(new Set(run.receipts.map(receipt=>receipt.key)).size,4);
+ assert.equal(await f.db.collection('personal_task_runs').countDocuments(),1);
+ assert.deepEqual(run.outputs.draft.actionItems.map(action=>action.text),['Action: Prepare a local checklist only.']);
+ assert.match((await s.getArtifact('owner',id)).text,/Do not contact Pat/);
+});
+
+test('meeting draft recovers after accepted-before-enqueue crash and HTTP download needs no separate worker',async()=>{
+ const f=await fixture(),s=f.service;await s.importEvents('owner',[meetingEvent('agenda')]);
+ const item=(await s.list('owner')).suggestions[0];s.runs.enqueue=async()=>{throw Error('crash before enqueue');};
+ await assert.rejects(s.decide('owner',item._id,'accept'),/crash before/);
+ const restarted=await createPersonalSuggestions(f.config);assert.equal(await restarted.recoverAccepted(),1);
+ const stored=await f.db.collection('personal_suggestions').findOne({_id:item._id});assert.equal((await restarted.run('owner',stored.runId)).status,'completed');
+ const other=await fixture(),app=createApp({serveStatic:false,suggestions:other.service}),visitor=request.agent(app);
+ await visitor.post('/api/suggestions/import').send({events:[meetingEvent('agenda')]}).expect(200);
+ const listed=await visitor.get('/api/suggestions').expect(200);
+ const started=await visitor.post(`/api/suggestions/${listed.body.suggestions[0]._id}/decision`).send({decision:'accept'}).expect(200);
+ assert.equal(started.body.run.status,'completed');
+ const artifact=await visitor.get(`/api/suggestions/artifacts/${started.body.run._id}`).expect(200);
+ assert.match(artifact.text,/Meeting actions have not been executed/);
+});
+
+test('unrelated imports preserve valid meetings, and meeting dismissals never train the context policy',async()=>{
+ const f=await fixture(),s=f.service;await s.importEvents('owner',[meetingEvent('agenda')]);
+ const first=(await s.list('owner')).suggestions[0];
+ await s.importEvents('owner',[event('unrelated','A separate project note.',{timestamp:'2026-09-26T11:30:00Z'})]);
+ assert.equal((await s.list('owner')).suggestions[0]._id,first._id);
+ await s.decide('owner',first._id,'dismiss');assert.equal((await s.list('owner')).suggestions.length,0);
+ await s.importEvents('owner',[meetingEvent('another',{meeting:{...meetingEvent('x').meeting,id:'second-meeting'}})]);
+ const second=(await s.list('owner')).suggestions[0];await s.decide('owner',second._id,'dismiss');
+ assert.equal((await s.policy.active('owner')).version,1);
+});
