@@ -5,7 +5,9 @@ async function onboard(page) {
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Open my workspace" }).click();
-  await expect(page.getByRole("heading", {name:"Hello Alex What can I help you with?"})).toBeVisible();
+  // Onboarding lands on the Overview; the chat greeting lives at /app/chat.
+  await expect(page.getByRole("heading", { name: "Your workspace, at a glance." })).toBeVisible();
+  await expect(page.getByText(/^Good (morning|afternoon|evening), Alex\.$/)).toBeVisible();
 }
 test("landing, onboarding, suggestions and memory persist", async ({
   page,
@@ -21,22 +23,14 @@ test("landing, onboarding, suggestions and memory persist", async ({
     fullPage: true,
   });
   await onboard(page);
+  // The Overview shows the first two personal suggestions; "View all" opens the chat.
+  await expect(page.locator(".home-tasks > button")).toHaveCount(2);
+  await expect(page.getByRole("heading", { name: "Find my homework for the week" })).toBeVisible();
+  await page.getByRole("button", { name: "View all" }).click();
+  await expect(page).toHaveURL(/\/app\/chat$/);
   await expect(
     page.getByRole("heading", { name: "Hello Alex What can I help you with?" }),
   ).toBeVisible();
-  if (
-    await page
-      .getByRole("button", { name: "Open suggestions", exact: true })
-      .isVisible()
-  )
-    await page
-      .getByRole("button", { name: "Open suggestions", exact: true })
-      .click();
-  await page
-    .getByRole("textbox", { name: "Filter suggestions" })
-    .fill("Friday");
-  await expect(page.locator(".suggestion")).toHaveCount(1);
-  await page.getByRole("button", { name: "Close suggestions panel" }).click();
   await page.goto("/app/memory");
   await page
     .getByRole("textbox", { name: "New memory" })
@@ -74,16 +68,16 @@ test("connection setup and overnight tasks persist", async ({ page }) => {
   await page.getByRole('button',{name:'Pause task',exact:true}).click();
   await expect(page.getByText('Paused',{exact:true})).toBeVisible();
 });
-test("capture modes require consent and chat requires account setup", async ({ page }, info) => {
+test("capture modes and chat requires account setup", async ({ page }, info) => {
   await onboard(page);
   await page.getByRole('button', { name: 'Start a session', exact: true }).click();
+  // Session modes have no in-app consent checkbox (HANDOFF.md); the browser's media permission prompt is the gate.
+  await expect(page.getByRole('checkbox', { name: 'Everyone involved agrees to this recording.' })).toHaveCount(0);
   for (const name of ['Screen', 'Microphone', 'Both']) {
     await page.getByRole('button', { name, exact: true }).click();
     await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('button', { name: 'Start session', exact: true })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Start session', exact: true })).toBeEnabled();
   }
-  await page.getByRole('checkbox', { name: 'Everyone involved agrees to this recording.' }).check();
-  await expect(page.getByRole('button', { name: 'Start session', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Close dialog' }).click();
   await page.goto('/app/chat');
   await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
