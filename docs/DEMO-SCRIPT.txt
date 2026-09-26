@@ -53,7 +53,7 @@ Measured on Atlas today: run 4 to 6 s, reconnect 10 to 15 s, Sleep 31 to 43 s, m
       no-regression gate working. Show the harness diff v0 -> v1, then the one ask: "Want me to send the
       brief myself next time?" Run the same task again: done, no leak.
 2:30  The curve (5 simulated days on Atlas): passed 2/4 -> 4/4, collateral 3 -> 0, interventions 4 -> 0,
-      cost $0.096 -> $0.009 per day, memory stays small and exact (32 items vs 120 without sleep,
+      cost per day down about 90%, memory stays small and exact (32 items vs 120 without sleep,
       duplicates 0 vs 0.64, precision 1.0 vs 0.4). 10 emails, 0 duplicates, 4 crashes reconciled.
 2:50  Close. "Statement One: the harness evolves its own rules, guardrails, routing and even how strictly it
       judges itself. Statement Two: memory that gets smaller and more precise, durable execution, hard metrics."
