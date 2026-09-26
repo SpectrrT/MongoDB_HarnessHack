@@ -243,9 +243,11 @@ try {
   const baseline = aggregate('baseline'), compacted = aggregate('compacted');
   const identicalRequests = report.pairs.every(pair => pair.baseline.calls.length === pair.compacted.calls.length && pair.baseline.calls.every((call, i) => call.requestSha256 === pair.compacted.calls[i].requestSha256));
   const noContextChange = report.pairs.every(pair => pair.compacted.selection?.beforeChars === pair.compacted.selection?.afterChars && pair.compacted.selection?.decisionCalls === 0);
+  const selectionFailed = report.pairs.some(pair => pair.compacted.status === 'context-needs-review');
   report.summary = {baseline, compacted, compactionOnlyRegressions: report.pairs.filter(pair => pair.compactionOnlyRegression).length,
+    artifactAvailabilityRegressions: report.pairs.filter(pair => pair.baseline.artifactSha256 && !pair.compacted.artifactSha256).length,
     comparison: identicalRequests && noContextChange ? 'identical-input generation variation' : 'paired full-context and selected-context requests',
-    savingsAttribution: identicalRequests && noContextChange ? 'No compaction occurred. Token and check differences cannot be attributed to compaction.' : 'Observed paired result only, not a general causal guarantee.',
+    savingsAttribution: selectionFailed ? 'Selection did not fit. Paid partial usage is preserved; there is no completed comparison or savings claim.' : identicalRequests && noContextChange ? 'No compaction occurred. Token and check differences cannot be attributed to compaction.' : 'Observed paired result only, not a general causal guarantee.',
     compactionChangedInputs: !noContextChange,
     tokenSavingsPercent: baseline.totalTokens > 0 && compacted.totalTokens !== null ? Number((100 * (1 - compacted.totalTokens / baseline.totalTokens)).toFixed(2)) : null};
   await save(); console.log(JSON.stringify(report.summary));
