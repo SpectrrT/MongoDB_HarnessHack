@@ -15,4 +15,6 @@ Candidates never authorize external messages, network work, production changes, 
 
 The derivation is deliberately deterministic and limited. It does not understand every natural-language negation or discover every possible project. The authoritative execution permissions remain in the idle lifecycle and executor. It does not create another scheduler, recurring automation or night engine.
 
-Run `node --test tests/idle-candidates.test.js` for ten focused contract checks.
+Run `node --test tests/idle-candidates.test.js` for eleven focused contract checks.
+
+For an explicit counter goal whose supplied user context requests both Increment and Reset, `browserCheck: 'counter'` is emitted as metadata. The contract requires one visible `[data-testid="counter-value"]` showing 0, a unique visible native Increment button producing 1 then 2, and a native Reset button returning 0. A conflicting denial disables this metadata. It is not permission to launch a browser. The idle lifecycle and independent verifier own consent and execution. Other outputs remain behavior-unverified drafts.

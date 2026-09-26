@@ -73,3 +73,15 @@ test('identifies a concrete failure question and preserves corrections in the br
  assert.equal(c.kind,'investigation');assert.match(c.brief,/Correction: only use plain JavaScript, never React/);
  assert.ok(c.brief.length<=4000);
 });
+
+
+test('counter verification metadata requires explicit increment and reset with no conflicting denial',()=>{
+ const confirmed=input([user('goal','Build an HTML counter widget.'),user('details','Include Increment and Reset buttons.')]);
+ const c=deriveIdleDraft(confirmed);assert.equal(c.browserCheck,'counter');assert.match(c.brief,/data-testid="counter-value"/);
+ assert.ok(c.sourceMessageIds.includes('details'));assert.deepEqual(c.writeFiles,[]);
+ assert.equal(deriveIdleDraft(build()).browserCheck,undefined);
+ const denied=deriveIdleDraft({...confirmed,messages:[...confirmed.messages,user('deny','Do not include Reset.')]});
+ assert.equal(denied.browserCheck,undefined);assert.match(denied.brief,/Do not include Reset/);
+ const other=deriveIdleDraft(input([user('goal','Build an HTML form with Increment and Reset buttons.')]));
+ assert.equal(other.browserCheck,undefined);
+});

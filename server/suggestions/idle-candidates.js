@@ -57,7 +57,7 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
   const objective=goal.text,goalKey=hash([conversationId,canonical(objective)]);
   // Goal identity excludes timer generation. Repeated ticks and assistant restatements do not create new work.
   if(priorAttempts.some(a=>a&&(a.goalKey===goalKey||canonical(a.objective||'')===canonical(objective))&&BLOCKED_STATUSES.has(a.status)))continue;
-  const facts=[...new Map([...constraints,goal.message].map(m=>[m.id,m])).values()].sort((a,b)=>a.index-b.index);
+  const facts=[...new Map([...constraints,goal.message,...active.filter(m=>m.index>goal.message.index)].map(m=>[m.id,m])).values()].sort((a,b)=>a.index-b.index);
   const sourceMessageIds=facts.map(m=>m.id),id=hash([conversationId,goalKey,sourceMessageIds,facts.map(m=>m.text)]);
   if(priorAttempts.some(a=>a&&(a.candidateId===id||a.id===id)&&BLOCKED_STATUSES.has(a.status)))continue;
   const hypotheses=goal.kind==='investigation'
@@ -65,6 +65,9 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
    :goal.kind==='prototype'?[{label:'Unverified hypothesis',text:'A small isolated prototype may test the stated design before changing the real project.'}]
    :[{label:'Unverified hypothesis',text:'Comparing concrete alternatives may resolve the user’s open question.'}];
   const isWeb=goal.kind==='prototype'&&/\b(?:web|website|html|page|widget|calculator|dashboard|form|todo|counter)\b/i.test(objective);
+  const supplied=facts.map(m=>m.text).join('\n');
+  const counterCheck=isWeb&&/\bcounter\b/i.test(objective)&&/\bincrement\b/i.test(supplied)&&/\breset\b/i.test(supplied)
+   &&!/\b(?:no|without|don't|do not|never)\b[^.!?\n]{0,70}\b(?:reset|increment)\b/i.test(supplied);
   const solutionFile=isWeb?'prototype.html':'solution.md';
   const instructions=[
    'Attempt one bounded local solution for the quoted user objective. Produce a concrete proposed solution or isolated prototype, not just a list of future tasks.',
@@ -72,6 +75,8 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
    'Use only these supplied sources. No network, messages, deployments, purchases, account changes, private imports, shell execution or edits to an existing project. Do not invent facts, test results or permissions.',
    `Create ${solutionFile} and evidence.md. The solution is an unverified draft. In evidence.md quote the objective and constraints, cite the exact source markers, list competing hypotheses, describe the attempted solution and specify checks still needed.`,
    isWeb?'prototype.html must be a self-contained HTML prototype, with no external URLs or dependencies. Do not claim its behavior was browser-tested.':'solution.md must contain a concrete worked solution, proposed patch or detailed design. Clearly separate supplied facts from proposed ideas.',
+   ...(counterCheck?['Counter acceptance contract: prototype.html must contain exactly one visible [data-testid=\"counter-value\"] showing exactly 0 initially, one visible native button named exactly Increment, and one visible native button named exactly Reset. Clicking Increment twice must produce 1 then 2. Reset must return the value to 0. No external dependencies.']:[]),
+   'Begin evidence.md with the exact case-sensitive line: Unverified draft. Include the exact headings: Hypotheses (unverified), Checks still needed, and Not executed. Quote all source markers exactly. Begin solution.md with Unverified draft when that file is required.',
    'Successful file checks verify draft delivery only. They do not prove the original user goal is solved.',
    `Objective: ${objective}`,
    ...facts.map(m=>`[source:${m.id}] ${m.text}`),
@@ -83,7 +88,7 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
   candidates.push({id,goalKey,conversationId,generation,title:`${goal.kind==='prototype'?'Draft prototype':goal.kind==='investigation'?'Investigate':'Explore'}: ${objective}`.slice(0,160),
    objective,brief,kind:goal.kind,priority:goal.kind==='investigation'?90:goal.kind==='prototype'?80:70,
    sourceMessageIds,provenance:facts.map(m=>({id:m.id,role:m.role,excerpt:m.text})),hypotheses,
-   checks,writeFiles:[],allowedTools:[],requiredPermissions:['local-draft-only'],
+   checks,...(counterCheck?{browserCheck:'counter'}:{}),writeFiles:[],allowedTools:[],requiredPermissions:['local-draft-only'],
    completionMeaning:'Local draft delivered and structural checks passed; source goal remains unverified.'});
  }
  return candidates.sort((a,b)=>b.priority-a.priority).slice(0,2);
