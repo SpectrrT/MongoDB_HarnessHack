@@ -10,11 +10,11 @@ export default function Landing(){
   <main><section className="hero"><Net/><div className="hero-copy">
    <p className="eyebrow"><span aria-hidden="true">[ + ] </span>A harness that learns from the work</p>
    <h1>Your agent should<br/><em>finish the job.</em></h1>
-   <p className="hero-description">Keep context across long runs. Test what worked.<br/>Use it to improve the next one.</p>
+   <p className="hero-description">Offload is a dynamic harness that utilizes a decision model to be both smarter, and more efficient.</p>
    <Link to="/app" className="button">Try Offload <ArrowRight size={17}/></Link>
    <div className="hero-engineering"><span>Persistent memory</span><span>Verified outcomes</span><span>Evolving rules</span></div>
   </div><WorkDiagram/></section>
-  <section className="site-preview" id="how"><div className="section-heading"><h2>The work that keeps<br/>your team moving.</h2><p>Give the agent a goal.<br/>Keep the context and the evidence.</p></div>
+  <section className="site-preview" id="how"><div className="section-heading"><h2>The harness that keeps<br/>your team moving.</h2></div>
    <div className="preview-window"><div className="preview-top"><span className="wordmark">offload</span><span>Suggested for you</span><span className="ascii-small">YOUR NEXT MOVE</span></div><div className="preview-content">
     <div className="preview-message"><h3>From an open issue<br/>to a verified fix.</h3><p>Reproduce the failure. Trace the cause.<br/>Prepare the patch and run the checks.</p><Link className="text-link" to="/app">Try Offload <ArrowRight size={16}/></Link></div>
     <div className="preview-suggestions">{[

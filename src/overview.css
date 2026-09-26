@@ -1,0 +1,23 @@
+.workspace-overview {max-width:1040px;margin:0 auto;padding:48px 40px;color:var(--off-ink);}
+.workspace-overview .overview-heading {display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:32px;}
+.workspace-overview h1 {font-size:34px;line-height:1.2;}
+.workspace-overview .overview-heading p {margin-top:10px;color:var(--off-muted);font-size:13px;line-height:1.6;}
+.workspace-overview .overview-heading>.button {flex-shrink:0;}
+.workspace-overview .overview-stats {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:40px;}
+.workspace-overview .overview-stats>a {display:flex;align-items:flex-start;gap:12px;padding:22px 18px;border:1px solid var(--off-line);border-radius:12px;background:var(--off-surface);}
+.workspace-overview .overview-stats>a>span {display:flex;flex:1;min-width:0;flex-direction:column;gap:8px;font-size:12px;}
+.workspace-overview .overview-stats strong {font-size:28px;line-height:1;font-weight:500;}
+.workspace-overview .overview-stats svg {flex-shrink:0;color:var(--off-muted);}
+.workspace-overview .overview-stats small {font-size:11px;color:var(--off-muted);line-height:1.5;}
+.workspace-overview .overview-section-heading {display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;}
+.workspace-overview h2 {font-size:14px;font-weight:500;}
+.workspace-overview .overview-section-heading>a {display:flex;align-items:center;gap:7px;color:var(--off-muted);font-size:12px;}
+.workspace-overview .overview-conversation-list>a {display:flex;align-items:center;gap:12px;border-top:1px solid var(--off-line);padding:18px 4px;font-size:13px;}
+.workspace-overview .overview-conversation-list>a:last-child {border-bottom:1px solid var(--off-line);}
+.workspace-overview .overview-conversation-list>a>span {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.workspace-overview .overview-conversation-list small {color:var(--off-muted);font-size:11px;white-space:nowrap;}
+.workspace-overview .overview-conversation-list svg {flex-shrink:0;color:var(--off-muted);}
+.workspace-overview .overview-empty {border-top:1px solid var(--off-line);padding:24px 0;color:var(--off-muted);font-size:13px;line-height:1.7;}
+.workspace-overview a:focus-visible {outline:2px solid var(--off-accent);outline-offset:4px;}
+.workspace-overview .overview-stats>a:hover,.workspace-overview .overview-conversation-list>a:hover {background:var(--off-inset);}
+@media(max-width:700px){.workspace-overview{padding:30px 20px;}.workspace-overview .overview-heading{align-items:flex-start;flex-wrap:wrap;}.workspace-overview .overview-stats{grid-template-columns:1fr;gap:10px;margin-bottom:30px;}.workspace-overview .overview-stats>a{padding:18px;}.workspace-overview .overview-stats>a>span{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:14px;}.workspace-overview .overview-stats strong{grid-row:span 2;min-width:32px;}.workspace-overview .overview-stats small{grid-column:2;}}
