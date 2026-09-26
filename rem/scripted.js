@@ -12,6 +12,7 @@ const KINDS = [
   ["review-brief", /product review brief/i],
   ["review-prep", /prepare for the .*product review/i],
   ["standup", /standup/i],
+  ["release-readiness", /release readiness/i],
   ["blockers", /unresolved blockers/i],
   ["follow-ups", /follow-ups? I promised/i],
   ["release-handoff", /release handoff/i],
@@ -291,6 +292,28 @@ function blockers(c) {
   return c.final(c.out([`Unresolved blockers — ${week}`, ...open.map((x) => c.line(x))].join("\n")));
 }
 
+// Earlier weeks' open work is only in memory. Search it once (under the harness's recall policy) and
+// merge what comes back with this week's ops review.
+const LONG_BLOCKER = /^Unresolved blocker since (W\d{2}): (.+?) \(owner: ([^)]+)\)$/;
+function releaseReadiness(c) {
+  const { week } = c.task;
+  const v = verify(c, ["drive"]);
+  if (v) return v;
+  const ops = readAll(c, { folder: "Ops", week });
+  if (ops.action) return ops.action;
+  const query = "unresolved blocker since";
+  const search = c.done("memory.search", (a) => a.query === query);
+  if (!search && c.can("memory.search") && !c.tried("memory.search", (a) => a.query === query)) return c.call("memory.search", { query });
+  const remembered = [...(search?.result?.memories || []).map((m) => m.text), ...c.policy.memories]
+    .map((t) => LONG_BLOCKER.exec(t))
+    .filter(Boolean)
+    .map(([, since, title, owner]) => ({ type: "BLOCKER", title, owner, since, author: null }));
+  const open = latestByTitle([...byType(items(ops.docs), "BLOCKER"), ...remembered]);
+  const ask = askOwners(c, open);
+  if (ask) return ask;
+  return c.final(c.out([`Release readiness for ${week}: ${open.length ? "no-go" : "go"}`, ...open.map((x) => c.line(x))].join("\n")));
+}
+
 function followUps(c) {
   const { week } = c.task;
   const v = verify(c, ["gmail"]);
@@ -438,6 +461,7 @@ const PROCEDURES = {
   "weekly-brief": weeklyBrief,
   standup,
   blockers,
+  "release-readiness": releaseReadiness,
   "follow-ups": followUps,
   "release-handoff": releaseHandoff,
   "review-prep": reviewPrep,
@@ -456,6 +480,7 @@ const PLAN = {
   ],
   standup: () => ["Read this week's standup notes", "Write the standup update"],
   blockers: (p) => ["Read the ops review", p.askOwner ? "Ask about blockers without an owner" : "List blockers with owners"],
+  "release-readiness": () => ["Read this week's ops review", "Search memory for older open blockers", "Say go or no-go"],
   "follow-ups": () => ["Find threads where I promised something", "Draft one follow-up per promise"],
   "release-handoff": () => ["Read the handoff checklist", "Find the release thread", "Send the checklist"],
   "review-prep": () => ["Find the review on the calendar", "Read its agenda", "List open decisions"],

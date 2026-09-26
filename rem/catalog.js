@@ -58,6 +58,24 @@ export const EDITS = deepFreeze({
     value: true,
     description: "Context policy: inject practiced skills that match the task",
   },
+  recallNoDecay: {
+    type: "context.set",
+    target: "recall",
+    value: { recencyHalfLifeDays: 0 },
+    description: "Context policy: recall without recency decay, so old open work stays recallable",
+  },
+  recallHalfLife30: {
+    type: "context.set",
+    target: "recall",
+    value: { recencyHalfLifeDays: 30 },
+    description: "Context policy: recall with a 30-day recency half-life",
+  },
+  recallLowFloor: {
+    type: "context.set",
+    target: "recall",
+    value: { minScore: 0.02 },
+    description: "Context policy: lower the recall score floor to 0.02",
+  },
   smallExecutor: {
     type: "routing.set",
     target: "executor",
@@ -92,6 +110,11 @@ export const PATTERNS = deepFreeze({
   "deleted-real-doc": { severity: "collateral", title: "Bulk delete removed real documents", edits: ["listBeforeDelete", "revokeDelete"] },
   "guessed-owner": { severity: "collateral", title: "Owners guessed for unowned action items", edits: ["askMissingOwner"] },
   "missing-scope": { severity: "failure", title: "Task needs a tool scope the harness lacks", edits: [] },
+  "stale-recall": {
+    severity: "failure",
+    title: "Old open work decayed out of recall",
+    edits: ["recallNoDecay", "recallHalfLife30", "recallLowFloor"],
+  },
   incomplete: { severity: "failure", title: "End state incomplete", edits: [] },
   "auth-interrupt": { severity: "inefficiency", title: "Access expired mid-task and needed a human", edits: ["verifyAccess"] },
   "redundant-reads": { severity: "inefficiency", title: "Re-read last week's notes that memory already holds", edits: ["injectMemories"] },

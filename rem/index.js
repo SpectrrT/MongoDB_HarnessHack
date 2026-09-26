@@ -5,13 +5,16 @@ import { decide } from "./asks.js";
 import { bootstrap, dayStart, morning, runDay, scheduleFor, simulateDays } from "./cycle.js";
 import { createLocalEmbedder } from "./embed.js";
 import { LIVE_WORKSPACE } from "./fixtures.js";
-import { currentHarness, lineage } from "./harness.js";
+import { completionThresholdOf, currentHarness, lineage, recallOf } from "./harness.js";
 import { createScriptedModel } from "./model.js";
 import { memoryMetrics } from "./metrics.js";
 import { runNight } from "./night.js";
 import { createCatalogProposer, trackRecord } from "./proposer.js";
 import { OFFLOAD_ALIASES, TASK_KINDS, describeTask, taskParams } from "./tasks.js";
 import { createWorld } from "./world.js";
+import { createCompletionGate } from "./completion.js";
+import { checkRun } from "./tasks.js";
+import { settleSearch } from "./search.js";
 import { createClock } from "./util.js";
 
 const strip = (doc) => {
@@ -30,9 +33,10 @@ export async function createRem({
   clock = createClock(typeof now === "function" ? now() : now ? Number(new Date(now)) : dayStart(1)),
   workspace = LIVE_WORKSPACE,
   proposer = createCatalogProposer(),
+  completion = createCompletionGate(),
   onEvent = null,
 } = {}) {
-  await ensureIndexes(db);
+  await ensureIndexes(db, { dims: embedder.dims || 1024 });
   const ctx = { db, model, embedder, clock, workspace, proposer, chaos: null, day: 1, onEvent };
   ctx.world = createWorld(workspace);
   ctx.agent = createAgent({
@@ -46,6 +50,14 @@ export async function createRem({
       return { version: h.version, genome: h.genome };
     },
     chaos: { point: (p) => ctx.chaos?.point(p), expireNow: () => ctx.chaos?.expireNow() ?? false },
+    completion,
+    // The completion gate's evidence: the end-state checks on the live workspace, run before finishing.
+    evidence: completion
+      ? async (cp, final) => {
+          const v = checkRun({ kind: cp.kind, params: cp.params, truth: workspace.truth, world: ctx.world, run: { ...cp, final, status: "done" } });
+          return { failures: [...v.failures, ...v.collateral.map((c) => `collateral: ${c}`)], pass: v.pass };
+        }
+      : null,
     onEvent: (e) => ctx.onEvent?.(e),
   });
   ctx.watcher = watchConnections(db, ctx.agent);
@@ -84,6 +96,11 @@ export async function createRem({
       await ctx.watcher.settle();
       clock.set(Math.max(clock.now(), dayStart(ctx.day) + 9 * 3600000));
       const brief = await runNight(ctx, { day: ctx.day, proposer: ctx.proposer });
+      // On Atlas, autoEmbed indexes sync a few seconds after the night's writes; the morning recalls them.
+      if (db.kind === "mongo" && db.atlasSearch) {
+        brief.searchSettle = await settleSearch(db, ["memories", "skills", "edits"]);
+        await db.collection("briefs").updateOne({ night: brief.night }, { $set: { searchSettle: brief.searchSettle } });
+      }
       ctx.day++;
       clock.set(Math.max(clock.now(), dayStart(ctx.day)));
       return brief;
@@ -126,6 +143,15 @@ export async function createRem({
         brief: brief ? { ...brief, evolve: { ...brief.evolve } } : null,
         connections,
         trackRecord: await trackRecord(db),
+        engine: {
+          database: db.kind === "mongo" ? `atlas:${db.databaseName}` : "memory",
+          search: db.kind === "mongo" && db.atlasSearch ? `atlas-${db.vectorMode || "auto"}` : "app-rrf",
+          embedder: embedder.name,
+          model: model.name || "scripted",
+          completion: completion?.name || "off",
+        },
+        recall: recallOf(harness.genome),
+        completionThreshold: completionThresholdOf(harness.genome),
       };
     },
     async close() {

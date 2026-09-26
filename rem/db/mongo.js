@@ -1,5 +1,4 @@
-// TOMORROW: Atlas adapter with the same surface as createMemoryDb(). Not exercised tonight.
-// Needs `npm install mongodb` and MONGODB_URI pointing at the Atlas Sandbox cluster.
+// Atlas adapter with the same surface as createMemoryDb(). Verified on the event sandbox Sep 26.
 export async function createMongoDb({ uri = process.env.MONGODB_URI, dbName = "rem" } = {}) {
   if (!uri) throw new Error("Set MONGODB_URI to the Atlas Sandbox connection string.");
   const { MongoClient, ObjectId } = await import("mongodb");
@@ -11,8 +10,11 @@ export async function createMongoDb({ uri = process.env.MONGODB_URI, dbName = "r
     databaseName: dbName,
     client,
     toId: (id) => (ObjectId.isValid(String(id)) ? new ObjectId(String(id)) : id),
-    // 1 = hybrid search through $rankFusion on the autoEmbed + Atlas Search indexes (needs 8.1+).
-    atlasSearch: process.env.REM_ATLAS_SEARCH === "1",
+    // Search runs in Atlas ($rankFusion over the vector + Atlas Search indexes) unless REM_ATLAS_SEARCH=0.
+    // Verified on the event sandbox (8.0.32). REM_VECTOR_MODE=explicit queries stored vectors instead
+    // of autoEmbed, for clusters where autoEmbed is unavailable.
+    atlasSearch: process.env.REM_ATLAS_SEARCH !== "0",
+    vectorMode: process.env.REM_VECTOR_MODE === "explicit" ? "explicit" : "auto",
     collection: (name) => db.collection(name),
     listCollections: (filter, options) => db.listCollections(filter, options),
     watch: (pipeline, options) => db.watch(pipeline, options),
@@ -38,7 +40,12 @@ export async function createMongoDb({ uri = process.env.MONGODB_URI, dbName = "r
     },
     // Atlas's TTL monitor deletes expired episodes about once a minute; nothing to do here.
     sweepExpired: async () => 0,
-    dropDatabase: () => db.dropDatabase(),
+    // A fresh instance without dropDatabase: sandbox users hold readWrite (dropDatabase is unauthorized),
+    // and keeping the collections keeps the Atlas Search indexes READY instead of rebuilding them.
+    async dropDatabase() {
+      for (const c of await db.listCollections({}, { nameOnly: true }).toArray())
+        if (!c.name.startsWith("system.")) await db.collection(c.name).deleteMany({});
+    },
     close: () => client.close(),
   };
 }

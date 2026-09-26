@@ -124,6 +124,31 @@ export const SEARCH_INDEXES = Object.freeze({
   ],
 });
 
+// "auto": the autoEmbed indexes above (verified READY on the event sandbox, Sep 26: text indexes in
+// 60 to 92 s, vector indexes in 72 to 116 s). "explicit": the same indexes over the app's stored
+// `embedding` (Voyage or the local embedder), named `<collection>_vec`, for clusters without autoEmbed.
+export function searchIndexesFor({ mode = "auto", dims = 1024 } = {}) {
+  if (mode !== "explicit") return SEARCH_INDEXES;
+  return Object.fromEntries(
+    Object.entries(SEARCH_INDEXES).map(([name, specs]) => [
+      name,
+      specs.map((spec) =>
+        spec.type !== "vectorSearch"
+          ? spec
+          : {
+              name: `${name}_vec`,
+              type: "vectorSearch",
+              definition: {
+                fields: spec.definition.fields.map((f) =>
+                  f.type === "autoEmbed" ? { type: "vector", path: "embedding", numDimensions: dims, similarity: "cosine" } : f,
+                ),
+              },
+            },
+      ),
+    ]),
+  );
+}
+
 // Explicit-embedding fallback (Voyage called by the app, vectors stored on the document).
 export const VECTOR_FIELDS = Object.freeze({
   episodes: { text: "summary", vector: "embedding" },
