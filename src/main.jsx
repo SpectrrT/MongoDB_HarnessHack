@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { WorkspaceProvider } from "./store";
 import Landing from "./pages/Landing";
 import "./styles.css";
+import "./polish.css";
 const Workspace = lazy(() => import("./pages/Workspace"));
 class AppBoundary extends React.Component {
   state = { error: false };

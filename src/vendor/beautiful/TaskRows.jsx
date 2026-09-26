@@ -111,12 +111,18 @@ function TaskRows({
   const badgeFor = (row) => {
     if (row.status === "done") return /* @__PURE__ */ jsx(Badge, { tone: "green", children: CheckIcon });
     if (row.status === "running") return /* @__PURE__ */ jsx(SpinnerRing, { active: true, children: row.step });
+    if (row.status === "idle") return /* @__PURE__ */ jsx(SpinnerRing, { children: row.step });
+    if (row.status === "paused") return /* @__PURE__ */ jsx(Badge, { tone: "red", children: /* @__PURE__ */ jsxs("svg", { width: "11", height: "11", viewBox: "0 0 24 24", fill: "currentColor", "aria-hidden": "true", children: [
+      /* @__PURE__ */ jsx("rect", { x: "6", y: "5", width: "4", height: "14", rx: "1" }),
+      /* @__PURE__ */ jsx("rect", { x: "14", y: "5", width: "4", height: "14", rx: "1" })
+    ] }) });
     return row2 === "pending" ? /* @__PURE__ */ jsx(SpinnerRing, { children: row.step }) : row2 === "failed" ? /* @__PURE__ */ jsx(Badge, { tone: "red", children: XIcon }) : /* @__PURE__ */ jsx(Badge, { tone: "green", children: CheckIcon });
   };
   const pillFor = (row) => {
     if (row.status === "done")
       return /* @__PURE__ */ jsx("span", { className: "inline-flex h-5.5 items-center rounded-full bg-green-tint px-2 text-[11.5px] font-medium text-green", children: copy.completed });
-    if (row.status === "running") return null;
+    if (row.status === "running" || row.status === "idle") return null;
+    if (row.status === "paused") return /* @__PURE__ */ jsx("span", { className: "inline-flex h-5.5 items-center rounded-full bg-red-tint px-2 text-[11.5px] font-medium text-red", children: copy.paused ?? "Paused" });
     return row2 === "failed" ? /* @__PURE__ */ jsxs("span", { className: "inline-flex h-5.5 items-center gap-1.5 rounded-full bg-red-tint px-2 text-[11.5px] font-medium text-red", style: { animation: "fade-in 200ms ease-out both" }, children: [
       copy.failed,
       " ",

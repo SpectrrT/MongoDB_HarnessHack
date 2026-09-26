@@ -31,6 +31,11 @@ import {
   Shield,
   Command,
   ExternalLink,
+  HardDrive,
+  Mail,
+  GitPullRequest,
+  CalendarDays,
+  TimerReset,
 } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import { useWorkspace, download } from "../store";
@@ -642,10 +647,11 @@ function Chat({ id, onNew }) {
       send(t);
     }
   }, []);
-  useEffect(
-    () => end.current?.scrollIntoView({ behavior: "smooth" }),
-    [conversation?.messages.length],
-  );
+  // Braces matter: newer Chrome returns a Promise from scrollIntoView, and an
+  // effect may only return a cleanup function.
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: "smooth" });
+  }, [conversation?.messages.length]);
   return (
     <div className="chat-page">
       {!conversation?.messages.length ? (
@@ -714,35 +720,42 @@ function Tasks({ id, onConnect }) {
         </button>
         <div className="page-title">
           <h1>{run.title}</h1>
-          <span className="status-label">
-            {run.status === "ready" ? "Ready for review" : run.status}
-          </span>
+          <RunStatus status={run.status} />
         </div>
         <p className="muted">Progress is saved after each completed step.</p>
         <div className="run-progress beautiful-ui">
           <TaskRows
             variant="List"
-            rows={run.steps.map((label, i) => ({
-              key: String(i),
-              label,
-              amount:
+            labels={{ completed: "Saved", paused: "Paused" }}
+            rows={run.steps.map((label, i) => {
+              const current = i === run.checkpoint;
+              const status =
                 i < run.checkpoint
-                  ? "Saved"
-                  : i === run.checkpoint && run.status === "running"
-                    ? "In progress"
-                    : "",
-              status: i < run.checkpoint ? "done" : "running",
-              step: i + 1,
-              details: [
-                {
-                  label:
-                    i < run.checkpoint
-                      ? "Checkpoint stored"
-                      : "Waiting for this step",
-                  meta: "",
-                },
-              ],
-            }))}
+                  ? "done"
+                  : current && run.status === "running"
+                    ? "running"
+                    : current && run.status === "blocked"
+                      ? "paused"
+                      : "idle";
+              return {
+                key: String(i),
+                label,
+                amount: status === "running" ? "In progress" : "",
+                status,
+                step: i + 1,
+                details: [
+                  {
+                    label:
+                      status === "done"
+                        ? "Checkpoint stored"
+                        : status === "paused"
+                          ? "Waiting for account access"
+                          : "Waiting for this step",
+                    meta: "",
+                  },
+                ],
+              };
+            })}
           />
         </div>
         {run.status === "blocked" && (
@@ -840,13 +853,27 @@ function Tasks({ id, onConnect }) {
                   {r.checkpoint} of {r.steps.length} steps saved
                 </small>
               </div>
-              <span className="status-label">{r.status}</span>
+              <RunStatus status={r.status} />
               <ChevronRight size={16} />
             </Link>
           ))}
         </div>
       )}
     </div>
+  );
+}
+const RUN_STATUS = {
+  running: "Running",
+  blocked: "Needs access",
+  ready: "Ready for review",
+  completed: "Completed",
+  cancelled: "Cancelled",
+};
+function RunStatus({ status }) {
+  return (
+    <span className={"status-label is-" + status}>
+      {RUN_STATUS[status] || status}
+    </span>
   );
 }
 function PageTitle({ title, description, children }) {
@@ -1063,55 +1090,67 @@ function Connections({ onConnect }) {
         </p>
       </div>
       <div className="connection-list">
-        {state.connections.map((c) => (
-          <article key={c.id}>
-            <div className="connection-icon">{c.name[0]}</div>
-            <div>
-              <h3>{c.name}</h3>
-              <p>{c.detail}</p>
-              <span className="connection-state">
-                {c.status === "connected"
-                  ? "Sample account connected"
-                  : c.status === "expired"
-                    ? "Access expired in demo"
-                    : "Not connected"}
-              </span>
-            </div>
-            <div className="connection-actions">
-              <button
-                className={
-                  "button small " +
-                  (c.status === "connected" ? "secondary" : "")
-                }
-                onClick={() =>
-                  c.status === "connected"
-                    ? act("connect", { id: c.id, disconnect: true }).catch(
-                        () => {},
-                      )
-                    : onConnect(c.id)
-                }
-              >
-                {c.status === "connected"
-                  ? "Disconnect"
-                  : c.status === "expired"
-                    ? "Reconnect"
-                    : "Connect sample"}
-              </button>
-              {c.status === "connected" && (
+        {state.connections.map((c) => {
+          const Icon = CONNECTION_ICONS[c.id] || Plug;
+          return (
+            <article key={c.id} className={"is-" + c.status}>
+              <div className="connection-icon" aria-hidden="true">
+                <Icon size={20} strokeWidth={1.6} />
+              </div>
+              <div>
+                <h3>{c.name}</h3>
+                <p>{c.detail}</p>
+                <span className={"connection-state is-" + c.status}>
+                  {c.status === "connected"
+                    ? "Sample account connected"
+                    : c.status === "expired"
+                      ? "Access expired in demo"
+                      : "Not connected"}
+                </span>
+              </div>
+              <div className="connection-actions">
                 <button
-                  className="text-button"
-                  onClick={() => act("expire", { id: c.id }).catch(() => {})}
+                  className={
+                    "button small " +
+                    (c.status === "connected" ? "secondary" : "")
+                  }
+                  onClick={() =>
+                    c.status === "connected"
+                      ? act("connect", { id: c.id, disconnect: true }).catch(
+                          () => {},
+                        )
+                      : onConnect(c.id)
+                  }
                 >
-                  Simulate expiry
+                  {c.status === "connected"
+                    ? "Disconnect"
+                    : c.status === "expired"
+                      ? "Reconnect"
+                      : "Connect sample"}
                 </button>
-              )}
-            </div>
-          </article>
-        ))}
+                {c.status === "connected" && (
+                  <button
+                    className="demo-control"
+                    onClick={() => act("expire", { id: c.id }).catch(() => {})}
+                  >
+                    <TimerReset size={14} aria-hidden="true" />
+                    Simulate expiry
+                  </button>
+                )}
+              </div>
+            </article>
+          );
+        })}
       </div>
     </div>
   );
 }
+const CONNECTION_ICONS = {
+  drive: HardDrive,
+  gmail: Mail,
+  github: GitPullRequest,
+  calendar: CalendarDays,
+};
 function ConnectDialog({ id, onClose }) {
   const { state, act } = useWorkspace();
   const c = state.connections.find((x) => x.id === id);

@@ -37,6 +37,21 @@ for (const file of await fs.readdir("vendor/beautiful-ui")) {
       'plusOpen ? "at" : token?.kind ?? null',
       'demo ? (plusOpen ? "at" : token?.kind ?? null) : null',
     );
+  // Upstream rows that are neither done nor running play a gallery demo sequence
+  // (pending → failed → done). Checkpointed runs need static "idle" and "paused" steps.
+  if (file === "TaskRows.tsx") {
+    source = source.replace(
+      'if (row.status === "running") return <SpinnerRing active>{row.step}</SpinnerRing>;',
+      'if (row.status === "running") return <SpinnerRing active>{row.step}</SpinnerRing>;\n' +
+        '    if (row.status === "idle") return <SpinnerRing>{row.step}</SpinnerRing>;\n' +
+        '    if (row.status === "paused") return <Badge tone="red"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></svg></Badge>;',
+    );
+    source = source.replace(
+      'if (row.status === "running") return null;',
+      'if (row.status === "running" || row.status === "idle") return null;\n' +
+        '    if (row.status === "paused") return <span className="inline-flex h-5.5 items-center rounded-full bg-red-tint px-2 text-[11.5px] font-medium text-red">{copy.paused ?? "Paused"}</span>;',
+    );
+  }
   const code = await transform(source, {
     loader: "tsx",
     jsx: "automatic",
