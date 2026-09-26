@@ -4,9 +4,9 @@ export default defineConfig({
   plugins: [react()],
   base: "/",
   server: {
-    port: 5193,
+    port: Number(process.env.VITE_PORT) || 5193,
     strictPort: true,
-    proxy: { "/api": "http://127.0.0.1:5194" },
+    proxy: { "/api": process.env.VITE_API_PROXY || "http://127.0.0.1:5194" },
   },
   build: {
     chunkSizeWarningLimit: 900,
