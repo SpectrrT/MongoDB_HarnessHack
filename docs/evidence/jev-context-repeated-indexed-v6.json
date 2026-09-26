@@ -1,0 +1,855 @@
+{
+  "createdAt": "2026-09-26T18:25:02.608Z",
+  "mode": "live Jev",
+  "database": "Atlas sleep_context_eval",
+  "scope": "Synthetic retention and paired exact-answer evaluation. No billion-token or overnight claim.",
+  "scorer": "openrouter:typesafe/jev-1.13",
+  "scorerPolicy": "retention-v6-indexed-lossless",
+  "cases": [
+    {
+      "id": "release",
+      "error": "Protected or uncertain context exceeds the budget. Narrow the task or increase the context budget.",
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7219,
+        "afterChars": 7219,
+        "budgetChars": 1600,
+        "retained": 15,
+        "archived": 0,
+        "duplicateOmissions": 0,
+        "decisionCalls": 1,
+        "cacheHits": 0,
+        "inputTokens": 1268,
+        "outputTokens": 241,
+        "reportedCost": 0.000053256,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "needs_review",
+        "evidenceKey": "c329ef57c5c0619fb77b9e6ad106159b27bb6f62397de8d7368c199ef9d0b8c8",
+        "stateChars": 838,
+        "statePartial": true,
+        "unscored": 0,
+        "decisions": [
+          {
+            "id": "f1",
+            "digest": "d9b8557979b32b938f2cb7827182748c2c1a642a6217cf9abaf9c4759194f087",
+            "probability": 0.88,
+            "distribution": {
+              "keep": 0.88,
+              "omit": 0.12
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-0",
+            "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+            "probability": 0.31,
+            "distribution": {
+              "keep": 0.31,
+              "omit": 0.69
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-1",
+            "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+            "probability": 0.33,
+            "distribution": {
+              "keep": 0.33,
+              "omit": 0.6699999999999999
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-2",
+            "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+            "probability": 0.39,
+            "distribution": {
+              "keep": 0.39,
+              "omit": 0.61
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-3",
+            "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+            "probability": 0.38,
+            "distribution": {
+              "keep": 0.38,
+              "omit": 0.62
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-4",
+            "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+            "probability": 0.38,
+            "distribution": {
+              "keep": 0.38,
+              "omit": 0.62
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-5",
+            "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+            "probability": 0.37,
+            "distribution": {
+              "keep": 0.37,
+              "omit": 0.63
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "f2",
+            "digest": "3e57401394b6d99834ef1c6f3dd6e9949b57b2f9193560308e9b330a85954957",
+            "probability": null,
+            "distribution": null,
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "constraint_or_open_loop"
+          },
+          {
+            "id": "noise-6",
+            "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+            "probability": 0.38,
+            "distribution": {
+              "keep": 0.38,
+              "omit": 0.62
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-7",
+            "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+            "probability": 0.36,
+            "distribution": {
+              "keep": 0.36,
+              "omit": 0.64
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-8",
+            "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+            "probability": 0.38,
+            "distribution": {
+              "keep": 0.38,
+              "omit": 0.62
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-9",
+            "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+            "probability": 0.39,
+            "distribution": {
+              "keep": 0.39,
+              "omit": 0.61
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-10",
+            "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+            "probability": 0.33,
+            "distribution": {
+              "keep": 0.33,
+              "omit": 0.6699999999999999
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-11",
+            "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+            "probability": 0.32,
+            "distribution": {
+              "keep": 0.32,
+              "omit": 0.6799999999999999
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "recent",
+            "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+            "probability": null,
+            "distribution": null,
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "recent"
+          }
+        ]
+      }
+    },
+    {
+      "id": "meeting",
+      "error": "Protected or uncertain context exceeds the budget. Narrow the task or increase the context budget.",
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7221,
+        "afterChars": 7221,
+        "budgetChars": 1600,
+        "retained": 15,
+        "archived": 0,
+        "duplicateOmissions": 0,
+        "decisionCalls": 1,
+        "cacheHits": 0,
+        "inputTokens": 1264,
+        "outputTokens": 260,
+        "reportedCost": 0.000053088,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "needs_review",
+        "evidenceKey": "a2802085b07dc1ca46d536ecaf0b73b08e656b1157ec4e2383e99599e76d740e",
+        "stateChars": 840,
+        "statePartial": true,
+        "unscored": 0,
+        "decisions": [
+          {
+            "id": "f1",
+            "digest": "f40c1eca799bddde3db8d32e012d41f061000c2a6fcdb960e0de5a5833f7ea89",
+            "probability": 0.9,
+            "distribution": {
+              "keep": 0.9,
+              "omit": 0.09999999999999998
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-0",
+            "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+            "probability": 0.45,
+            "distribution": {
+              "keep": 0.45,
+              "omit": 0.55
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-1",
+            "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+            "probability": 0.45,
+            "distribution": {
+              "keep": 0.45,
+              "omit": 0.55
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-2",
+            "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+            "probability": 0.53,
+            "distribution": {
+              "keep": 0.53,
+              "omit": 0.47
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-3",
+            "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+            "probability": 0.51,
+            "distribution": {
+              "keep": 0.51,
+              "omit": 0.49
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-4",
+            "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+            "probability": 0.64,
+            "distribution": {
+              "keep": 0.64,
+              "omit": 0.36
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-5",
+            "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+            "probability": 0.9,
+            "distribution": {
+              "keep": 0.9,
+              "omit": 0.09999999999999998
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "f2",
+            "digest": "180e794195cb9b6452dbaee4858d713e0c1559e8ca13386851a20b2b434a5ca3",
+            "probability": 0.46,
+            "distribution": {
+              "keep": 0.46,
+              "omit": 0.54
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-6",
+            "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+            "probability": 0.34,
+            "distribution": {
+              "keep": 0.34,
+              "omit": 0.6599999999999999
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-7",
+            "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+            "probability": 0.46,
+            "distribution": {
+              "keep": 0.46,
+              "omit": 0.54
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-8",
+            "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+            "probability": 0.42,
+            "distribution": {
+              "keep": 0.42,
+              "omit": 0.5800000000000001
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-9",
+            "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+            "probability": 0.41,
+            "distribution": {
+              "keep": 0.41,
+              "omit": 0.5900000000000001
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-10",
+            "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+            "probability": 0.42,
+            "distribution": {
+              "keep": 0.42,
+              "omit": 0.5800000000000001
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-11",
+            "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+            "probability": 0.38,
+            "distribution": {
+              "keep": 0.38,
+              "omit": 0.62
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "recent",
+            "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+            "probability": null,
+            "distribution": null,
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "recent"
+          }
+        ]
+      }
+    },
+    {
+      "id": "retry",
+      "error": "Protected or uncertain context exceeds the budget. Narrow the task or increase the context budget.",
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7235,
+        "afterChars": 7235,
+        "budgetChars": 1600,
+        "retained": 15,
+        "archived": 0,
+        "duplicateOmissions": 0,
+        "decisionCalls": 1,
+        "cacheHits": 0,
+        "inputTokens": 1278,
+        "outputTokens": 260,
+        "reportedCost": 0.000053676,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "needs_review",
+        "evidenceKey": "7fc1d98af842bd21f6c0be36bef079dbbe742762924b02706526318bc7618635",
+        "stateChars": 854,
+        "statePartial": true,
+        "unscored": 0,
+        "decisions": [
+          {
+            "id": "f1",
+            "digest": "f0ba1fe999efb2dc9f6f284bf6350f37c03193fbb21b601997a75d406e941003",
+            "probability": 0.9,
+            "distribution": {
+              "keep": 0.9,
+              "omit": 0.09999999999999998
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-0",
+            "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+            "probability": 0.4,
+            "distribution": {
+              "keep": 0.4,
+              "omit": 0.6
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-1",
+            "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+            "probability": 0.43,
+            "distribution": {
+              "keep": 0.43,
+              "omit": 0.5700000000000001
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-2",
+            "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+            "probability": 0.46,
+            "distribution": {
+              "keep": 0.46,
+              "omit": 0.54
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-3",
+            "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+            "probability": 0.51,
+            "distribution": {
+              "keep": 0.51,
+              "omit": 0.49
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-4",
+            "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+            "probability": 0.54,
+            "distribution": {
+              "keep": 0.54,
+              "omit": 0.45999999999999996
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-5",
+            "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+            "probability": 0.86,
+            "distribution": {
+              "keep": 0.86,
+              "omit": 0.14
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "f2",
+            "digest": "28a99dd64d9ed9151b37a38a4d7d52a251ff329dcd8ee41944a0f297cdf12c7a",
+            "probability": 0.43,
+            "distribution": {
+              "keep": 0.43,
+              "omit": 0.5700000000000001
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-6",
+            "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+            "probability": 0.42,
+            "distribution": {
+              "keep": 0.42,
+              "omit": 0.5800000000000001
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-7",
+            "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+            "probability": 0.46,
+            "distribution": {
+              "keep": 0.46,
+              "omit": 0.54
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-8",
+            "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+            "probability": 0.53,
+            "distribution": {
+              "keep": 0.53,
+              "omit": 0.47
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-9",
+            "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+            "probability": 0.42,
+            "distribution": {
+              "keep": 0.42,
+              "omit": 0.5800000000000001
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-10",
+            "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+            "probability": 0.47,
+            "distribution": {
+              "keep": 0.47,
+              "omit": 0.53
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-11",
+            "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+            "probability": 0.4,
+            "distribution": {
+              "keep": 0.4,
+              "omit": 0.6
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "recent",
+            "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+            "probability": null,
+            "distribution": null,
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "recent"
+          }
+        ]
+      }
+    },
+    {
+      "id": "correction",
+      "error": "Protected or uncertain context exceeds the budget. Narrow the task or increase the context budget.",
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7223,
+        "afterChars": 7223,
+        "budgetChars": 1600,
+        "retained": 15,
+        "archived": 0,
+        "duplicateOmissions": 0,
+        "decisionCalls": 1,
+        "cacheHits": 0,
+        "inputTokens": 1267,
+        "outputTokens": 222,
+        "reportedCost": 0.000053214,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "needs_review",
+        "evidenceKey": "ad403b6ed8ff5ae366b1fb516bb740adcb6d1cf41819d871df2ccb2362950319",
+        "stateChars": 842,
+        "statePartial": true,
+        "unscored": 0,
+        "decisions": [
+          {
+            "id": "f1",
+            "digest": "ff064cad14516c0954d9da0260800992770d76e1db14244d5b736f4631002cb2",
+            "probability": null,
+            "distribution": null,
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "constraint_or_open_loop"
+          },
+          {
+            "id": "noise-0",
+            "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+            "probability": 0.39,
+            "distribution": {
+              "keep": 0.39,
+              "omit": 0.61
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-1",
+            "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+            "probability": 0.54,
+            "distribution": {
+              "keep": 0.54,
+              "omit": 0.45999999999999996
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-2",
+            "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+            "probability": 0.53,
+            "distribution": {
+              "keep": 0.53,
+              "omit": 0.47
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-3",
+            "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+            "probability": 0.47,
+            "distribution": {
+              "keep": 0.47,
+              "omit": 0.53
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-4",
+            "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+            "probability": 0.48,
+            "distribution": {
+              "keep": 0.48,
+              "omit": 0.52
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-5",
+            "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+            "probability": 0.47,
+            "distribution": {
+              "keep": 0.47,
+              "omit": 0.53
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "f2",
+            "digest": "9fcec845c818916a68c111c7a8903e37a4217bca89db406e78758c67ac43933f",
+            "probability": null,
+            "distribution": null,
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "constraint_or_open_loop"
+          },
+          {
+            "id": "noise-6",
+            "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+            "probability": 0.47,
+            "distribution": {
+              "keep": 0.47,
+              "omit": 0.53
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-7",
+            "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+            "probability": 0.47,
+            "distribution": {
+              "keep": 0.47,
+              "omit": 0.53
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-8",
+            "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+            "probability": 0.4,
+            "distribution": {
+              "keep": 0.4,
+              "omit": 0.6
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-9",
+            "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+            "probability": 0.4,
+            "distribution": {
+              "keep": 0.4,
+              "omit": 0.6
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-10",
+            "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+            "probability": 0.43,
+            "distribution": {
+              "keep": 0.43,
+              "omit": 0.5700000000000001
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "noise-11",
+            "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+            "probability": 0.35,
+            "distribution": {
+              "keep": 0.35,
+              "omit": 0.65
+            },
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "jev"
+          },
+          {
+            "id": "recent",
+            "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+            "probability": null,
+            "distribution": null,
+            "kept": true,
+            "duplicateOf": null,
+            "reason": "recent"
+          }
+        ]
+      }
+    }
+  ],
+  "implementation": {
+    "../server/context/compaction.js": "3dc4da9964c8a6b8a9025df9f4ceedb6917b89d4e5fed04ab469e990eaca67da",
+    "../server/context/jev.js": "c2b87059ef21da9556e4e067c9fc841384fa19ef49583b452ac03d33e865be13",
+    "../server/context/repeat-evidence.js": "59177050e0bb2965b966bcfdd9708a8993222998e512e91f4ed8e03345dbc70d",
+    "./benchmark-context.mjs": "5277d0a4e155853cbc7f65df0df48fee0d2b199bb7f99415f333bdce6ff27b4d"
+  },
+  "summary": {
+    "complete": false,
+    "expectedAnswersPerPath": 20,
+    "baselinePassed": 0,
+    "compactedPassed": 0,
+    "baseline": {
+      "measuredTokens": 0,
+      "known": true,
+      "measuredCost": 0,
+      "costKnown": true
+    },
+    "compacted": {
+      "measuredTokens": 0,
+      "known": true,
+      "measuredCost": 0,
+      "costKnown": true
+    },
+    "decisions": {
+      "measuredTokens": 6060,
+      "known": true,
+      "measuredCost": 0.000213234,
+      "costKnown": true
+    },
+    "baselineTotal": null,
+    "compactedTotal": null,
+    "tokenSavingsPercent": null,
+    "combinedCompactedCost": null
+  }
+}

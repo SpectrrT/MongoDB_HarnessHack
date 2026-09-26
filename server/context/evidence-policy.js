@@ -1,0 +1,3 @@
+// Source retrieval must not turn old facts into newer decisions.
+export const EVIDENCE_POLICY_VERSION = 'subject-time-v1';
+export const EVIDENCE_POLICY = "Bind facts to the requested subject using explicit source evidence. A named plan, option or example is not selected merely because it is mentioned. Prefer explicit current statements about the subject; follow a referenced plan only when the evidence says that subject uses it. Retrieval order is not event time: reading an old record later does not make its contents newer. Use original timestamps and explicit corrections to resolve conflicts. If the supplied records already establish the answer, do not retrieve duplicates.";

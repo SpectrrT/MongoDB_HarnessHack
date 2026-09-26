@@ -24,7 +24,7 @@ export function Connections({ onConnect }) {
     })}</div>
     {!list.length && <p className="catalog-empty">No apps match "{query}". Try another name.</p>}
     <p className="catalog-note"><Shield size={15}/> Account authorization will be available when the integrations are connected.</p>
-    <details className="context-provider"><summary>Context decisions · Jev</summary><p>Planned: score which context to keep and check task evidence. No Jev model is connected to this workspace yet.</p></details>
+      <details className="context-provider"><summary>Context decisions · Jev</summary><p>Sleep's REM runs and OpenRouter tool turns support Jev context selection when configured. Open Context memory in Sleep for REM metrics. OpenRouter task records include selection usage. Codex manages its own context.</p></details>
   </div>;
 }
 export function ConnectDialog({ id, onClose }) {

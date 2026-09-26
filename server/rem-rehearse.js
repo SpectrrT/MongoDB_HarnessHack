@@ -1,6 +1,7 @@
 import { rehearse, rehearsalLevel } from "../rem/rehearse.js";
 import { gymSkills } from "../rem/evolve.js";
 import { withRem } from "./rem.js";
+import { remAccess } from "./rem-access.js";
 
 // Idle rehearsal (opt-in, REM_REHEARSE_IDLE=1): when nobody has acted in REM (a run, a sleep, an answer to an ask) for
 // REM_REHEARSE_IDLE_MIN minutes (default 30), REM rehearses once on its own; the next one waits for the next action.
@@ -46,6 +47,8 @@ export function createRemIdleRehearsal({
 }
 
 export function mountRemRehearsal(app, idle = createRemIdleRehearsal()) {
+  // This module mounts before the other REM routes, so it must apply the same local gate.
+  app.use("/api/rem", remAccess());
   app.use("/api/rem", (req, res, next) => {
     if (req.method === "POST" && req.path !== "/rehearse") idle.touch();
     next();

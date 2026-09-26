@@ -1,0 +1,51 @@
+{
+  "title": "Measured progress, with the receipts",
+  "scope": "Development benchmark",
+  "sourceType": "synthetic",
+  "stages": 12,
+  "baselineTokens": 39196,
+  "offloadTokens": 32264,
+  "baselinePassed": 11,
+  "offloadPassed": 12,
+  "tokenSavingsPercent": 17.69,
+  "answerModel": "openai/gpt-4o-mini",
+  "scorer": "typesafe:jev-1.13.0",
+  "description": "Three synthetic tasks, twelve chronological stages, used during development. Both paths use GPT-4o-mini and the same exact checks. Offload totals include Jev selection and archive recovery.",
+  "limitation": "The baseline failed one check by adding an extra JSON field. Its owner and readiness were correct. These cases were used during development. Combined monetary cost is unknown.",
+  "receipt": "/evidence/evolving-context.json",
+  "repeated": {
+    "baselineTokens": 26640,
+    "offloadTokens": 9052,
+    "baselinePassed": 20,
+    "offloadPassed": 20,
+    "stages": 20,
+    "tokenSavingsPercent": 66.02,
+    "description": "Four synthetic snapshots, five answers per path. Both paths use GPT-4o-mini and the same exact checks. All Jev scoring is included. Reusing unchanged context makes its initial selection cost worthwhile.",
+    "limitation": "Repeated snapshots are an optimistic microbenchmark. First-use compaction costs more; this does not establish savings on every task. Provider-reported cost was $0.000714378 versus $0.0023805.",
+    "receipt": "/evidence/repeated-context.json"
+  },
+  "reliability": [
+    {
+      "scope": "Live model \u00b7 3 synthetic tasks",
+      "title": "Assigned drafts",
+      "result": "2/3 \u2192 3/3",
+      "description": "Declared file checks passed after the prompt fix. Calls fell from 7 to 3, tokens from 1,721 to 815. These checks assess phrases, size and JSON, not broad quality.",
+      "receipt": "/evidence/assigned-drafts.json"
+    },
+    {
+      "scope": "Scripted model \u00b7 300 steps",
+      "title": "Bounded working memory",
+      "result": "98.49% smaller",
+      "description": "Maximum checkpoint: 18,852 bytes versus 1,245,224. The full 1,242,822-byte source remains recoverable. This measures bytes, not model tokens.",
+      "receipt": "/evidence/transcript-storage.json"
+    },
+    {
+      "scope": "Live model \u00b7 real offline browser",
+      "title": "Idle Sleep counter",
+      "result": "10/10 checks",
+      "description": "One paid call, 1,346 tokens, $0.0014084. Increment and Reset passed; restart added zero calls. One synthetic case with an injected idle clock.",
+      "receipt": "/evidence/idle-counter.json"
+    }
+  ],
+  "personal": []
+}

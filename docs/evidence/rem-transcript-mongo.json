@@ -1,0 +1,45 @@
+{
+  "provider": "real local MongoDB replica set; deterministic task models; no Atlas or external model API",
+  "cases": [
+    {
+      "name": "restart_existing_collections",
+      "canonicalEvents": 2,
+      "parts": 8,
+      "maxPartBsonBytes": 17909,
+      "checkpointBsonBytes": 150,
+      "passed": true
+    },
+    {
+      "name": "transaction_rollback",
+      "rolledBackCollections": 5,
+      "committedTranscriptDocuments": 0,
+      "passed": true
+    },
+    {
+      "name": "migration_guard_race",
+      "retainedLatestCount": 9,
+      "guardAllowed": false,
+      "indexedDocumentsExamined": 1,
+      "passed": true
+    },
+    {
+      "name": "selection_lease_race",
+      "staleWrites": 0,
+      "passed": true
+    },
+    {
+      "name": "effect_recovery",
+      "externalEffects": 1,
+      "committedEvents": 1,
+      "passed": true
+    },
+    {
+      "name": "late_model_lease_race",
+      "staleRepliesRejected": 2,
+      "staleFinalWrites": 0,
+      "staleExternalEffects": 0,
+      "passed": true
+    }
+  ],
+  "mongoVersion": "8.2.6"
+}

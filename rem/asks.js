@@ -3,13 +3,15 @@
 // always ask.
 import { TASK_KINDS } from "./tasks.js";
 import { setConnection } from "./agent.js";
-import { applyEdit, commitHarness, currentHarness } from "./harness.js";
+import { decideAuthority } from "./authority.js";
+import { TOOLS } from "./world.js";
 
 const SCOPE_NOTE = {
   send: "needs Gmail send scope",
   delete: "needs Drive delete scope",
   draft: "needs Gmail draft scope",
   read: "read-only",
+  unknown: "requires permission review for unsupported tools",
 };
 const AUTO_APPROVABLE = new Set(["read"]);
 
@@ -19,11 +21,36 @@ const promote = (by, at) => ({
   $push: { statusHistory: { $each: [{ status: "approved", by, at }, { status: "autonomous", by, at }] } },
 });
 
-export function riskOf(scopes = []) {
+export function riskOf(scopes) {
+  if (!Array.isArray(scopes) || scopes.some(scope => typeof scope !== "string" || !Object.hasOwn(TOOLS, scope))) return "unknown";
   if (scopes.includes("gmail.send")) return "send";
   if (scopes.includes("drive.delete")) return "delete";
   if (scopes.includes("gmail.draft")) return "draft";
   return "read";
+}
+
+async function decideSkill({ db, clock }, askId, approved) {
+  return db.withTransaction(async session => {
+    const asks = db.collection("asks"), skills = db.collection("skills");
+    const ask = await asks.findOne({ _id: askId }, { session });
+    if (!ask || !["open", "resolved"].includes(ask.status)) return ask;
+    const skill = await skills.findOne({ name: ask.skill }, { session });
+    const eligible = skill?.status === "practiced" && skill.test?.lastResult?.pass === true && riskOf(skill.requiredScopes) !== "unknown"
+      && Array.isArray(ask.scopes) && JSON.stringify([...ask.scopes].sort()) === JSON.stringify([...skill.requiredScopes].sort());
+    const status = !approved ? "denied" : eligible ? "approved" : "rejected";
+    const at = new Date(clock.now());
+    const validation = approved ? { passed: eligible,
+      reason: eligible ? "Practiced skill has a passing test and the requested tool scopes." : "Skill requires a passing practice test and unchanged, supported requested scopes before promotion." } : null;
+    // Claim the decision before promotion. A competing approval or denial must see
+    // the committed winner after Mongo retries its conflicting transaction.
+    const claimed = await asks.updateOne({ _id: askId, status: ask.status }, { $set: {
+      status, decision: approved ? "approved" : "denied", validation, decidedAt: at,
+    } }, { session });
+    if (!claimed.matchedCount) return asks.findOne({ _id: askId }, { session });
+    if (status === "approved") await skills.updateOne({ name: ask.skill }, promote("human", at), { session });
+    else if (!approved && skill) await skills.updateOne({ name: ask.skill }, { $set: { declinedAt: at } }, { session });
+    return asks.findOne({ _id: askId }, { session });
+  });
 }
 
 export async function riskProfile(db) {
@@ -64,16 +91,21 @@ export async function queueAsks({ db, clock }, { night }) {
       createdAt: new Date(clock.now()),
     };
     const p = profile[risk];
-    if (AUTO_APPROVABLE.has(risk) && p?.approved > 0 && !p.denied) {
-      await asks.insertOne({
-        ...base,
-        status: "auto-approved",
-        decision: "approved",
-        auto: true,
-        reason: `${risk}-only; you approved ${risk}-only access before`,
-        decidedAt: new Date(clock.now()),
+    if (AUTO_APPROVABLE.has(risk) && skill.test?.lastResult?.pass === true && p?.approved > 0 && !p.denied) {
+      await db.withTransaction(async session => {
+        const current = await skills.findOne({ name: skill.name }, { session });
+        if (current?.status !== "practiced" || current.test?.lastResult?.pass !== true || riskOf(current.requiredScopes) !== "read")
+          throw new Error("Skill changed before automatic approval; review it again.");
+        await asks.insertOne({
+          ...base,
+          status: "auto-approved",
+          decision: "approved",
+          auto: true,
+          reason: `${risk}-only; you approved ${risk}-only access before`,
+          decidedAt: new Date(clock.now()),
+        }, { session });
+        await skills.updateOne({ name: skill.name }, promote("risk tolerance", new Date(clock.now())), { session });
       });
-      await skills.updateOne({ name: skill.name }, promote("risk tolerance", new Date(clock.now())));
       out.push({ ...base, status: "auto-approved" });
     } else {
       await asks.insertOne({ ...base, status: "open" });
@@ -91,29 +123,9 @@ export async function decide(ctx, askId, decision, { answer } = {}) {
   if (!["open", "resolved"].includes(ask.status)) return ask;
   const approved = decision === "approve" || decision === "approved";
   const now = new Date(clock.now());
-  if (ask.kind === "skill.autonomous")
-    await db
-      .collection("skills")
-      .updateOne({ name: ask.skill }, approved ? promote("human", now) : { $set: { declinedAt: now } });
+  if (ask.kind === "skill.autonomous") return decideSkill(ctx, askId, approved);
   if (ask.kind === "reconnect" && approved) await setConnection(db, ask.provider, "valid", clock.now());
-  if (ask.kind === "edit.authority") {
-    const edit = await db.collection("edits").findOne({ _id: ask.editId });
-    let resultVersion = null;
-    if (approved) {
-      const parent = await currentHarness(db);
-      const next = await commitHarness(db, {
-        parent,
-        genome: applyEdit(parent.genome, edit),
-        editIds: [edit._id],
-        night: edit.night,
-        now: clock.now(),
-      });
-      resultVersion = next.version;
-    }
-    await db
-      .collection("edits")
-      .updateOne({ _id: edit._id }, { $set: { "outcome.status": approved ? "approved" : "denied", resultVersion } });
-  }
+  if (ask.kind === "edit.authority") return decideAuthority(ctx, ask, approved);
   if (ask.kind === "owner" && answer) {
     const summary = `Owner of "${ask.item}" is ${answer}`;
     await db.collection("episodes").insertOne({

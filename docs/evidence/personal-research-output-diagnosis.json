@@ -1,0 +1,21 @@
+{
+  "kind": "Single original-prompt output-shape diagnosis, not paired benchmark",
+  "requestHash": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+  "model": "openai/gpt-4o-mini",
+  "usage": {
+    "input_tokens": 5382,
+    "output_tokens": 486,
+    "cost": 0.0007053
+  },
+  "latencyMs": 7182,
+  "outerKeys": [
+    "summary",
+    "files"
+  ],
+  "files": [
+    {
+      "path": "artifact.json",
+      "contentType": "object"
+    }
+  ]
+}

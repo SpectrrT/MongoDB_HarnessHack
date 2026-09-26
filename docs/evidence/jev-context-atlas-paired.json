@@ -1,0 +1,923 @@
+{
+  "createdAt": "2026-09-26T17:23:31.573Z",
+  "mode": "live Jev",
+  "database": "Atlas sleep_context_eval",
+  "scope": "Synthetic retention and paired exact-answer evaluation. No billion-token or overnight claim.",
+  "scorer": "openrouter:typesafe/jev-1.13",
+  "cases": [
+    {
+      "id": "release",
+      "runId": "context-eval-release-096f697e-c280-4315-ad5e-bb898070b847",
+      "goal": "Return JSON with owner and ready for the Orion release. A release awaiting a security signature is not ready.",
+      "requiredIds": [
+        "f1",
+        "f2"
+      ],
+      "retainedIds": [
+        "f1",
+        "f2",
+        "recent"
+      ],
+      "fullRecall": true,
+      "tailRecall": false,
+      "jevRecall": true,
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7219,
+        "afterChars": 149,
+        "budgetChars": 1600,
+        "retained": 3,
+        "archived": 12,
+        "decisionCalls": 2,
+        "cacheHits": 0,
+        "inputTokens": 3037,
+        "outputTokens": 260,
+        "reportedCost": 0.000127554,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "compacted"
+      },
+      "latencyMs": 8221,
+      "restartDecisionCalls": 0,
+      "archiveRecovery": true,
+      "decisions": [
+        {
+          "id": "f1",
+          "digest": "d9b8557979b32b938f2cb7827182748c2c1a642a6217cf9abaf9c4759194f087",
+          "probability": 0.91,
+          "distribution": {
+            "keep": 0.91,
+            "omit": 0.08999999999999997
+          },
+          "kept": true,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-0",
+          "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+          "probability": 0.07,
+          "distribution": {
+            "keep": 0.07,
+            "omit": 0.9299999999999999
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-1",
+          "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-2",
+          "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+          "probability": 0.07,
+          "distribution": {
+            "keep": 0.07,
+            "omit": 0.9299999999999999
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-3",
+          "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+          "probability": 0.06,
+          "distribution": {
+            "keep": 0.06,
+            "omit": 0.94
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-4",
+          "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+          "probability": 0.06,
+          "distribution": {
+            "keep": 0.06,
+            "omit": 0.94
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-5",
+          "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "f2",
+          "digest": "3e57401394b6d99834ef1c6f3dd6e9949b57b2f9193560308e9b330a85954957",
+          "probability": 0.96,
+          "distribution": {
+            "keep": 0.96,
+            "omit": 0.040000000000000036
+          },
+          "kept": true,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-6",
+          "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-7",
+          "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-8",
+          "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-9",
+          "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-10",
+          "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-11",
+          "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+          "probability": 0.05,
+          "distribution": {
+            "keep": 0.05,
+            "omit": 0.95
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "recent",
+          "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "reason": "recent"
+        }
+      ],
+      "baseline": {
+        "answer": {
+          "owner": "Priya Raman",
+          "ready": false
+        },
+        "inputTokens": 1319,
+        "outputTokens": 11,
+        "cost": 0.00020445,
+        "latencyMs": 806,
+        "pass": true
+      },
+      "compacted": {
+        "answer": {
+          "owner": "Priya Raman",
+          "ready": false
+        },
+        "inputTokens": 83,
+        "outputTokens": 11,
+        "cost": 0.00001905,
+        "latencyMs": 636,
+        "pass": true
+      },
+      "baselineTotal": 1330,
+      "compactedTotal": 3391,
+      "repeatedFiveCalls": {
+        "baseline": 6650,
+        "compacted": 3767,
+        "label": "Projection from one paired call and verified zero-call decision reuse, not five live answers"
+      }
+    },
+    {
+      "id": "meeting",
+      "runId": "context-eval-meeting-395cf893-dab2-411e-b24c-81023e40fae8",
+      "goal": "Return JSON with start and timezone for the customer review meeting.",
+      "requiredIds": [
+        "f1",
+        "f2"
+      ],
+      "retainedIds": [
+        "f1",
+        "f2",
+        "recent"
+      ],
+      "fullRecall": true,
+      "tailRecall": false,
+      "jevRecall": true,
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7221,
+        "afterChars": 151,
+        "budgetChars": 1600,
+        "retained": 3,
+        "archived": 12,
+        "decisionCalls": 2,
+        "cacheHits": 0,
+        "inputTokens": 3026,
+        "outputTokens": 260,
+        "reportedCost": 0.00012709199999999998,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "compacted"
+      },
+      "latencyMs": 5555,
+      "restartDecisionCalls": 0,
+      "archiveRecovery": true,
+      "decisions": [
+        {
+          "id": "f1",
+          "digest": "f40c1eca799bddde3db8d32e012d41f061000c2a6fcdb960e0de5a5833f7ea89",
+          "probability": 0.95,
+          "distribution": {
+            "keep": 0.95,
+            "omit": 0.050000000000000044
+          },
+          "kept": true,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-0",
+          "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-1",
+          "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-2",
+          "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-3",
+          "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-4",
+          "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-5",
+          "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "f2",
+          "digest": "180e794195cb9b6452dbaee4858d713e0c1559e8ca13386851a20b2b434a5ca3",
+          "probability": 0.97,
+          "distribution": {
+            "keep": 0.97,
+            "omit": 0.030000000000000027
+          },
+          "kept": true,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-6",
+          "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-7",
+          "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-8",
+          "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-9",
+          "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-10",
+          "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-11",
+          "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "recent",
+          "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "reason": "recent"
+        }
+      ],
+      "baseline": {
+        "answer": {
+          "start": "09:30",
+          "timezone": "America/New_York"
+        },
+        "inputTokens": 1316,
+        "outputTokens": 14,
+        "cost": 0.0002058,
+        "latencyMs": 1150,
+        "pass": true
+      },
+      "compacted": {
+        "answer": {
+          "start": "09:30",
+          "timezone": "America/New_York"
+        },
+        "inputTokens": 80,
+        "outputTokens": 14,
+        "cost": 0.0000204,
+        "latencyMs": 558,
+        "pass": true
+      },
+      "baselineTotal": 1330,
+      "compactedTotal": 3380,
+      "repeatedFiveCalls": {
+        "baseline": 6650,
+        "compacted": 3756,
+        "label": "Projection from one paired call and verified zero-call decision reuse, not five live answers"
+      }
+    },
+    {
+      "id": "retry",
+      "runId": "context-eval-retry-0b4b48d9-7286-4f4f-b71d-82f281e5f844",
+      "goal": "Return JSON with key and delivered from the invoice delivery receipt. Reuse its key when reconciling delivery.",
+      "requiredIds": [
+        "f1",
+        "f2"
+      ],
+      "retainedIds": [
+        "f1",
+        "f2",
+        "recent"
+      ],
+      "fullRecall": true,
+      "tailRecall": false,
+      "jevRecall": true,
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7235,
+        "afterChars": 165,
+        "budgetChars": 1600,
+        "retained": 3,
+        "archived": 12,
+        "decisionCalls": 2,
+        "cacheHits": 0,
+        "inputTokens": 3051,
+        "outputTokens": 260,
+        "reportedCost": 0.000128142,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "compacted"
+      },
+      "latencyMs": 5494,
+      "restartDecisionCalls": 0,
+      "archiveRecovery": true,
+      "decisions": [
+        {
+          "id": "f1",
+          "digest": "f0ba1fe999efb2dc9f6f284bf6350f37c03193fbb21b601997a75d406e941003",
+          "probability": 0.96,
+          "distribution": {
+            "keep": 0.96,
+            "omit": 0.040000000000000036
+          },
+          "kept": true,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-0",
+          "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-1",
+          "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-2",
+          "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-3",
+          "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-4",
+          "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-5",
+          "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "f2",
+          "digest": "28a99dd64d9ed9151b37a38a4d7d52a251ff329dcd8ee41944a0f297cdf12c7a",
+          "probability": 0.96,
+          "distribution": {
+            "keep": 0.96,
+            "omit": 0.040000000000000036
+          },
+          "kept": true,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-6",
+          "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-7",
+          "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-8",
+          "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-9",
+          "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-10",
+          "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-11",
+          "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "recent",
+          "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "reason": "recent"
+        }
+      ],
+      "baseline": {
+        "answer": {
+          "key": "INV-4827",
+          "delivered": true
+        },
+        "inputTokens": 1326,
+        "outputTokens": 13,
+        "cost": 0.0002067,
+        "latencyMs": 739,
+        "pass": true
+      },
+      "compacted": {
+        "answer": {
+          "key": "INV-4827",
+          "delivered": true
+        },
+        "inputTokens": 90,
+        "outputTokens": 13,
+        "cost": 0.0000213,
+        "latencyMs": 507,
+        "pass": true
+      },
+      "baselineTotal": 1339,
+      "compactedTotal": 3414,
+      "repeatedFiveCalls": {
+        "baseline": 6695,
+        "compacted": 3826,
+        "label": "Projection from one paired call and verified zero-call decision reuse, not five live answers"
+      }
+    },
+    {
+      "id": "correction",
+      "runId": "context-eval-correction-b3ed7c68-f7e0-450b-9a50-0931cff31943",
+      "goal": "Return JSON with region and approval for the data export.",
+      "requiredIds": [
+        "f1",
+        "f2"
+      ],
+      "retainedIds": [
+        "f1",
+        "f2",
+        "recent"
+      ],
+      "fullRecall": true,
+      "tailRecall": false,
+      "jevRecall": true,
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7223,
+        "afterChars": 153,
+        "budgetChars": 1600,
+        "retained": 3,
+        "archived": 12,
+        "decisionCalls": 2,
+        "cacheHits": 0,
+        "inputTokens": 2840,
+        "outputTokens": 224,
+        "reportedCost": 0.00011928,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "compacted"
+      },
+      "latencyMs": 4454,
+      "restartDecisionCalls": 0,
+      "archiveRecovery": true,
+      "decisions": [
+        {
+          "id": "f1",
+          "digest": "ff064cad14516c0954d9da0260800992770d76e1db14244d5b736f4631002cb2",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "reason": "constraint_or_open_loop"
+        },
+        {
+          "id": "noise-0",
+          "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-1",
+          "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-2",
+          "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-3",
+          "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-4",
+          "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-5",
+          "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "f2",
+          "digest": "9fcec845c818916a68c111c7a8903e37a4217bca89db406e78758c67ac43933f",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "reason": "constraint_or_open_loop"
+        },
+        {
+          "id": "noise-6",
+          "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-7",
+          "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-8",
+          "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+          "probability": 0.1,
+          "distribution": {
+            "keep": 0.1,
+            "omit": 0.9
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-9",
+          "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-10",
+          "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-11",
+          "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "reason": "jev"
+        },
+        {
+          "id": "recent",
+          "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "reason": "recent"
+        }
+      ],
+      "baseline": {
+        "answer": {
+          "region": "eu-west-1",
+          "approval": "pending"
+        },
+        "inputTokens": 1317,
+        "outputTokens": 12,
+        "cost": 0.00020475,
+        "latencyMs": 826,
+        "pass": true
+      },
+      "compacted": {
+        "answer": {
+          "region": "eu-west-1",
+          "approval": "pending"
+        },
+        "inputTokens": 81,
+        "outputTokens": 12,
+        "cost": 0.00001935,
+        "latencyMs": 601,
+        "pass": true
+      },
+      "baselineTotal": 1329,
+      "compactedTotal": 3157,
+      "repeatedFiveCalls": {
+        "baseline": 6645,
+        "compacted": 3529,
+        "label": "Projection from one paired call and verified zero-call decision reuse, not five live answers"
+      }
+    }
+  ]
+}

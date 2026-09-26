@@ -1,0 +1,185 @@
+{
+  "generatedAt": "2026-09-26T18:12:53.882Z",
+  "mode": "scripted",
+  "storage": "temporary-local-mongodb",
+  "clock": "injected 30-minute idle threshold; execution wall time measured",
+  "beforeOptIn": {
+    "calls": 0,
+    "tasks": 0
+  },
+  "beforeIdleThreshold": {
+    "calls": 0,
+    "tasks": 0
+  },
+  "current": {
+    "status": "completed",
+    "provider": "scripted-fixture",
+    "model": "counter-fixture",
+    "calls": 1,
+    "tokensUsed": 200,
+    "usageUnknown": 0,
+    "costUSD": 0,
+    "wallTimeMs": 1100,
+    "tasks": 1,
+    "artifacts": 2,
+    "extraCallsAfterRestart": 0,
+    "checks": [
+      {
+        "path": "prototype.html",
+        "passed": true,
+        "failed": []
+      },
+      {
+        "path": "evidence.md",
+        "passed": true,
+        "failed": []
+      },
+      {
+        "id": "browser:counter",
+        "path": "prototype.html",
+        "passed": true,
+        "failed": [],
+        "verification": {
+          "kind": "counter",
+          "contractVersion": "counter-v1",
+          "requireReset": true,
+          "browserVersion": "153.0.8010.53",
+          "passed": true,
+          "checks": [
+            {
+              "id": "counter-value",
+              "passed": true,
+              "detail": "One visible counter value."
+            },
+            {
+              "id": "increment-control",
+              "passed": true,
+              "detail": "One visible native button with the required accessible name."
+            },
+            {
+              "id": "reset-control",
+              "passed": true,
+              "detail": "One visible native button with the required accessible name."
+            },
+            {
+              "id": "initial-zero",
+              "passed": true,
+              "detail": "Expected 0; observed 0."
+            },
+            {
+              "id": "increment-once",
+              "passed": true,
+              "detail": "Expected 1; observed 1."
+            },
+            {
+              "id": "increment-twice",
+              "passed": true,
+              "detail": "Expected 2; observed 2."
+            },
+            {
+              "id": "reset-zero",
+              "passed": true,
+              "detail": "Expected 0; observed 0."
+            },
+            {
+              "id": "self-contained",
+              "passed": true,
+              "detail": "No external resource or forbidden navigation attempts observed."
+            },
+            {
+              "id": "browser-cleanup",
+              "passed": true,
+              "detail": "Owned browser process group exited."
+            }
+          ],
+          "observed": [
+            {
+              "id": "initial-zero",
+              "expected": "0",
+              "actual": "0"
+            },
+            {
+              "id": "increment-once",
+              "expected": "1",
+              "actual": "1"
+            },
+            {
+              "id": "increment-twice",
+              "expected": "2",
+              "actual": "2"
+            },
+            {
+              "id": "reset-zero",
+              "expected": "0",
+              "actual": "0"
+            }
+          ],
+          "isolation": {
+            "blockedRequests": 0,
+            "blockedWebSockets": 0,
+            "policyViolations": 0,
+            "unexpectedNavigations": 0,
+            "unexpectedPages": 0
+          },
+          "cleanup": {
+            "browserStarted": true,
+            "processExited": true,
+            "processGroupExited": true
+          },
+          "elapsedMs": 691,
+          "htmlSha256": "0cea95af33477c727933deddd7fe95803e5222bcc0b50a44e0696761aa5d15c0",
+          "htmlBytes": 440
+        }
+      }
+    ]
+  },
+  "conversation": [
+    {
+      "role": "user",
+      "text": "Build a local HTML counter prototype with Increment and Reset buttons. It starts at 0, increments once per click, and Reset returns it to 0. Do not deploy or modify any existing project."
+    }
+  ],
+  "hypotheses": [
+    {
+      "label": "Unverified hypothesis",
+      "text": "A small isolated prototype may test the stated design before changing the real project."
+    }
+  ],
+  "sourceMessageIds": [
+    "bb11b6abe26699d8c52ea805"
+  ],
+  "events": [
+    {
+      "type": "model-start",
+      "reserved": 5512,
+      "at": "2026-09-26T19:12:52.783Z"
+    },
+    {
+      "type": "model-usage",
+      "tokens": 200,
+      "measured": true,
+      "at": "2026-09-26T19:12:52.783Z"
+    },
+    {
+      "type": "completed",
+      "reason": "All required file checks passed.",
+      "at": "2026-09-26T19:12:52.783Z"
+    }
+  ],
+  "artifacts": [
+    {
+      "name": "prototype.html",
+      "content": "<!doctype html><html><head><meta charset=\"utf-8\"><title>Counter prototype</title></head><body><output data-testid=\"counter-value\">0</output><button id=\"inc\">Increment</button><button id=\"reset\">Reset</button><script>const value=document.querySelector(\"output\");document.querySelector(\"#inc\").onclick=()=>value.textContent=Number(value.textContent)+1;document.querySelector(\"#reset\").onclick=()=>value.textContent=\"0\";</script></body></html>"
+    },
+    {
+      "name": "evidence.md",
+      "content": "Unverified draft\nHypotheses (unverified)\nChecks still needed\nNot executed\n[source:bb11b6abe26699d8c52ea805]\nThis synthetic prototype is an unverified draft. The fixed browser check verifies counter behavior only. No deployment or user-project edit was executed."
+    }
+  ],
+  "limitations": [
+    "One synthetic counter task. This is not a long-horizon or general quality benchmark.",
+    "The injected clock verifies scheduling decisions; no claim of 30 minutes actual waiting.",
+    "Browser checks verify 0 -> 1 -> 2 -> Reset -> 0 only. Broader goal completion remains unverified.",
+    "The scripted mode reports fixture token counts, not measured model usage."
+  ]
+}

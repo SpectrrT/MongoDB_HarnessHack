@@ -1,0 +1,246 @@
+{
+  "schema": 2,
+  "createdAt": "2026-09-26T18:50:13.488Z",
+  "id": "personal-research-qualification",
+  "title": "Preserve creator-screening rules across a long research session",
+  "mode": "Reconstructed offline artifact replay through production Sleep generation, file writing and declared file checks",
+  "evaluationPhase": "Development configuration after observed failures. Prompt and model changed jointly; no separate causal attribution.",
+  "adapter": "Benchmark-only immutable historical context attachment. Production Sleep has no context compaction/retrieval integration.",
+  "model": "openai/gpt-4.1-mini",
+  "scorerPolicy": "retention-v9-shared-encoding",
+  "trials": 1,
+  "startTrial": 1,
+  "provenance": {
+    "packetSha256": "3214e4481b6cda12f7c0fd8683acbcf8803b304136b91b51b71b316f9470ca62",
+    "evaluatorSha256": "89b176dab8aa476fc32382dc9715956806018b3df942332dbd09747d3a289090",
+    "frozenFiles": {
+      "input.json": "3214e4481b6cda12f7c0fd8683acbcf8803b304136b91b51b71b316f9470ca62",
+      "evaluate.mjs": "89b176dab8aa476fc32382dc9715956806018b3df942332dbd09747d3a289090",
+      "checks.private.json": "46664026d71dc635e7e8eb10610c9ce208fc15df061e60e0bab797194259ef9b"
+    },
+    "origin": "codex",
+    "sessionSpanHours": 48.62,
+    "observedReturnGapSeconds": 2190.726,
+    "gapMeaning": "Elapsed between prior assistant message and next authored request; not proven inactivity of every computer process.",
+    "cutoffAt": "2026-09-24T01:08:19.528Z",
+    "historyRecords": 83,
+    "authoredTextChars": 6238,
+    "serializedHistoryChars": 11575,
+    "characterMeasurement": "Chars and selector budgets use JavaScript UTF-16 code units. No text normalization was performed."
+  },
+  "policy": {
+    "budgetChars": 16000,
+    "recentCount": 2,
+    "threshold": 0.25,
+    "maxAttempts": 3,
+    "tokenBudget": 100000,
+    "maxOutputTokens": 1800,
+    "tools": [],
+    "storage": "Fresh temporary local MongoDB, real driver"
+  },
+  "disclosure": [
+    "History uses authored user requests before the cutoff, plus one prior assistant continuation constraint. Tool output and later answers are excluded.",
+    "Candidate accounts and their metadata are synthetic, introduced identically in both arms to make the historical task independently checkable.",
+    "Idle time is replayed now; no historical background execution or elapsed-time speedup is claimed.",
+    "This tests a bounded qualification artifact, not the full original research task or spreadsheet.",
+    "User and system instructions are pinned. The production 16000-character selection budget is unchanged; no artificial context pressure.",
+    "Both arms use identical current inputs, model, generation parameters, local file permissions, declared file checks and repair limits.",
+    "Private evaluator and future outcomes are never included in model requests. The evaluator runs only after both artifacts in a pair exist; its failures never feed repair.",
+    "Production declared file checks assess JSON and existence only. Independent reconstructed criteria decide benchmark success.",
+    "Raw private history, prompts and generated artifact content are not included in this public receipt.",
+    "Each paid attempt is recorded, including failed requests. Unknown provider usage makes token totals unknown.",
+    "No retrieval tools are exposed, matching the production Sleep executor. This does not measure arbitrary archive recovery.",
+    "Source session duration and observed idle gaps do not establish historical background execution or elapsed-time speedup."
+  ],
+  "implementation": {
+    "server/context/compaction.js": "d8d68e37c59ffed88921b58a5411597dca992a7f5ab652f5127dc099f701f9b1",
+    "server/context/jev.js": "9e3e3f3531f75a46f1bc4074261a944f489c2657d5d3d2ecf353334dcf21ada1",
+    "server/context/repeat-evidence.js": "59177050e0bb2965b966bcfdd9708a8993222998e512e91f4ed8e03345dbc70d",
+    "server/sleep/execution.js": "33a9c35c0c659f9f20af77fc0ffdaaeb855fc677c9fdc1fe8dcda1b3c42bb4b2",
+    "server/sleep/execution-store.js": "d50acf61cf13c85c480f600451bd77b6e9edaf4ef3032adb31bb3a94486d5b4f",
+    "server/sleep/execution-provider.js": "a434c09d8663b688df407a4d1cbd541ba41942cc891f211623008dc19c4d4c28",
+    "scripts/benchmark-real-sleep.mjs": "248fc4e86c3e6aaaec37d2a04ccab46a0a1bf9b8ef29afa5297d221c1be06ac8",
+    "scripts/lib/real-replay-evaluation.mjs": "54e34733630643a927cc62f594a0dced179c0a10a0cb5e8d269ae8dd90c875eb",
+    "scripts/lib/replay-packet.mjs": "e31902efe154a78a7c5e49dd567544fdb8dcb9f615750fda6f9587a724119c57"
+  },
+  "pairs": [
+    {
+      "trial": 1,
+      "order": [
+        "baseline",
+        "compacted"
+      ],
+      "baseline": {
+        "arm": "baseline",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "176c59def6454ff46405f5027f7059d5265a3ebd12e030844e5909d74951a9a0",
+            "requestChars": 24998,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5673,
+            "outputTokens": 645,
+            "cost": 0.0033012,
+            "reportedModel": "openai/gpt-4.1-mini",
+            "outputShape": {
+              "hasSummary": true,
+              "hasFiles": true,
+              "fileContentTypes": [
+                "string"
+              ]
+            },
+            "latencyMs": 5558
+          }
+        ],
+        "startedAt": "2026-09-26T18:50:16.760Z",
+        "status": "completed",
+        "repairs": 0,
+        "terminalReason": "All required file checks passed.",
+        "terminalError": null,
+        "finalReservation": 0,
+        "declaredChecks": [
+          {
+            "path": "artifact.json",
+            "passed": true,
+            "failed": []
+          }
+        ],
+        "runtimeChargedTokens": 6318,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 6318,
+          "totalTokens": 6318,
+          "measuredCost": 0.0033012
+        },
+        "decisionTokens": 0,
+        "totalTokens": 6318,
+        "artifactSha256": "835c0688e33ff05b6e6c8d3559ef7bb76b50ded943b1a59105b61829cc9e670f",
+        "artifactBytes": 2110,
+        "elapsedMs": 5787,
+        "evaluation": {
+          "passed": false,
+          "checksPassed": 29,
+          "checksTotal": 31,
+          "failures": [
+            "creator-F.dedicated",
+            "creator-I.qualified"
+          ]
+        }
+      },
+      "compacted": {
+        "arm": "compacted",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "176c59def6454ff46405f5027f7059d5265a3ebd12e030844e5909d74951a9a0",
+            "requestChars": 24998,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5673,
+            "outputTokens": 747,
+            "cost": 0.0018132,
+            "reportedModel": "openai/gpt-4.1-mini",
+            "outputShape": {
+              "hasSummary": true,
+              "hasFiles": true,
+              "fileContentTypes": [
+                "string"
+              ]
+            },
+            "latencyMs": 4961
+          }
+        ],
+        "startedAt": "2026-09-26T18:50:22.615Z",
+        "selection": {
+          "source": "openrouter:typesafe/jev-1.13",
+          "beforeChars": 11575,
+          "afterChars": 11575,
+          "budgetChars": 16000,
+          "retained": 83,
+          "archived": 0,
+          "duplicateOmissions": 0,
+          "decisionCalls": 0,
+          "cacheHits": 0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "reportedCost": 0,
+          "costKnown": true,
+          "usageKnown": true,
+          "errors": [],
+          "status": "under_budget"
+        },
+        "selectionLatencyMs": 1,
+        "status": "completed",
+        "repairs": 0,
+        "terminalReason": "All required file checks passed.",
+        "terminalError": null,
+        "finalReservation": 0,
+        "declaredChecks": [
+          {
+            "path": "artifact.json",
+            "passed": true,
+            "failed": []
+          }
+        ],
+        "runtimeChargedTokens": 6420,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 6420,
+          "totalTokens": 6420,
+          "measuredCost": 0.0018132
+        },
+        "decisionTokens": 0,
+        "totalTokens": 6420,
+        "artifactSha256": "38c9d12f0d79a2bcc569ae93b24b0bd8cdc8e67ff16815d11827c6d908ccf24c",
+        "artifactBytes": 2387,
+        "elapsedMs": 5167,
+        "evaluation": {
+          "passed": false,
+          "checksPassed": 29,
+          "checksTotal": 31,
+          "failures": [
+            "creator-F.dedicated",
+            "creator-I.qualified"
+          ]
+        }
+      },
+      "compactionOnlyRegression": false
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "trials": 1,
+      "artifactsGenerated": 1,
+      "passed": 0,
+      "checksPassed": 29,
+      "checksTotal": 31,
+      "totalTokens": 6318,
+      "decisionTokens": 0,
+      "decisionCalls": 0,
+      "mainCalls": 1,
+      "elapsedMs": 5787
+    },
+    "compacted": {
+      "trials": 1,
+      "artifactsGenerated": 1,
+      "passed": 0,
+      "checksPassed": 29,
+      "checksTotal": 31,
+      "totalTokens": 6420,
+      "decisionTokens": 0,
+      "decisionCalls": 0,
+      "mainCalls": 1,
+      "elapsedMs": 5167
+    },
+    "compactionOnlyRegressions": 0,
+    "tokenSavingsPercent": -1.61,
+    "comparison": "identical-input generation variation",
+    "savingsAttribution": "No compaction occurred. Token and check differences cannot be attributed to compaction.",
+    "compactionChangedInputs": false
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "model": "openai/gpt-4o-mini",
+  "policy": "Bind facts to the requested subject using explicit source evidence. A named plan, option or example is not selected merely because it is mentioned. Prefer explicit current statements about the subject; follow a referenced plan only when the evidence says that subject uses it. Retrieval order is not event time: reading an old record later does not make its contents newer. Use original timestamps and explicit corrections to resolve conflicts. If the supplied records already establish the answer, do not retrieve duplicates.",
+  "cases": [
+    {
+      "id": "existing-routing",
+      "path": "before",
+      "expected": {
+        "region": "us-west-2"
+      },
+      "calls": 2,
+      "inputTokens": 3781,
+      "outputTokens": 57,
+      "cost": 0.00046695,
+      "answer": {
+        "region": "eu-central-1"
+      },
+      "pass": false
+    },
+    {
+      "id": "existing-routing",
+      "path": "after",
+      "expected": {
+        "region": "us-west-2"
+      },
+      "calls": 3,
+      "inputTokens": 6068,
+      "outputTokens": 73,
+      "cost": 0.000666,
+      "answer": {
+        "region": "us-west-2"
+      },
+      "pass": true
+    },
+    {
+      "id": "unseen-shipping",
+      "path": "before",
+      "expected": {
+        "carrier": "UPS"
+      },
+      "calls": 2,
+      "inputTokens": 648,
+      "outputTokens": 66,
+      "cost": 0.00013680000000000002,
+      "answer": {
+        "carrier": "UPS"
+      },
+      "pass": true
+    },
+    {
+      "id": "unseen-shipping",
+      "path": "after",
+      "expected": {
+        "carrier": "UPS"
+      },
+      "calls": 1,
+      "inputTokens": 333,
+      "outputTokens": 6,
+      "cost": 0.00005355,
+      "answer": {
+        "carrier": "UPS"
+      },
+      "pass": true
+    },
+    {
+      "id": "unseen-reference",
+      "path": "before",
+      "expected": {
+        "carrier": "FedEx"
+      },
+      "calls": 3,
+      "inputTokens": 1052,
+      "outputTokens": 62,
+      "cost": 0.000195,
+      "answer": {
+        "carrier": "FedEx"
+      },
+      "pass": true
+    },
+    {
+      "id": "unseen-reference",
+      "path": "after",
+      "expected": {
+        "carrier": "FedEx"
+      },
+      "calls": 3,
+      "inputTokens": 1328,
+      "outputTokens": 62,
+      "cost": 0.0002364,
+      "answer": {
+        "carrier": "FedEx"
+      },
+      "pass": true
+    }
+  ],
+  "limitations": "Three synthetic probes of a general evidence rule, not a replacement for the full frozen benchmark."
+}

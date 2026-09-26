@@ -1,13 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
+import express from "express";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { rehearse, rehearsalLevel, rehearsalSignature, rehearsalTask, imagine, priorScore } from "../rem/rehearse.js";
 import { GYM, TRAIN_IDS } from "../rem/gym.js";
 import { createRem } from "../rem/index.js";
-import { createRemIdleRehearsal } from "../server/rem-rehearse.js";
+import { createRemIdleRehearsal, mountRemRehearsal } from "../server/rem-rehearse.js";
 import { createApp } from "../server/index.js";
 
 test("imagine: seeded, train tasks only, level-many attacks, never a recipe already tried", () => {
@@ -103,8 +104,8 @@ test("REM API: a rehearsal on demand runs and the rehearsals view lists it", asy
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "rem-rehearse-"));
   try {
     const api = request.agent(createApp({ dataDir: dir, serveStatic: false }));
-    await api.post("/api/rem/reset").expect(200);
-    const { body } = await api.post("/api/rem/rehearse").expect(200);
+    await api.post("/api/rem/reset").set("X-Offload-Client", "local").expect(200);
+    const { body } = await api.post("/api/rem/rehearse").set("X-Offload-Client", "local").expect(200);
     assert.equal(body.rehearsal.mode, "idle");
     assert.ok(body.rehearsal.tried > 0);
     const view = (await api.get("/api/rem/rehearsals").expect(200)).body;
@@ -112,7 +113,34 @@ test("REM API: a rehearsal on demand runs and the rehearsals view lists it", asy
     assert.ok(view.recent.every((d) => d.mode === "idle"));
     assert.equal(view.idle.enabled, false);
   } finally {
-    await request(createApp({ dataDir: dir, serveStatic: false })).post("/api/rem/reset");
+    await request(createApp({ dataDir: dir, serveStatic: false })).post("/api/rem/reset").set("X-Offload-Client", "local");
     await fs.rm(dir, { recursive: true, force: true });
   }
+});
+
+test("mounted rehearsal handlers enforce local transport, origin, client intent and production disable", async () => {
+  let starts = 0, touches = 0;
+  const idle = { touch: () => { touches++; }, start: async () => { starts++; return { tried: 0 }; }, status: () => ({ enabled: false }) };
+  const mount = ({ remote, production = false } = {}) => {
+    const app = express();
+    if (remote) app.use((req, res, next) => { Object.defineProperty(req.socket, "remoteAddress", { value: remote }); next(); });
+    const previous = process.env.NODE_ENV;
+    try { if (production) process.env.NODE_ENV = "production"; mountRemRehearsal(app, idle); }
+    finally { if (previous === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = previous; }
+    return app;
+  };
+  const app = mount();
+  await request(app).post("/api/rem/rehearse").expect(403);
+  await request(app).post("/api/rem/rehearse").set("X-Offload-Client", "local").set("Origin", "https://attacker.example").expect(403);
+  await request(app).post("/api/rem/rehearse").set("X-Offload-Client", "local").set("Host", "attacker.example").expect(403);
+  await request(app).get("/api/rem/rehearsals").set("Host", "attacker.example").expect(403);
+  const remote = mount({ remote: "203.0.113.9" });
+  await request(remote).post("/api/rem/rehearse").set("X-Offload-Client", "local").set("Host", "127.0.0.1:5194").expect(403);
+  await request(remote).get("/api/rem/rehearsals").set("Host", "127.0.0.1:5194").expect(403);
+  const production = mount({ production: true });
+  await request(production).post("/api/rem/rehearse").set("X-Offload-Client", "local").expect(403);
+  await request(production).get("/api/rem/rehearsals").expect(403);
+  assert.equal(starts, 0); assert.equal(touches, 0);
+  await request(app).post("/api/rem/rehearse").set("X-Offload-Client", "local").expect(200);
+  assert.equal(starts, 1);
 });

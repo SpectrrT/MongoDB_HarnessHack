@@ -1,0 +1,40 @@
+{
+  "createdAt": "2026-09-26T18:05:13.104Z",
+  "source": "Synthetic conversation fixture. No personal history or private files sent to the model.",
+  "scope": "Candidate derivation plus real Sleep executor and independent browser behavior check. Does not exercise idle timing or toggle lifecycle.",
+  "candidateId": "35fd438ecf0fabb768be1dd62d90be3a0ea01062bd05f3ec9b77ad79a8606c62",
+  "sourceMessageIds": [
+    "goal-counter",
+    "constraint-local"
+  ],
+  "status": "completed",
+  "model": "openai/gpt-4.1-mini",
+  "calls": 1,
+  "tokensUsed": 1425,
+  "usageUnknown": 0,
+  "cost": 0.0016152,
+  "checks": [
+    {
+      "path": "prototype.html",
+      "passed": true,
+      "failed": []
+    },
+    {
+      "path": "evidence.md",
+      "passed": true,
+      "failed": []
+    }
+  ],
+  "costScope": "This run only. The initial failed smoke test has unreported usage and is retained separately.",
+  "browser": {
+    "initialCount": 0,
+    "afterClicks": [
+      1,
+      2
+    ],
+    "afterReset": 0,
+    "networkRequests": 0,
+    "pageErrors": []
+  },
+  "passed": true
+}

@@ -19,7 +19,9 @@ import {
 } from "../shared/workspace.js";
 import { connectStore, RunConflict } from './harness/store.js';
 import { inputSchema } from './harness/workflow.js';
+import { sleepExecutionRoutes } from './sleep/execution-routes.js';
 import { activityRoutes } from './activity/routes.js';
+import { suggestionRoutes } from './suggestions/routes.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const types = [
   "request-connection",
@@ -135,8 +137,14 @@ export function createApp({
   dataDir = process.env.OFFLOAD_DATA_DIR || path.join(here, "../.data"),
   serveStatic = true,
   harnessStore = null,
+  sleepTasks = null,
+  sleepTaskRoot = path.join(dataDir, 'sleep-artifacts'),
+  sleepTaskWorkerEnabled = false,
+  idleExecution = null,
   atlas = null,
   activity = null,
+  chatCompactor = null,
+  suggestions = null,
 } = {}) {
   const app = express(),
     queues = new Map(),
@@ -238,7 +246,9 @@ export function createApp({
       res.json(visible);
     } catch (error) { next(error); }
   });
+  sleepExecutionRoutes(app, { store: sleepTasks, root: sleepTaskRoot, enabled: sleepTaskWorkerEnabled });
   activityRoutes(app, { activity });
+  suggestionRoutes(app, { suggestions });
   async function access(req, fn) {
     const key = req.workspaceKey;
     const previous = queues.get(key) || Promise.resolve();
@@ -271,7 +281,7 @@ export function createApp({
       if (queues.get(key) === task) queues.delete(key);
     }
   }
-  mountModel(app,{dataDir,activity});
+  mountModel(app,{dataDir,activity,compactor:chatCompactor,idleExecution});
   app.get("/api/state", async (req, res, next) => {
     try {
       res.json(await access(req, (s) => s));
@@ -337,7 +347,34 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         .createActivity(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon'), { log: console.warn })
         .catch((error) => (console.warn('Computer history is off:', error.message), null))
     : null;
-  createApp({ harnessStore: connection?.store, atlas, activity }).listen(port, "127.0.0.1", () =>
+  const chatCompactor = connection && process.env.OFFLOAD_COMPACTION === 'jev'
+    ? (await import('./context/compaction.js')).createContextCompactor({db:connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon')}) : null;
+  if (chatCompactor) {
+    const db=connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon');
+    await Promise.all([db.collection('context_archive').createIndex({runId:1,unitId:1,part:1},{name:'context_run_unit'}),db.collection('context_decisions').createIndex({runId:1,stateKey:1},{name:'context_run_state'})]);
+  }
+  const sleepTasks = connection ? new (await import('./sleep/execution-store.js')).SleepExecutionStore(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon')) : null;
+  if (sleepTasks) await sleepTasks.initialize();
+  const dataDir = process.env.OFFLOAD_DATA_DIR || path.join(here, '../.data');
+  const sleepTaskRoot = path.resolve(process.env.SLEEP_TASK_ROOT || path.join(dataDir, 'sleep-artifacts'));
+  const sleepTaskWorkerEnabled = process.env.SLEEP_EXECUTION_ENABLED === 'true';
+  let idleExecution = null;
+  if (sleepTasks) {
+    const { createIdleExecution } = await import('./sleep/idle-execution.js');
+    const { sleepOpenRouterExecutor } = await import('./sleep/execution-provider.js');
+    const { deriveIdleDraft } = await import('./suggestions/idle-candidates.js');
+    idleExecution = createIdleExecution({ store: sleepTasks, executor: sleepOpenRouterExecutor({ dataDir }), root: sleepTaskRoot, derive: deriveIdleDraft });
+  }
+  if (sleepTasks && sleepTaskWorkerEnabled) {
+    const { sleepOpenRouterExecutor } = await import('./sleep/execution-provider.js');
+    const { startSleepExecutionWorker } = await import('./sleep/execution-worker.js');
+    const worker = startSleepExecutionWorker(sleepTasks, sleepOpenRouterExecutor({ dataDir }), { root: sleepTaskRoot });
+    process.once('SIGTERM', worker.stop); process.once('SIGINT', worker.stop);
+  }
+  const suggestions = connection ? await (await import('./suggestions/service.js')).createPersonalSuggestions({
+    db: connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon') }) : null;
+  createApp({ harnessStore: connection?.store, atlas, activity, sleepTasks, sleepTaskRoot, sleepTaskWorkerEnabled, idleExecution, chatCompactor, suggestions }).listen(port, "127.0.0.1", () =>
+
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
 }

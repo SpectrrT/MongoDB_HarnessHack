@@ -1,7 +1,9 @@
 // REM API. One shared demo instance for every visitor (not per-visitor like /api/state): the
 // engine's harness, memory and ledger are the thing being demonstrated. Mutations run one at a time.
 import { z } from "zod";
+import { remAccess } from "./rem-access.js";
 import { createRem } from "../rem/index.js";
+import { MAX_EPISODE_JSON_CHARS } from "../rem/episode-archive.js";
 import { review } from "../rem/cycle.js";
 import { createEmbedder } from "../rem/embed.js";
 import { createModel } from "../rem/model.js";
@@ -63,6 +65,7 @@ const runSummary = (cp) =>
     verdict: cp.verdict ?? null,
     completion: cp.completion ?? null,
     injected: cp.injected ?? null,
+    compaction: cp.compaction ?? null,
   };
 
 // Change events for the live feed: small, no vectors.
@@ -83,7 +86,7 @@ function feedEvent(e) {
 }
 
 async function reviewFinished(rem) {
-  const done = await rem.ctx.db.collection("checkpoints").find({ status: "done", verdict: { $exists: false } }).toArray();
+  const done = await rem.ctx.db.collection("checkpoints").find({ status: { $in: ["done", "incomplete", "failed"] }, verdict: { $exists: false } }).toArray();
   for (const run of done) await review(rem.ctx, run);
   return rem.ctx.db
     .collection("checkpoints")
@@ -92,6 +95,7 @@ async function reviewFinished(rem) {
 }
 
 export function mountRem(app) {
+  app.use("/api/rem", remAccess());
   const handle = (fn) => async (req, res, next) => {
     try {
       res.json(await fn(req, res));
@@ -107,6 +111,19 @@ export function mountRem(app) {
     "/api/rem/state",
     handle(async () => (await getRem()).state()),
   );
+  app.get("/api/rem/archive", handle(async req => {
+    const query = z.object({ runId: z.string().min(1).max(200).optional(), kind: z.string().min(1).max(200).optional(),
+      after: z.string().min(1).max(200).optional(), limit: z.coerce.number().int().min(1).max(50).default(20) }).strict().parse(req.query);
+    return (await getRem()).episodeArchive(query);
+  }));
+  app.get("/api/rem/episodes/:id", handle(async (req, res) => {
+    const id = z.string().min(1).max(200).parse(req.params.id);
+    const query = z.object({ offset: z.coerce.number().int().min(0).max(MAX_EPISODE_JSON_CHARS).default(0),
+      limit: z.coerce.number().int().min(1).max(8000).default(4000) }).strict().parse(req.query);
+    const result = await (await getRem()).episode(id, query);
+    if (!result) { res.status(404); return { error: "Episode not found." }; }
+    return result;
+  }));
   app.post(
     "/api/rem/run",
     handle((req) =>

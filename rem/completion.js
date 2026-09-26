@@ -2,8 +2,10 @@ import { traceable } from "./trace.js";
 
 // Probabilistic termination: before a day run may finish, estimate P(goal satisfied | evidence).
 // Jev (TypeSafe's decision model, through OpenRouter's decisions endpoint) answers one yes/no
-// question with a probability. The stub is deterministic, used by tests and whenever Jev is off
-// or unreachable, and every verdict says which one produced it.
+// question with a probability. The deterministic stub is used for offline evaluation when
+// Jev is not selected. Every verdict identifies its source.
+import { hasCompletionEvidence } from "./completion-record.js";
+
 export const JEV_MODEL = "typesafe/jev-1.13";
 const DECISIONS_URL = "https://openrouter.ai/api/alpha/decisions";
 const QUESTION =
@@ -13,6 +15,20 @@ const QUESTION =
 const lastSteps = (cp, n = 12) =>
   (cp.transcript || []).slice(-n).map((t) => `${t.step}. ${t.call.name} ${t.error ? `error: ${t.error}` : "ok"}`);
 
+// Only reported valid components are counted. A subtotal is not a complete usage receipt.
+export function decisionUsage(usage) {
+  const tokenCount = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
+  const inputTokens = tokenCount(usage?.input_tokens ?? usage?.prompt_tokens);
+  const outputTokens = tokenCount(usage?.output_tokens ?? usage?.completion_tokens);
+  const subtotal = (inputTokens ?? 0) + (outputTokens ?? 0);
+  const tokens = (inputTokens !== null || outputTokens !== null) && Number.isSafeInteger(subtotal) ? subtotal : null;
+  const cost = Number.isFinite(usage?.cost) && usage.cost >= 0 ? usage.cost : null;
+  return { inputTokens, outputTokens, tokens, cost,
+    usageKnown: inputTokens !== null && outputTokens !== null && tokens !== null && usage?.usageKnown !== false,
+    costKnown: cost !== null && usage?.costKnown !== false };
+}
+const noCallUsage = () => decisionUsage({ input_tokens: 0, output_tokens: 0, cost: 0 });
+
 // What the decision sees: the task, the plan, the last steps, the final answer and, when the
 // harness can run them, the end-state checks' findings.
 export function evidenceState({ cp, final, evidence }) {
@@ -21,10 +37,10 @@ export function evidenceState({ cp, final, evidence }) {
     plan: (cp.plan || []).slice(0, 8).join(" | ").slice(0, 600),
     steps: lastSteps(cp).join("\n").slice(0, 1200),
     final: String(final || "").slice(0, 1500),
-    checks: evidence
+    checks: hasCompletionEvidence(evidence)
       ? evidence.failures.length
         ? `failing: ${evidence.failures.join("; ")}`.slice(0, 800)
-        : "all end-state checks pass"
+        : evidence.pass === false ? "end-state checks failed" : "all end-state checks pass"
       : "not available",
   };
 }
@@ -33,6 +49,8 @@ export function evidenceState({ cp, final, evidence }) {
 export function stubVerdict({ cp, final, evidence }) {
   const reasons = [];
   let p = 0.92;
+  if (!hasCompletionEvidence(evidence)) (p = Math.min(p, 0.2)), reasons.push("acceptance evidence unavailable");
+  if (evidence?.pass === false) (p = Math.min(p, 0.3)), reasons.push("acceptance checks failed");
   if (!String(final || "").trim()) (p = Math.min(p, 0.2)), reasons.push("no final answer");
   const last = (cp.transcript || []).at(-1);
   if (last?.error) (p = Math.min(p, 0.45)), reasons.push(`last step failed: ${last.error.slice(0, 80)}`);
@@ -44,7 +62,7 @@ export function createStubGate() {
   return {
     name: "stub",
     async check(input) {
-      return { ...stubVerdict(input), source: "stub" };
+      return { ...stubVerdict(input), source: "stub", available: true, ...noCallUsage() };
     },
   };
 }
@@ -54,7 +72,8 @@ export function createJevGate({ apiKey = process.env.OPENROUTER_API_KEY, model =
   return {
     name: "jev",
     async check(input) {
-      const fallback = (why) => ({ ...stubVerdict(input), source: `stub (jev unavailable: ${why})` });
+      let receipt = decisionUsage();
+      const fallback = (why) => ({ p: null, available: false, source: `jev unavailable: ${why}`, reasons: ["Configured completion evaluator is unavailable. Completion is unverified."], ...receipt });
       try {
         const res = await fetchImpl(DECISIONS_URL, {
           method: "POST",
@@ -62,15 +81,16 @@ export function createJevGate({ apiKey = process.env.OPENROUTER_API_KEY, model =
           headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
           body: JSON.stringify({ model, state: evidenceState(input), questions: { satisfied: { type: "noul", instructions: QUESTION } } }),
         });
+        let body;
+        try { body = await res.json(); } catch {}
+        receipt = decisionUsage(body?.usage);
         if (!res.ok) return fallback(res.status === 402 ? "402 payment required" : `HTTP ${res.status}`);
-        const body = await res.json();
-        const p = body.answers?.satisfied?.noul;
-        if (typeof p !== "number") return fallback("no probability in reply");
-        const tokens = (body.usage?.input_tokens || 0) + (body.usage?.output_tokens || 0);
+        const p = body?.answers?.satisfied?.noul;
+        if (!Number.isFinite(p) || p < 0 || p > 1) return fallback("invalid probability in reply");
         const reasons = input.evidence?.failures?.slice(0, 4) || [];
-        return { p: Math.round(p * 1000) / 1000, reasons, source: model, tokens, cost: body.usage?.cost ?? null };
+        return { p: Math.round(p * 1000) / 1000, available: true, reasons, source: model, ...receipt };
       } catch (error) {
-        return fallback(error.name === "TimeoutError" ? "timeout" : error.message.slice(0, 60));
+        return fallback(error.name === "TimeoutError" ? "timeout" : "request failed");
       }
     },
   };
@@ -81,8 +101,12 @@ function traceGate(gate) {
   return { ...gate, check: traceable(gate.check.bind(gate), { name: "completion-gate", run_type: "chain" }) };
 }
 
-// REM_COMPLETION=jev uses Jev when OPENROUTER_API_KEY exists; stub otherwise (and by default).
+// An explicitly configured Jev gate never silently becomes a successful stub.
 export function createCompletionGate() {
-  const gate = process.env.REM_COMPLETION === "jev" && process.env.OPENROUTER_API_KEY ? createJevGate() : createStubGate();
+  const gate = process.env.REM_COMPLETION === "jev"
+    ? process.env.OPENROUTER_API_KEY ? createJevGate() : {
+      name: "jev", check: async () => ({ p: null, available: false, source: "jev unavailable: missing key", reasons: ["Configure the completion evaluator before verifying this task."], ...noCallUsage() }),
+    }
+    : createStubGate();
   return traceGate(gate);
 }

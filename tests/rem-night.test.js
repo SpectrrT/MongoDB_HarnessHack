@@ -125,11 +125,12 @@ test("an edit that expands authority becomes an ask instead of passing through t
   assert.match(brief.text, /Queued as an ask: Grant tool scope calendar\.write/);
   const ask = await fresh.ctx.db.collection("asks").findOne({ kind: "edit.authority" });
   assert.equal(ask.text, "Allow this harness change? Grant tool scope calendar.write");
-  await fresh.decide(ask._id, "approve");
+  const decision = await fresh.decide(ask._id, "approve");
   const harness = await fresh.harness();
-  assert.equal(harness.version, 1);
-  assert.ok(harness.genome.toolScopes.calendar.includes("write"));
-  assert.equal((await fresh.ctx.db.collection("edits").findOne({ _id: ask.editId })).outcome.status, "approved");
+  assert.equal(harness.version, 0);
+  assert.equal(decision.status, "rejected");
+  assert.match(decision.validation.reason, /not implemented/);
+  assert.equal((await fresh.ctx.db.collection("edits").findOne({ _id: ask.editId })).outcome.status, "rejected");
   await fresh.close();
 });
 
