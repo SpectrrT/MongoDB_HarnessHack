@@ -25,7 +25,7 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 
 - `src/`: React 19 + Vite UI (Floyd). The design pass lives in `src/polish.css`, loaded after `styles.css`.
 - `server/index.js`: Express API. `shared/workspace.js` is the original mock engine the UI still runs on.
-- `rem/`: the REM engine, served at `/api/rem/*` by `server/rem.js`. Tonight's stand-ins (an in-memory, driver-shaped
+- `rem/`: the REM engine, served at `/api/rem/*` by `server/rem.js`. Its stand-ins (an in-memory, driver-shaped
   store, a scripted model, local embeddings) switch to Atlas, OpenRouter and Voyage by env vars; see `docs/rem-engine.md`.
 - `server/harness/`: durable MongoDB harness with fenced workers (Ryan). Its `connectStore()` is the server's MongoDB
   connection. `server/activity/`: computer history.

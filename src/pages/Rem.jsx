@@ -56,6 +56,8 @@ const LABEL_OVERRIDES = { latencyMs: "Latency" };
 const label = (key) =>
   LABEL_OVERRIDES[key] || key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
 const statusClass = (s) => STATUS_CLASS[s] || "";
+// Import kept below the top-of-file imports, which other branches edit.
+import RemSelfCheck from "../components/RemSelfCheck";
 
 function fmtMetric(key, value) {
   if (value === undefined || value === null) return "n/a";
@@ -749,7 +751,7 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
             <p>{brief.rehearse.tried} variations tested. {brief.rehearse.held} passed, {brief.rehearse.broke.length} exposed new failures.</p>
             <p className="muted">Level {brief.rehearse.level}. {brief.rehearse.kept} unresolved challenges retained.</p></article>}
           {brief.calibration && <article className="rem-phase-card"><span className="rem-eyebrow">05 / Check the judge</span><h3>Calibrate</h3>
-            <p>Completion threshold: {brief.calibration.threshold.to} ({brief.calibration.threshold.status}).</p>
+            <p>Completion threshold: {brief.calibration.threshold.to ?? brief.calibration.threshold.from} ({brief.calibration.threshold.status}).</p>
             <p className="muted">Held-out checks without the answer key: {brief.calibration.blind.heldOut.falseAccepts} unfinished runs accepted; {brief.calibration.blind.heldOut.falseRejects} completed runs rejected.</p></article>}
           </div>
           <div className="section-line"><h3>Evolve</h3><span>{brief.evolve.edits.length} proposed edits</span></div>
@@ -830,6 +832,7 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
             <h3>Before / after on the gym</h3>
           </div>
           <FitnessTable title="Whole gym" before={brief.evolve.baseline} after={brief.evolve.fitness} />
+          <Disclosure title="Rehearsal and calibration details"><div className="rem-table-scroll"><RemSelfCheck brief={brief} /></div></Disclosure>
           {brief.verified && (
             <div className="rem-table-wrap" tabIndex={0} role="region" aria-label="Verified work costs">
             <table className="rem-table">
@@ -970,6 +973,7 @@ export default function Rem() {
       {error && <div className="rem-error" role="alert"><AlertTriangle size={18} aria-hidden="true" /><div><strong>Could not complete the request</strong><p>{error}</p><p>{state ? "Your last loaded results are kept below. Use Refresh to try again." : "Once the local service is running, open its address to continue."}</p></div></div>}
       {!state ? (!error && <div className="beautiful-ui rem-loading"><LoadingState label="Loading the harness" variant="Dots" /></div>) : (
         <>
+          {state.engine?.database?.startsWith("atlas:") && <p className="rem-source-note">MongoDB Atlas · {state.engine.database.slice(6)} · search {state.engine.search}</p>}
           <p className="rem-source-note">{state.engine?.model === "scripted" ? "Scripted model · fixture tasks" : `Model: ${state.engine?.model || "Unavailable"} · fixture tasks`}. Results below come from this engine, including failed checks.</p>
           <div className="rem-overview" aria-label="Engine overview">
             <div><span>Active memories</span><strong>{state.memory.active}</strong><small>{state.memory.unconsolidated} episodes awaiting review</small></div>

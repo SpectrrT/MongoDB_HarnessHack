@@ -53,7 +53,7 @@ export function createLocalEmbedder({ dims = 256 } = {}) {
   };
 }
 
-// TOMORROW: used only when VOYAGE_API_KEY is set (explicit-embedding fallback if autoEmbed misbehaves).
+// Used only when VOYAGE_API_KEY is set (explicit-embedding fallback if autoEmbed misbehaves).
 export function createVoyageEmbedder({ apiKey = process.env.VOYAGE_API_KEY, model = "voyage-4" } = {}) {
   if (!apiKey) throw new Error("Set VOYAGE_API_KEY to use Voyage embeddings.");
   const cache = new Map();

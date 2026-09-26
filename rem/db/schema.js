@@ -69,7 +69,7 @@ export const TIME_SERIES = Object.freeze({
 });
 
 // Atlas Vector Search (autoEmbed, public preview) + Atlas Search definitions. The memory db records
-// them; tomorrow's setup creates them with createSearchIndex on the Atlas Sandbox.
+// them; on the Atlas Sandbox, ensureIndexes creates them with createSearchIndex.
 const autoEmbed = (path) => ({ type: "autoEmbed", path, model: "voyage-4", modality: "text" });
 export const SEARCH_INDEXES = Object.freeze({
   episodes: [

@@ -1,5 +1,5 @@
-// Turns raw episodes into candidate facts for Merge. Tonight this is a deterministic extractor;
-// tomorrow the consolidator model (routing.consolidator) can produce the same shape.
+// Turns raw episodes into candidate facts for Merge. This is a deterministic extractor;
+// the consolidator model (routing.consolidator) can produce the same shape.
 export const NOISE_THRESHOLD = 0.3;
 
 const owner = (o) => o || "none";
