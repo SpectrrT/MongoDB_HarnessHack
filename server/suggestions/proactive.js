@@ -1,3 +1,4 @@
+import { actionDraftSupported } from './action-draft.js';
 import { digest } from './history.js';
 
 const DAY = 86400000;
@@ -59,7 +60,7 @@ export function proactiveDraft(input, records) {
   const claims = records.map(record => ({ text: record.text, sourceId: record.id }));
   const actionItems = input.kind === 'meeting-followup' ? claims.filter(claim => claim.sourceId === input.actionSourceId).flatMap(claim => claim.text.split(/\r?\n/)
     .filter(line => /^\s*(?:[-*]\s*)?(?:action(?: item)?|todo|follow[- ]?up)\s*:/i.test(line))
-    .map(text => ({text, sourceId: claim.sourceId, status: 'not_started'}))) : [];
+    .map(text => ({text, sourceId: claim.sourceId, status: 'not_started', draftSupported: actionDraftSupported(text)}))) : [];
   return {title: input.title, claims, actionItems};
 }
 

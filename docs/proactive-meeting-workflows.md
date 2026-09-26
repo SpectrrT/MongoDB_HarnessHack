@@ -50,3 +50,13 @@ Repeated or concurrent starts share one durable run and one artifact. Repeating 
 ## Current boundaries
 
 The meeting form imports selected notes. Automatic calendar ingestion, meeting transcription, recurring scheduling, and execution of external action items are not connected. A weekly UTC pattern is only a suggestion to review, especially across timezone and daylight-saving changes. Source links are provided by the person importing notes; source checks confirm quotations, not the authenticity of a remote document. The public static site requires the local service for these features.
+
+## Hand one action to Sleep
+
+A checked meeting checklist exposes `draftSupported` for each exact quoted action. Local text-draft actions such as draft, write, prepare, summarize, outline, document, list, review, and design can be handed to the existing assigned-task executor. Send, buy, delete, book, and other external-only actions are not supported by this bridge.
+
+`POST /api/suggestions/runs/:runId/actions/:index/draft` accepts a future `deadline` in milliseconds, a total `budget` of 1,000 to 100,000 tokens, and `maxAttempts` from one to three. It returns HTTP 202 with `task`, `workerEnabled`, and the limited completion meaning. Repeating the handoff returns the existing task, including if that task was cancelled. It never silently recreates a cancelled action.
+
+The worker produces `action-draft.md` and `source-evidence.md` from the supplied notes. The generated files pause for review under the existing exact-draft approval mechanism before being written. The action quote and source markers are checked. The files remain unverified drafts; structural checks do not prove that the original meeting action was completed. No new executor or external tool permissions are introduced.
+
+The handoff creates a queued task, not a completed action. The existing Sleep worker and model credentials must be configured to generate the draft. This feature does not enable a worker automatically. Source changes or withdrawal cancel the task at the next worker fence and withdraw artifact downloads. If a model reservation was in flight, its full reserved usage is conservatively charged when actual usage is unavailable. Sources are bounded rather than silently truncated; oversized note sets ask for a narrower import.

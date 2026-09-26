@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { HarnessStore } from '../harness/store.js';
+import { meetingActionDraftInput, sourceFingerprint } from './action-draft.js';
+import { HarnessStore, RunConflict } from '../harness/store.js';
 import { PolicyStore } from '../harness/policy.js';
 import { tick } from '../harness/worker.js';
 import { digest, normalizeEvent } from './history.js';
@@ -238,6 +239,30 @@ export async function createPersonalSuggestions({db,clock=()=>new Date(),compact
     if(active!==artifact.sourceIds.length)throw Error('Artifact withdrawn because a source was removed.');
     return artifact;
   }
+  async function draftAction(workspace,id,index,{store,deadline,budget,maxAttempts=2}){
+    if(!store)throw new RunConflict('Sleep task storage is unavailable. Connect MongoDB before creating a local draft.');
+    const run=await runs.get(workspace,id);
+    if(!run||run.status!=='completed'||run.input.kind!=='meeting-followup')throw new RunConflict('Choose a completed meeting checklist first.');
+    await sourceRows(run);
+    const action=run.outputs.draft.actionItems[index];
+    if(!Number.isSafeInteger(index)||index<0||!action)throw new RunConflict('Unknown meeting action.');
+    const requestKey=`meeting-action:${digest([id,index])}`;
+    const existing=await store.tasks.findOne({workspace,requestKey});
+    if(existing){await store.validateSource(existing);return await store.get(workspace,existing._id);}
+    const rows=await sourceRows(run);
+    const snapshot=await events.find({workspace,projectId:run.input.projectId,active:true},{sort:{timestamp:1,_id:1},limit:501}).toArray();
+    if(snapshot.length>500)throw new RunConflict('Too many project sources. Narrow the meeting project first.');
+    const input=meetingActionDraftInput({run,action,rows,deadline,budget,maxAttempts});
+    let task;
+    try{task=await store.enqueue(workspace,requestKey,input,{sourceContract:{type:'meeting-action',suggestionRunId:id,actionIndex:index,
+      projectId:run.input.projectId,sourceIds:rows.map(row=>row._id),revision:sourceFingerprint(snapshot)}});}
+    catch(error){
+      if(!(error instanceof RunConflict))throw error;
+      task=await store.tasks.findOne({workspace,requestKey});if(!task)throw error;
+    }
+    await store.validateSource(task);
+    return await store.get(workspace,task._id);
+  }
   async function cancel(workspace,id){
     const run=await runs.runs.findOneAndUpdate({_id:id,workspace,status:{$in:['queued','running','paused_for_auth']}},
       {$set:{status:'cancelled',error:'Cancelled by owner.',outputs:{},updatedAt:now()},$unset:{worker:'',leaseToken:'',leaseUntil:''}},{returnDocument:'after'});
@@ -270,6 +295,6 @@ export async function createPersonalSuggestions({db,clock=()=>new Date(),compact
     else await policy.reject(candidate._id,'Candidate did not improve both splits without regressions.');
     return {accepted,candidateId:candidate._id,parentVersion:parent.version,candidateVersion:candidate.version,train,heldOut};
   }
-  return {db,runs,policy,importEvents,openProject,list,decide,workOnce,recoverAccepted,getArtifact,forget,evolve,cancel,
+  return {db,runs,policy,importEvents,openProject,list,decide,workOnce,recoverAccepted,getArtifact,forget,evolve,cancel,draftAction,
     run:async(workspace,id)=>visibleRun(await runs.get(workspace,id))};
 }
