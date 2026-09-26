@@ -38,18 +38,18 @@ const PHASES = ["Replay", "Merge", "Distill", "Rehearse", "Evolve", "Calibrate",
 const METRIC_ORDER = ["tasks", "passed", "passRate", "collateral", "cost", "steps", "interventions", "latencyMs"];
 const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", incomplete: "is-blocked", failed: "is-cancelled" };
 
-const get = async (url) => {
-  const r = await fetch(url);
-  const v = await r.json();
-  if (!r.ok) throw Error(v?.error || "Request failed.");
-  return v;
+const readResponse = async (response) => {
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw Error("REM needs the local Offload service. This website does not host the engine. Open the local app to run tasks and review results.");
+  }
+  const value = await response.json();
+  if (!response.ok) throw Error(value?.error || "Request failed.");
+  return value;
 };
-const post = async (url, body) => {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Offload-Client": "local" }, body: JSON.stringify(body ?? {}) });
-  const v = await r.json();
-  if (!r.ok) throw Error(v?.error || "Request failed.");
-  return v;
-};
+const get = async (url) => readResponse(await fetch(url));
+const post = async (url, body) => readResponse(await fetch(url, {
+  method: "POST", headers: { "Content-Type": "application/json", "X-Offload-Client": "local" }, body: JSON.stringify(body ?? {}),
+}));
 const pct = (x) => `${Math.round((x ?? 0) * 100)}%`;
 const money = (x) => Number.isFinite(x) ? `$${x.toFixed(4)}` : "n/a";
 const LABEL_OVERRIDES = { latencyMs: "Latency" };
@@ -967,7 +967,7 @@ export default function Rem() {
         </div>
         <button className="button secondary small" disabled={busy || refreshing} onClick={refresh}><RefreshCw size={14} aria-hidden="true" />{refreshing ? "Refreshing..." : "Refresh"}</button>
       </div>
-      {error && <div className="rem-error" role="alert"><AlertTriangle size={18} aria-hidden="true" /><div><strong>Could not complete the request</strong><p>{error}</p><p>Your last loaded results are kept below. Use Refresh to try again.</p></div></div>}
+      {error && <div className="rem-error" role="alert"><AlertTriangle size={18} aria-hidden="true" /><div><strong>Could not complete the request</strong><p>{error}</p><p>{state ? "Your last loaded results are kept below. Use Refresh to try again." : "Once the local service is running, open its address to continue."}</p></div></div>}
       {!state ? (!error && <div className="beautiful-ui rem-loading"><LoadingState label="Loading the harness" variant="Dots" /></div>) : (
         <>
           <p className="rem-source-note">{state.engine?.model === "scripted" ? "Scripted model · fixture tasks" : `Model: ${state.engine?.model || "Unavailable"} · fixture tasks`}. Results below come from this engine, including failed checks.</p>

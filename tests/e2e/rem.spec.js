@@ -192,3 +192,12 @@ for (const theme of ["light", "monochrome-dark"]) {
     await page.screenshot({ path: `test-results/rem-night-${theme}-${info.project.name}.png` });
   });
 }
+
+
+test("REM: static hosting explains the missing service instead of a JSON parser error", async ({ page }) => {
+  await page.route("**/api/rem/state", route => route.fulfill({status:404,contentType:"text/html",body:"<!doctype html><title>Not found</title>"}));
+  await openRem(page);
+  await expect(page.getByRole("alert")).toContainText("REM needs the local Offload service");
+  await expect(page.getByRole("alert")).not.toContainText("Unexpected token");
+  await expect(page.getByRole("button", {name:"Run", exact:true})).not.toBeVisible();
+});
