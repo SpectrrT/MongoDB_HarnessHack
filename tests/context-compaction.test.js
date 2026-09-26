@@ -60,7 +60,7 @@ test('Jev wire contract validates probabilities, usage and HTTP failures', async
     request={url,body:JSON.parse(init.body)};
     return Response.json({answers:{keep_0:{noul:0.08},keep_1:{noul:2}},usage:{input_tokens:100,output_tokens:8}});
   }});
-  const result=await scorer.score({goal:'release',units:[noise(0),noise(1)]});
+  const result=await scorer.score({goal:'release',units:[{id:'owner',text:'Release owner is Mei.'},{id:'weather',text:'The weather is clear.'}]});
   assert.equal(request.url,'https://api.typesafe.ai/v1/systemone');
   assert.equal(request.body.model,'jev-1.13.0');
   assert.deepEqual(result.scores.map(s=>s.probability),[0.08,null]);

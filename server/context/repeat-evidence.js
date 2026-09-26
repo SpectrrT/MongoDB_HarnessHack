@@ -82,3 +82,20 @@ export function expandRepeatedEvidence(value, dictionary = {}) {
   }
   return text;
 }
+
+// Share one conservative OR decision only when an identical repeated block
+// dominates each candidate. Unique text remains visible for every member.
+export function retentionGroups(encoded) {
+  const groups = [], positions = new Map();
+  for (const [index, record] of encoded.records.entries()) {
+    const segments = record.text?.segments;
+    const repeats = segments?.filter(segment => typeof segment !== 'string');
+    const repeatedChars = repeats?.reduce((n, segment) => n + (segment.ref === undefined ? segment.text : encoded.dictionary[segment.ref]).length * segment.repeat, 0) || 0;
+    const totalChars = typeof record.text === 'string' ? record.text.length : expandRepeatedEvidence(record.text, encoded.dictionary).length;
+    const key = repeatedChars >= totalChars * 0.75 && repeats.length
+      ? JSON.stringify(repeats.map(segment => [segment.ref === undefined ? segment.text : encoded.dictionary[segment.ref], segment.repeat])) : null;
+    if (key !== null && positions.has(key)) groups[positions.get(key)].push(index);
+    else {if (key !== null) positions.set(key, groups.length); groups.push([index]);}
+  }
+  return groups;
+}
