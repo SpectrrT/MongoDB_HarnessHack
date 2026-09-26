@@ -1,3 +1,7 @@
+# SDK comparison evidence
+
+The original single-trial report below is preserved as a historical measurement. The final seven complete paired runs and three infrastructure-failed attempts are consolidated in [reference-summary.json](evidence/reference-summary.json). The homepage uses the two fixed paced runs each for Astra and Opus 5.5, including adverse outcomes. See the [registered protocol](../scripts/agents-reference/README.md) and [current README](../README.md) for totals and limitations.
+
 # OpenAI Agents SDK reference comparison
 
 One live paired run on September 26, 2026 compared a configured **OpenAI Agents SDK reference harness** with Offload context selection and archive recovery. The unchanged synthetic fixture has three tasks and twelve chronological stages. This is not a Codex, Claude Code, frontier-model or full-product benchmark.

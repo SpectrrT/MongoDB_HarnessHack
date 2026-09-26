@@ -1,0 +1,224 @@
+{
+  "comparison": {
+    "id": "sdk-mini",
+    "label": "GPT-4o-mini · 3 runs",
+    "baselineLabel": "OpenAI Agents SDK",
+    "baselineTokens": 111118,
+    "offloadTokens": 100377,
+    "baselinePassed": 35,
+    "offloadPassed": 36,
+    "stages": 36,
+    "description": "Three fixed paired trials of the same three synthetic tasks, twelve chronological stages per trial. Same model, tools, prompts and budgets. Offload totals include every selector and retrieval call.",
+    "limitation": "A configured SDK reference, not a Codex or Claude Code comparison. One missed check concerned JSON formatting. Offload used more calls and took longer. All-in cost is unknown because selector prices are absent.",
+    "answerModel": "openai/gpt-4o-mini",
+    "receipt": "/evidence/sdk-three-runs.json"
+  },
+  "trials": [
+    {
+      "file": "agents-reference-2026-09-26.json",
+      "summary": {
+        "tasks": 3,
+        "stages": 12,
+        "complete": true,
+        "referencePassed": 11,
+        "offloadPassed": 12,
+        "regressions": [],
+        "improvements": [
+          "owner-correction"
+        ],
+        "reference": {
+          "calls": 19,
+          "inputTokens": 38752,
+          "outputTokens": 394,
+          "knownCost": 0.0041964,
+          "usageKnown": true,
+          "costKnown": true,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 0,
+          "totalTokens": 39146,
+          "cost": 0.0041964
+        },
+        "offload": {
+          "calls": 35,
+          "inputTokens": 30937,
+          "outputTokens": 3627,
+          "knownCost": 0.0023175000000000005,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 34564,
+          "cost": null
+        },
+        "decisions": {
+          "calls": 12,
+          "inputTokens": 17219,
+          "outputTokens": 3034,
+          "knownCost": 0,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 20253,
+          "cost": null
+        },
+        "totalExperiment": {
+          "calls": 54,
+          "inputTokens": 69689,
+          "outputTokens": 4021,
+          "knownCost": 0.0065138999999999996,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 73710,
+          "cost": null
+        },
+        "allInTokenSavingsPercent": 11.7,
+        "allInCostSavingsPercent": null,
+        "archiveRecoveryChecks": 1,
+        "archiveRecoveryPassed": 1,
+        "restartDecisionCalls": 0,
+        "selectionFailures": 0,
+        "referenceAnswerLatencyMs": 14800,
+        "offloadSelectionAndAnswerLatencyMs": 23382
+      }
+    },
+    {
+      "file": "agents-reference-replication-2.json",
+      "summary": {
+        "tasks": 3,
+        "stages": 12,
+        "complete": true,
+        "referencePassed": 12,
+        "offloadPassed": 12,
+        "regressions": [],
+        "improvements": [],
+        "reference": {
+          "calls": 17,
+          "inputTokens": 34510,
+          "outputTokens": 348,
+          "knownCost": 0.0030429000000000007,
+          "usageKnown": true,
+          "costKnown": true,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 0,
+          "totalTokens": 34858,
+          "cost": 0.0030429000000000007
+        },
+        "offload": {
+          "calls": 34,
+          "inputTokens": 28556,
+          "outputTokens": 3585,
+          "knownCost": 0.00203115,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 32141,
+          "cost": null
+        },
+        "decisions": {
+          "calls": 12,
+          "inputTokens": 17219,
+          "outputTokens": 3034,
+          "knownCost": 0,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 20253,
+          "cost": null
+        },
+        "totalExperiment": {
+          "calls": 51,
+          "inputTokens": 63066,
+          "outputTokens": 3933,
+          "knownCost": 0.005074049999999998,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 66999,
+          "cost": null
+        },
+        "allInTokenSavingsPercent": 7.79,
+        "allInCostSavingsPercent": null,
+        "archiveRecoveryChecks": 1,
+        "archiveRecoveryPassed": 1,
+        "restartDecisionCalls": 0,
+        "selectionFailures": 0,
+        "referenceAnswerLatencyMs": 11987,
+        "offloadSelectionAndAnswerLatencyMs": 18977
+      }
+    },
+    {
+      "file": "agents-reference-replication-3.json",
+      "summary": {
+        "tasks": 3,
+        "stages": 12,
+        "complete": true,
+        "referencePassed": 12,
+        "offloadPassed": 12,
+        "regressions": [],
+        "improvements": [],
+        "reference": {
+          "calls": 18,
+          "inputTokens": 36729,
+          "outputTokens": 385,
+          "knownCost": 0.00355155,
+          "usageKnown": true,
+          "costKnown": true,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 0,
+          "totalTokens": 37114,
+          "cost": 0.00355155
+        },
+        "offload": {
+          "calls": 36,
+          "inputTokens": 30041,
+          "outputTokens": 3631,
+          "knownCost": 0.0022815000000000005,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 33672,
+          "cost": null
+        },
+        "decisions": {
+          "calls": 12,
+          "inputTokens": 17219,
+          "outputTokens": 3034,
+          "knownCost": 0,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 20253,
+          "cost": null
+        },
+        "totalExperiment": {
+          "calls": 54,
+          "inputTokens": 66770,
+          "outputTokens": 4016,
+          "knownCost": 0.00583305,
+          "usageKnown": true,
+          "costKnown": false,
+          "unknownUsageCalls": 0,
+          "unknownCostCalls": 12,
+          "totalTokens": 70786,
+          "cost": null
+        },
+        "allInTokenSavingsPercent": 9.27,
+        "allInCostSavingsPercent": null,
+        "archiveRecoveryChecks": 1,
+        "archiveRecoveryPassed": 1,
+        "restartDecisionCalls": 0,
+        "selectionFailures": 0,
+        "referenceAnswerLatencyMs": 13057,
+        "offloadSelectionAndAnswerLatencyMs": 22158
+      }
+    }
+  ]
+}

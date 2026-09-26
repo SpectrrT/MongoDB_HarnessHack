@@ -1,0 +1,1938 @@
+{
+  "schema": 2,
+  "createdAt": "2026-09-26T19:06:11.503Z",
+  "id": "personal-onboarding-routing",
+  "title": "Reconcile onboarding routing from chronological history",
+  "mode": "Reconstructed offline artifact replay through production Sleep generation, file writing and declared file checks",
+  "evaluationPhase": "Preregistered development configuration after observed failures. Prompt, model and any opted-in typed-history policy differ from initial frozen trials; no separate causal attribution.",
+  "adapter": "Benchmark-only immutable historical context attachment. Production Sleep has no context compaction/retrieval integration.",
+  "model": "openai/gpt-4.1-mini",
+  "scorerPolicy": "retention-v9-shared-encoding",
+  "trials": 1,
+  "startTrial": 1,
+  "provenance": {
+    "packetSha256": "41a76e84f461a4041a7311a7a5a2bd1a66643588306763946b159e3489aa143c",
+    "evaluatorSha256": "21a370b8ebcc8908510061e3d8afc94b5e1eeb03126c252b42bb7c2a42f2d99a",
+    "frozenFiles": {
+      "model-input.json": "41a76e84f461a4041a7311a7a5a2bd1a66643588306763946b159e3489aa143c",
+      "evaluate-v2.py": "21a370b8ebcc8908510061e3d8afc94b5e1eeb03126c252b42bb7c2a42f2d99a",
+      "checks.json": "f901f22f2cec00690634bf7a42b46b61aa49c6e922217fd52f35f766d71bc019",
+      "freeze-manifest.json": "9ddd642679d7fe6e61e0fc6fb708dc2199ae04f67cab2fd5964cdf5a6b60dfb2"
+    },
+    "origin": "Claude authored requests and actual earlier assistant reports",
+    "historyRecords": 145,
+    "authoredTextChars": 56637,
+    "authoredTextCodePoints": 56627,
+    "characterMeasurement": "Chars and selector budgets use JavaScript UTF-16 code units. Code points are reported separately.",
+    "serializedHistoryChars": 67208
+  },
+  "policy": {
+    "budgetChars": 16000,
+    "recentCount": 2,
+    "threshold": 0.25,
+    "conversationHistory": {
+      "schemaVersion": 1,
+      "instructionsComplete": true
+    },
+    "maxAttempts": 3,
+    "tokenBudget": 100000,
+    "maxOutputTokens": 1800,
+    "tools": [],
+    "storage": "Fresh temporary local MongoDB, real driver"
+  },
+  "disclosure": [
+    "This frozen packet supplies 39 authored requests and 106 actual earlier assistant reports. Its source manifest states any selection limits.",
+    "The output is a reconstructed text-only routing configuration. Its twelve criteria are structural and lexical proxies, not a runnable UI or semantic-quality evaluation.",
+    "User, system and developer instructions are pinned. The production 16000-character selection budget is unchanged; no artificial context pressure.",
+    "Both arms use identical current inputs, model, generation parameters, local file permissions, declared file checks and repair limits.",
+    "Private evaluator and future outcomes are never included in model requests. The evaluator runs only after both artifacts in a pair exist; its failures never feed repair.",
+    "Production declared file checks assess JSON and existence only. Independent reconstructed criteria decide benchmark success.",
+    "Raw private history, prompts and generated artifact content are not included in this public receipt.",
+    "Each paid attempt is recorded, including failed requests. Unknown provider usage makes token totals unknown.",
+    "No retrieval tools are exposed, matching the production Sleep executor. This does not measure arbitrary archive recovery.",
+    "Source session duration and observed idle gaps do not establish historical background execution or elapsed-time speedup."
+  ],
+  "implementation": {
+    "server/context/compaction.js": "d0fc6f8319ba9737ae31eacf67c15aef22e339a39c9c3579d44009fe22d30e28",
+    "server/context/jev.js": "9e3e3f3531f75a46f1bc4074261a944f489c2657d5d3d2ecf353334dcf21ada1",
+    "server/context/repeat-evidence.js": "59177050e0bb2965b966bcfdd9708a8993222998e512e91f4ed8e03345dbc70d",
+    "server/sleep/execution.js": "33a9c35c0c659f9f20af77fc0ffdaaeb855fc677c9fdc1fe8dcda1b3c42bb4b2",
+    "server/sleep/execution-store.js": "d50acf61cf13c85c480f600451bd77b6e9edaf4ef3032adb31bb3a94486d5b4f",
+    "server/sleep/execution-provider.js": "a434c09d8663b688df407a4d1cbd541ba41942cc891f211623008dc19c4d4c28",
+    "scripts/benchmark-real-sleep.mjs": "b706e96cd37c27f03e05ad08c3a168a4be98d2a072815e80d592243e2ca055cc",
+    "scripts/lib/real-replay-evaluation.mjs": "54e34733630643a927cc62f594a0dced179c0a10a0cb5e8d269ae8dd90c875eb",
+    "scripts/lib/replay-packet.mjs": "57acbb14e2a3c5d6a2996b0ef3da450481bd9b1404d8a7cb6d4a537906dd0f5b"
+  },
+  "pairs": [
+    {
+      "trial": 1,
+      "order": [
+        "baseline",
+        "compacted"
+      ],
+      "baseline": {
+        "arm": "baseline",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "c24565c89add44d3eb38d2f698a0a18ebfd1101c5f13e7330d57eb4382490d18",
+            "requestChars": 85960,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 20032,
+            "outputTokens": 779,
+            "cost": 0.0092592,
+            "reportedModel": "openai/gpt-4.1-mini",
+            "outputShape": {
+              "hasSummary": true,
+              "hasFiles": true,
+              "fileContentTypes": [
+                "string"
+              ]
+            },
+            "latencyMs": 7317
+          }
+        ],
+        "decisionCalls": [],
+        "startedAt": "2026-09-26T19:06:12.432Z",
+        "decisionUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 0,
+          "totalTokens": 0,
+          "measuredCost": 0
+        },
+        "status": "completed",
+        "repairs": 0,
+        "terminalReason": "All required file checks passed.",
+        "terminalError": null,
+        "finalReservation": 0,
+        "declaredChecks": [
+          {
+            "path": "artifact.json",
+            "passed": true,
+            "failed": []
+          }
+        ],
+        "runtimeChargedTokens": 20811,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 20811,
+          "totalTokens": 20811,
+          "measuredCost": 0.0092592
+        },
+        "decisionTokens": 0,
+        "measuredTokens": 20811,
+        "measuredCost": 0.0092592,
+        "costKnown": true,
+        "totalTokens": 20811,
+        "artifactSha256": "7f3ccc2365947da427e14d5e84445246c58101f5eeffd7f444829337d1143528",
+        "artifactBytes": 2440,
+        "elapsedMs": 7340,
+        "evaluation": {
+          "passed": false,
+          "checksPassed": 9,
+          "checksTotal": 12,
+          "failures": [
+            "tail_order",
+            "post_paywall_moved",
+            "source_traceability"
+          ]
+        }
+      },
+      "compacted": {
+        "arm": "compacted",
+        "calls": [],
+        "decisionCalls": [
+          {
+            "attempt": 1,
+            "requestSha256": "f5fd65df013f9c50c9ed7f2a0a761bbae2831c60ef274634741997507b587bd9",
+            "requestChars": 14464,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 4359,
+            "outputTokens": 298,
+            "cost": 0.000183078,
+            "latencyMs": 376
+          },
+          {
+            "attempt": 2,
+            "requestSha256": "bea157d125c73ce7be76a4cbe2b0bc4e5cbb800020461ad360a144725c42596b",
+            "requestChars": 16407,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 4848,
+            "outputTokens": 298,
+            "cost": 0.000203616,
+            "latencyMs": 321
+          },
+          {
+            "attempt": 3,
+            "requestSha256": "f61eab679546e1b4d3131343bc358bb34199bf1c9249f38f8ce9bc28f416a1cd",
+            "requestChars": 13996,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 4231,
+            "outputTokens": 298,
+            "cost": 0.000177702,
+            "latencyMs": 280
+          },
+          {
+            "attempt": 4,
+            "requestSha256": "30e381bd1220131eb4ae154becdad3ab00af219b261bf32414322f054f03d372",
+            "requestChars": 16883,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 4936,
+            "outputTokens": 298,
+            "cost": 0.000207312,
+            "latencyMs": 368
+          },
+          {
+            "attempt": 5,
+            "requestSha256": "1b908f345dba6a21790fe908f98b25e95be120b10c8da9b2288179fa8d2a1565",
+            "requestChars": 14795,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 4462,
+            "outputTokens": 298,
+            "cost": 0.000187404,
+            "latencyMs": 405
+          },
+          {
+            "attempt": 6,
+            "requestSha256": "d506fd32031b29621430d1681d0d00cc1504e688906138297ec87dd282dd0b56",
+            "requestChars": 16546,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 4918,
+            "outputTokens": 279,
+            "cost": 0.000206556,
+            "latencyMs": 464
+          },
+          {
+            "attempt": 7,
+            "requestSha256": "9a103acffafab574e818211621fd3d02d5d55f29d2c23625ece6bacc22dcbe15",
+            "requestChars": 11631,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 3596,
+            "outputTokens": 166,
+            "cost": 0.000151032,
+            "latencyMs": 286
+          }
+        ],
+        "startedAt": "2026-09-26T19:06:19.773Z",
+        "selection": {
+          "source": "openrouter:typesafe/jev-1.13",
+          "beforeChars": 67208,
+          "afterChars": 67081,
+          "budgetChars": 16000,
+          "retained": 144,
+          "archived": 1,
+          "duplicateOmissions": 0,
+          "decisionCalls": 7,
+          "cacheHits": 0,
+          "inputTokens": 31350,
+          "outputTokens": 1935,
+          "reportedCost": 0.0013166999999999999,
+          "costKnown": true,
+          "usageKnown": true,
+          "errors": [],
+          "status": "needs_review",
+          "evidenceKey": "b46f1b23d3b651dd5b844c50e795fb4a706722fdb29d83ef19ac12f03c3651aa",
+          "stateChars": 3982,
+          "statePartial": true,
+          "unscored": 0,
+          "protectedChars": 12583,
+          "decisions": [
+            {
+              "id": "L6",
+              "digest": "efd27203b0aa13e4cd4e2bd20ed04a86e07daac4d566e35b24f7d96d5060321d",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L22",
+              "digest": "6e161ee74e28afb1f9815de62d92a3fbdf5e0154fa5cc45ac41f552da77da9a2",
+              "probability": 0.35,
+              "distribution": {
+                "keep": 0.35,
+                "omit": 0.65
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L81",
+              "digest": "afb77c9dfc3f35da3bed8974274113309765a3900efddde7182a5d3ab716c028",
+              "probability": 0.43,
+              "distribution": {
+                "keep": 0.43,
+                "omit": 0.5700000000000001
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L145",
+              "digest": "0b07de2663d71d189e4aedde651121db9821f039911d18393008124b54626c00",
+              "probability": 0.49,
+              "distribution": {
+                "keep": 0.49,
+                "omit": 0.51
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L174",
+              "digest": "e870e127e1ab553ae562144d40640eee84b27ca9c57133032af871eaae6a3df1",
+              "probability": 0.34,
+              "distribution": {
+                "keep": 0.34,
+                "omit": 0.6599999999999999
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L275",
+              "digest": "e2c67d9e10b1f9ff43482a7e42081f59e525ef73a5a8325d89bb94767b76056f",
+              "probability": 0.47,
+              "distribution": {
+                "keep": 0.47,
+                "omit": 0.53
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L314",
+              "digest": "a00112a817b224ae80b33328e3d6ff241fbfd6deab3ba2dca27187d6c525a12b",
+              "probability": 0.36,
+              "distribution": {
+                "keep": 0.36,
+                "omit": 0.64
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L349",
+              "digest": "f1d8b77ccdf9051bcf74a5c2fb8a4a2bf3e6325bc10cf348439f9e8c43aac5b2",
+              "probability": 0.79,
+              "distribution": {
+                "keep": 0.79,
+                "omit": 0.20999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L355",
+              "digest": "9d6747c1a0a94171470a15d9bb45be386717bdaf9100e355f1ebcf8875ce1779",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L365",
+              "digest": "80799f986ab036917f9f79d873e4043c5651b94c8b97ce4295e53add1ba455e9",
+              "probability": 0.48,
+              "distribution": {
+                "keep": 0.48,
+                "omit": 0.52
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L372",
+              "digest": "62156f0487e2e3221df7e76ef2033f9359cd00cda82a96bd11ad1e715cdfc0d3",
+              "probability": 0.64,
+              "distribution": {
+                "keep": 0.64,
+                "omit": 0.36
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L381",
+              "digest": "b3e6ff3cf345d55fa36a02eebe3d82b9394dcf54a8c3e4153535f9cd7122ee27",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L395",
+              "digest": "5d62d352e821fb40a3bd54b865acf48bce7e7a8da8140f5313015fc2a79cd6fe",
+              "probability": 0.67,
+              "distribution": {
+                "keep": 0.67,
+                "omit": 0.32999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L432",
+              "digest": "cebb32ccfa48f4c47564b989f6d4b0395a77ff8cff30c6184d5f580272c0abde",
+              "probability": 0.76,
+              "distribution": {
+                "keep": 0.76,
+                "omit": 0.24
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L438",
+              "digest": "4d3d5f3d8d67f5c17cc53136a0d519a85438efc2677f2da00e67ae3e6e50c3d5",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L449",
+              "digest": "4c7c93b92bb642bc5bd7a1174e58140471ca6d93bed8b002be4d383ed6a9342b",
+              "probability": 0.47,
+              "distribution": {
+                "keep": 0.47,
+                "omit": 0.53
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L456",
+              "digest": "a1b731ce0d4a4776c085d12512fcec0b0741bea03dec7fe86f25a86a7ab564c8",
+              "probability": 0.29,
+              "distribution": {
+                "keep": 0.29,
+                "omit": 0.71
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L471",
+              "digest": "3ae78b3283f6a1469eafb10a9042ade79d98973325e8ace7ed6b49e428ae687a",
+              "probability": 0.79,
+              "distribution": {
+                "keep": 0.79,
+                "omit": 0.20999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L483",
+              "digest": "0e47d294b5ecde934012fb0445c25f8cabc65560d54a479d031a2d0221a9c60d",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L486",
+              "digest": "b84ae8b359820f7d10bcd85efa884fcd305bfeafb1dff280f1b377f58cd76a6a",
+              "probability": 0.49,
+              "distribution": {
+                "keep": 0.49,
+                "omit": 0.51
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L513",
+              "digest": "fa45a661aa216d1cdff2dfa3846b76317f60a1e978ac72aea5b780ad089930ff",
+              "probability": 0.46,
+              "distribution": {
+                "keep": 0.46,
+                "omit": 0.54
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L528",
+              "digest": "c30a01c8b281e600832e001e664ca3aa825caa8d862fcf13eba581ed94f4e701",
+              "probability": 0.68,
+              "distribution": {
+                "keep": 0.68,
+                "omit": 0.31999999999999995
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L533",
+              "digest": "8bd5f134747ca4cd96afe1f1ecf9f3a7e701844c1cbf7f6e5eff51144d361574",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L557",
+              "digest": "76dce149392823c8f83a3f817b8b87d6ebcfa6ef9b4aa4a6aa42de5c69f16064",
+              "probability": 0.7,
+              "distribution": {
+                "keep": 0.7,
+                "omit": 0.30000000000000004
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L562",
+              "digest": "ba7de45e224ae58ced0d76f0fda85e78d076f387e541a0fe14c293cf0f891018",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L564",
+              "digest": "b00df58949b371225d92610dc372145b40d8ded13377c3387ec9a6cdf715ceb0",
+              "probability": 0.66,
+              "distribution": {
+                "keep": 0.66,
+                "omit": 0.33999999999999997
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L569",
+              "digest": "ae8c6f9f7a0a8f2bd5e352f6782e6c8e02f30fd2400a3af94e1aff8ba6ecaf4d",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L572",
+              "digest": "0cb6d856c58de9c4a328a27ee8a1b83e5e907727304e058316853bb4139a26b7",
+              "probability": 0.47,
+              "distribution": {
+                "keep": 0.47,
+                "omit": 0.53
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L627",
+              "digest": "e1d077cbd103489b7d55f85050a92c0c04abfec8d62410dfa1cae541f38a15c8",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L633",
+              "digest": "49c6a9bf670e9d917af806401ffad56c04738f164be53ee11960c923ff94d2fc",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L636",
+              "digest": "b341cec32e47c58adfaae838734ba0c43a285bcb3a4c2c3180cd830d888c575d",
+              "probability": 0.64,
+              "distribution": {
+                "keep": 0.64,
+                "omit": 0.36
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L641",
+              "digest": "d22ff18cdf6c5e18593a68ab4472ff9eaa6feb96cdec3e4f84df6b4411829f22",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L669",
+              "digest": "7a8f7ac6f4aac42ffac3d62fde2f5a80aaf17086d858e2f19c459403f6d39a2e",
+              "probability": 0.65,
+              "distribution": {
+                "keep": 0.65,
+                "omit": 0.35
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L674",
+              "digest": "5b136cd8a7b11b87c57088b2a7f7c827635daf71e620b9b869f8e27c74278830",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L677",
+              "digest": "30036ca3cb4d892a11acf03582aeb453c0eae1de968fd2802e4787481582f9ce",
+              "probability": 0.69,
+              "distribution": {
+                "keep": 0.69,
+                "omit": 0.31000000000000005
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L701",
+              "digest": "403a5eb720b3b47821d94d9dee188da1a56c4384a61b9be61f116930810e0479",
+              "probability": 0.29,
+              "distribution": {
+                "keep": 0.29,
+                "omit": 0.71
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L731",
+              "digest": "e164ac1dcb4c88fd8de10f9028d9cdf5ad0a68a95836ab0725a42b42bc06af5e",
+              "probability": 0.55,
+              "distribution": {
+                "keep": 0.55,
+                "omit": 0.44999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L778",
+              "digest": "a78ffdfd3d36f2022414ad31311f3a53eeb035975a0efb9eba2c6b106e0f0466",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L789",
+              "digest": "5cebc113321eeaf619b940048bf7386ee7fffb2b5840d322a26386495ccb63b2",
+              "probability": 0.39,
+              "distribution": {
+                "keep": 0.39,
+                "omit": 0.61
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L807",
+              "digest": "ba8e7a30f829a52f64a57e9d37c025ab66fb0110b71eb37ee2ab18274a1d46b1",
+              "probability": 0.53,
+              "distribution": {
+                "keep": 0.53,
+                "omit": 0.47
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L828",
+              "digest": "b4dc66dd934457f64709a563b3a677f5fc1f92132361b5fa8220ea3083a22ebb",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L839",
+              "digest": "a9a61bb576013f63cbe2cb052192ed0a1a7e970b88468496e9ab2ee94a7f6247",
+              "probability": 0.53,
+              "distribution": {
+                "keep": 0.53,
+                "omit": 0.47
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L881",
+              "digest": "9d614a5969ff31ef89685a9959981318436f046470e0f07da3390b166301c6a1",
+              "probability": 0.65,
+              "distribution": {
+                "keep": 0.65,
+                "omit": 0.35
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L886",
+              "digest": "51fbd4b0b52c9fe35dd51414c9db1c9c8a3db5214f855d368bcf5b06eb0584b7",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L897",
+              "digest": "933d407ae0ae56fb56c66374d2789b09790877f6fe4c2f852d2f7a4d5d5f4154",
+              "probability": 0.6,
+              "distribution": {
+                "keep": 0.6,
+                "omit": 0.4
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L925",
+              "digest": "dbfc1c9631a8b6235050eb5c746c5867c6f06387b016dfce7b6c832cb02ca410",
+              "probability": 0.53,
+              "distribution": {
+                "keep": 0.53,
+                "omit": 0.47
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L951",
+              "digest": "cc47dea14d5db107b5b08705b024c532944a11557b3008f7dbcf8e9e05ff1fb0",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "constraint_or_open_loop"
+            },
+            {
+              "id": "L962",
+              "digest": "a812ae0dc727044eadfe5ba9e308493bbc20e0627a46ddf0679c4d21e86a566c",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L966",
+              "digest": "267d4915777510137f0bdbe20c6aaf0d2ab54729ed1f1f54c2d18ff34fbab8d3",
+              "probability": 0.53,
+              "distribution": {
+                "keep": 0.53,
+                "omit": 0.47
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1003",
+              "digest": "8ff9f6b9bcf3c1b1e7cf99722ed4309cded57dff687f8c3a4a2cf1a9ac20d2d9",
+              "probability": 0.39,
+              "distribution": {
+                "keep": 0.39,
+                "omit": 0.61
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1018",
+              "digest": "9e915e2d875fc43669ac20b302a9790b367a32c5e0dcbfeb811ae783871e9d3d",
+              "probability": 0.66,
+              "distribution": {
+                "keep": 0.66,
+                "omit": 0.33999999999999997
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1025",
+              "digest": "60640ade14dba28f66ec26db046e1a6116b90d863584a0cdbb6afff5b81d12f3",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L1036",
+              "digest": "63a6a6488586240ced490e8b91143819e8aabbf9082293b08ee0b6f4f1132d3a",
+              "probability": 0.63,
+              "distribution": {
+                "keep": 0.63,
+                "omit": 0.37
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1051",
+              "digest": "6f2e81e06dacedbaf04d3e35a210d7c4ab363376cc2467ff8c6ee534c94ca72e",
+              "probability": 0.62,
+              "distribution": {
+                "keep": 0.62,
+                "omit": 0.38
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1056",
+              "digest": "573fa7542482d5b836b1bbb15274487aa4859e7de9a340a94cee34f894b38eb2",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L1067",
+              "digest": "f0df0ae1da80830608876d6cf47bb7b76a487e9dd1adccd89386bdc8762c038e",
+              "probability": 0.46,
+              "distribution": {
+                "keep": 0.46,
+                "omit": 0.54
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1111",
+              "digest": "6bb5044558b4b2c990fbb64cb1a9364b0da4dae3cfe6a3e909439d0529fab005",
+              "probability": 0.4,
+              "distribution": {
+                "keep": 0.4,
+                "omit": 0.6
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1137",
+              "digest": "61427d5aa155db006e771391fc874f7a58baa9099671f0517b7fe3d5a0ca2f2d",
+              "probability": 0.75,
+              "distribution": {
+                "keep": 0.75,
+                "omit": 0.25
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1143",
+              "digest": "48d1cec67aa78c67514ee0c2a5e38ed3520dcddd397c7b505096d890af76d029",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L1154",
+              "digest": "22e006222806100461ad706bed9e5ae8e4182be7a6c86ead283fc9d77b89c2cc",
+              "probability": 0.49,
+              "distribution": {
+                "keep": 0.49,
+                "omit": 0.51
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1189",
+              "digest": "0648ad739bb7150d309c44886a4323e43bce22bbd034b1dc671c9774de93ed0c",
+              "probability": 0.41,
+              "distribution": {
+                "keep": 0.41,
+                "omit": 0.5900000000000001
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1203",
+              "digest": "148afcb41c1cdcdc5f5bc06280d55c4f2663a31584087abd6e244966c35c100b",
+              "probability": 0.43,
+              "distribution": {
+                "keep": 0.43,
+                "omit": 0.5700000000000001
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1208",
+              "digest": "089b35a1e24ce33b887ce6db1de495edbd8ac7232ce1abf8a7be2512985288e8",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L1220",
+              "digest": "d0a97e458bf0933a6c3ab50a77c12d8875ac1fd645fa98e4af03d7a1760970d5",
+              "probability": 0.51,
+              "distribution": {
+                "keep": 0.51,
+                "omit": 0.49
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1280",
+              "digest": "322afbba3ffca839897eb5d65041c8125aa49422cdaed88db37c7dc650606035",
+              "probability": 0.74,
+              "distribution": {
+                "keep": 0.74,
+                "omit": 0.26
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1315",
+              "digest": "4e74861fc8fd8c001f15b7a89ff3a7d774d83b67413df6514f1d49bf4e14adf9",
+              "probability": 0.61,
+              "distribution": {
+                "keep": 0.61,
+                "omit": 0.39
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1384",
+              "digest": "a4759e70c977f783e87da56737f17bbc720576ace50e56d8552bf43a3906cfca",
+              "probability": 0.45,
+              "distribution": {
+                "keep": 0.45,
+                "omit": 0.55
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1462",
+              "digest": "f2c35914b4f3f8c147f3ccde19865704f8ab5c375c4ea3ef6746fd39d632bd23",
+              "probability": 0.47,
+              "distribution": {
+                "keep": 0.47,
+                "omit": 0.53
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1489",
+              "digest": "99a690a7b993eb00c58b67646315ec70ab83e3929b749203974f782b68ca06fa",
+              "probability": 0.4,
+              "distribution": {
+                "keep": 0.4,
+                "omit": 0.6
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1496",
+              "digest": "61799c21e17021642705d39550f90b161bbf0ccae4a5c0499c4f7b7743a9768d",
+              "probability": 0.78,
+              "distribution": {
+                "keep": 0.78,
+                "omit": 0.21999999999999997
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1501",
+              "digest": "abbfa0b30c3e81151722c8902eca1e1e0cfa88fc4981c7a380c1a71c95ac2108",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L1512",
+              "digest": "cad888655c3f30755463e6929e760b55fb3f9ec67915998c65f81adde19849c6",
+              "probability": 0.25,
+              "distribution": {
+                "keep": 0.25,
+                "omit": 0.75
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1566",
+              "digest": "227ddc005f6057567d02c4b931a98d08332c28567ec0359610740f105bad711e",
+              "probability": 0.31,
+              "distribution": {
+                "keep": 0.31,
+                "omit": 0.69
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1620",
+              "digest": "4eb48a17e873cf05ad19c1b12f3fdee635d1ab0b396d27ed55f8e1af7525316b",
+              "probability": 0.6,
+              "distribution": {
+                "keep": 0.6,
+                "omit": 0.4
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1625",
+              "digest": "26456b17320f314e60fa00cafbe0157168c2150512420078a614903a012c4920",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L1628",
+              "digest": "3850ca5bf8edf1c2e8b74fed2e0b757bbe1a32e3e11d9a4eb51242dce048df8d",
+              "probability": 0.29,
+              "distribution": {
+                "keep": 0.29,
+                "omit": 0.71
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1662",
+              "digest": "f6f229f8818f2b182a480e7eb948adab4eb71759f6db4f675f8e8974a4daff2f",
+              "probability": 0.46,
+              "distribution": {
+                "keep": 0.46,
+                "omit": 0.54
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1669",
+              "digest": "7e9d5446b2a41b88b0586d1a7f49c44d38ed86d2240c98e3f5c8f51adb86ab93",
+              "probability": 0.32,
+              "distribution": {
+                "keep": 0.32,
+                "omit": 0.6799999999999999
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1693",
+              "digest": "9f3b0f366854c5969bdbad29f74774eff0d88f7c4de8bb171e61cf9f06c4c314",
+              "probability": 0.26,
+              "distribution": {
+                "keep": 0.26,
+                "omit": 0.74
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1767",
+              "digest": "2cd03af54a074b1065e8befe1905acc6ccfc885dd5073b0738118f0f0e0f426a",
+              "probability": 0.58,
+              "distribution": {
+                "keep": 0.58,
+                "omit": 0.42000000000000004
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1784",
+              "digest": "39a5480ed9d7ea05b45fc62249504e734df6568fb55d2e00268036813dad61a4",
+              "probability": 0.41,
+              "distribution": {
+                "keep": 0.41,
+                "omit": 0.5900000000000001
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1844",
+              "digest": "02a94fc13d32da930440bf04939230e99f508614843f2a253d028c65b351e464",
+              "probability": 0.41,
+              "distribution": {
+                "keep": 0.41,
+                "omit": 0.5900000000000001
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1929",
+              "digest": "094d74b28ab5d4aa50fcb189bb78b3d09bf7cd0c23aeea16ce5787d9e1a57f75",
+              "probability": 0.37,
+              "distribution": {
+                "keep": 0.37,
+                "omit": 0.63
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L1982",
+              "digest": "bbebc5c0f39cd8607e9525b6f0087d3e8a0bbb7a1e4f052e5393989636123898",
+              "probability": 0.37,
+              "distribution": {
+                "keep": 0.37,
+                "omit": 0.63
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2126",
+              "digest": "f4990032817fe468da9387ba76a9b43319fa58f70bf24898b64a13bbc876f7a1",
+              "probability": 0.75,
+              "distribution": {
+                "keep": 0.75,
+                "omit": 0.25
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2132",
+              "digest": "638328065ffcb04a52667dbfc1a2346b7f001050bb944482f1d2015e1771588d",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2143",
+              "digest": "d0baeaa8e4e20374f1f595462fe69e107306d25e048670a50e77ffa0e2b3e139",
+              "probability": 0.53,
+              "distribution": {
+                "keep": 0.53,
+                "omit": 0.47
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2171",
+              "digest": "96acb89442b405b43f2e0c57b4e2389b90edcd3772121db429f9be18d9afb443",
+              "probability": 0.43,
+              "distribution": {
+                "keep": 0.43,
+                "omit": 0.5700000000000001
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2176",
+              "digest": "7158d13c997e7fb80efb2254e046c77125c9fcd5c89c36254228bb7806128f9f",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2187",
+              "digest": "bd9eb76471b95170b93aba602c62f3e5fcdbf169107a349c27ded4eeebbbe0a7",
+              "probability": 0.41,
+              "distribution": {
+                "keep": 0.41,
+                "omit": 0.5900000000000001
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2207",
+              "digest": "872d181fc26e0b4f37906c5a7885211665ff9204e731b68492c08cbbb2e173d3",
+              "probability": 0.5,
+              "distribution": {
+                "keep": 0.5,
+                "omit": 0.5
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2212",
+              "digest": "adad6f137772a76112297041bcfeddd11ce61cd14d248750cc8116166157ec3f",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2215",
+              "digest": "7c1424cf1d84c3a487a6bcf36ee27bbbc8dc104b164d1e658dd51045fdd022fa",
+              "probability": 0.3,
+              "distribution": {
+                "keep": 0.3,
+                "omit": 0.7
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2255",
+              "digest": "7cc7620a5e40ac8c2964a7abda48f71a0f19004134e2d1e701b060afe693d07d",
+              "probability": 0.54,
+              "distribution": {
+                "keep": 0.54,
+                "omit": 0.45999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2261",
+              "digest": "d5fe60337ac69450fed00fd19a96ac1587d05bf4fede46915711e870c7479802",
+              "probability": 0.32,
+              "distribution": {
+                "keep": 0.32,
+                "omit": 0.6799999999999999
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2269",
+              "digest": "fe56f18b2de4942e7488fdc0837f4319bc13da124512a9777177340bb8f1e3ea",
+              "probability": 0.3,
+              "distribution": {
+                "keep": 0.3,
+                "omit": 0.7
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2288",
+              "digest": "674c1043fff01425f99bb2e80ce7c5ae07b29c1fa5c8fd15353462ff40c604a8",
+              "probability": 0.44,
+              "distribution": {
+                "keep": 0.44,
+                "omit": 0.56
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2349",
+              "digest": "8abd80c11c07e09c23d22239cccda64c740d0c8b343ed44ca5ec6017e2841834",
+              "probability": 0.83,
+              "distribution": {
+                "keep": 0.83,
+                "omit": 0.17000000000000004
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2360",
+              "digest": "9b3f7058ab2f2aa4faf65db06379a48741d7decac27e3d4a3a2b939f2214c277",
+              "probability": 0.36,
+              "distribution": {
+                "keep": 0.36,
+                "omit": 0.64
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2373",
+              "digest": "b2658010d13d05a9afb774c6686d6cf5b80218c869d2dadcff8031f648b949f8",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2384",
+              "digest": "34f172c51b4083be8e97eb83e82eea6da1d77e77b2ea0ca0e996d526df264287",
+              "probability": 0.5,
+              "distribution": {
+                "keep": 0.5,
+                "omit": 0.5
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2411",
+              "digest": "1aa8b9d4a24acc44529db342495562a49569533e86a262ce41b5690561ab3457",
+              "probability": 0.46,
+              "distribution": {
+                "keep": 0.46,
+                "omit": 0.54
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2439",
+              "digest": "f05a15109601e3972892ab764bfa8f81beaae640286874fb0c750807127414eb",
+              "probability": 0.53,
+              "distribution": {
+                "keep": 0.53,
+                "omit": 0.47
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2447",
+              "digest": "9f53b5333b265434719f7128d4d5e7cd412a3ffacc67cce407f04279f6a3b389",
+              "probability": 0.22,
+              "distribution": {
+                "keep": 0.22,
+                "omit": 0.78
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2454",
+              "digest": "7c7d9c4b738121c5bca70899b6009aba4cd93c1aa47b6f9d82214b93c3a53c33",
+              "probability": 0.51,
+              "distribution": {
+                "keep": 0.51,
+                "omit": 0.49
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2459",
+              "digest": "93935db73fb145d1101a19b824ffde7eb0feadc6783029532ec2c421c58d23f3",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2473",
+              "digest": "f05f7f59b70bcaed5a18e56482478cf5d7d51a2a85c0aaf699749889ffb949ad",
+              "probability": 0.59,
+              "distribution": {
+                "keep": 0.59,
+                "omit": 0.41000000000000003
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2513",
+              "digest": "898bec00141f9852a2a803cef61137bb2a921b1cdc0c32cec6c9e895e0a40aad",
+              "probability": 0.37,
+              "distribution": {
+                "keep": 0.37,
+                "omit": 0.63
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2540",
+              "digest": "ec36cb7f9bd7a0bce703d3c783e6cff4df7c8f7debd3f276ec3a74b9c4a1f7a9",
+              "probability": 0.7,
+              "distribution": {
+                "keep": 0.7,
+                "omit": 0.30000000000000004
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2545",
+              "digest": "a9a603772beabe44908dcfdd53cf9bc1786f8031ed9ef2fdaa77e92fc3223246",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2548",
+              "digest": "129e4187ea3a4b6e3d7532af359f3f4ccb9ffa0670f9a5ea648a7e9e08023502",
+              "probability": 0.42,
+              "distribution": {
+                "keep": 0.42,
+                "omit": 0.5800000000000001
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2555",
+              "digest": "3c7a007a895086b481a1d738cf4b746165b1b680f474732c4e28b8eda4b2cbdf",
+              "probability": 0.34,
+              "distribution": {
+                "keep": 0.34,
+                "omit": 0.6599999999999999
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2560",
+              "digest": "852c068571b08d76c0a73f9fd2326ee3ce237037af28aa15cf78cc712c101f37",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2573",
+              "digest": "e0592e2299dcd493b504180f66ed96aef88add0eb69008f62b907ccb6046ba5f",
+              "probability": 0.48,
+              "distribution": {
+                "keep": 0.48,
+                "omit": 0.52
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2592",
+              "digest": "fc1aec2ede84ba0787032a7b45f0c3cfa92fdf4daa2958ac36b212a9c39c05e8",
+              "probability": 0.56,
+              "distribution": {
+                "keep": 0.56,
+                "omit": 0.43999999999999995
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2607",
+              "digest": "ef98d009ef21b4c281a6fb395fa7a5a056966c8c6e44edacbe2c833234f54ab2",
+              "probability": 0.44,
+              "distribution": {
+                "keep": 0.44,
+                "omit": 0.56
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2614",
+              "digest": "f90c1dab882542e4f09ff9e26c9a4cee73c3b36ccba668451255b7f7f142010f",
+              "probability": 0.73,
+              "distribution": {
+                "keep": 0.73,
+                "omit": 0.27
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2627",
+              "digest": "1ce9f70b3d40dd6ed38ec68c1811ba3aa8367b52e24423ae19c040996416a425",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2666",
+              "digest": "80c8c37d8e212516f977c7dcae3718077d5f050520f00e3aa38d7ba03f699f03",
+              "probability": 0.48,
+              "distribution": {
+                "keep": 0.48,
+                "omit": 0.52
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2724",
+              "digest": "f0ae2d216f23c5c47dccc174dcace93f6a96bb4e6cfb4e08f90dfc921ffa08aa",
+              "probability": 0.71,
+              "distribution": {
+                "keep": 0.71,
+                "omit": 0.29000000000000004
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2729",
+              "digest": "1d1d0390bc4c96cf289e3c42164d29bcc3cfb3234f5e0dba2f3c595683336cf5",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2767",
+              "digest": "30de1c7ab018e20ee5b6069803f1a9ea3a41ad2b2a6d899ffcb6f1ffa70c249b",
+              "probability": 0.25,
+              "distribution": {
+                "keep": 0.25,
+                "omit": 0.75
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2789",
+              "digest": "974032bec3e4f7ab7b574b044c3858f356494899669d60e4e44e0b5d7901b1a9",
+              "probability": 0.54,
+              "distribution": {
+                "keep": 0.54,
+                "omit": 0.45999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2795",
+              "digest": "4db481bfb3eed17929b177f851ba6ad0be6e67984edb7aa8acdc5199f94fe41d",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2856",
+              "digest": "ba6722da598a040d5d56a4de515f9f492b49d876c7b8fca4e9fa5b1c030597d4",
+              "probability": 0.29,
+              "distribution": {
+                "keep": 0.29,
+                "omit": 0.71
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2912",
+              "digest": "a4eb8ee33c65b1b52fd6374867f54b1b535e343bd9d0b18eac47e9c83c937855",
+              "probability": 0.78,
+              "distribution": {
+                "keep": 0.78,
+                "omit": 0.21999999999999997
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2917",
+              "digest": "d31a8606291240e7b4b8058d695500b7a2888dc79e7428bd4a3f278db1a4c408",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2928",
+              "digest": "3fdc1e1f013c34e2bd7f460f8572f92c70e57fc2de2721916e1caaabc65fc24f",
+              "probability": 0.56,
+              "distribution": {
+                "keep": 0.56,
+                "omit": 0.43999999999999995
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2935",
+              "digest": "dee80a55c844a632fcd966dc89e8ffccc8918f27f47602cb86081c25c48cdc8e",
+              "probability": 0.53,
+              "distribution": {
+                "keep": 0.53,
+                "omit": 0.47
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2940",
+              "digest": "a3de04ce14a73d28c080405ac9ee08d24390671bf9073ec26fde12747c5b7fe7",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2961",
+              "digest": "f0a529da08168b2a92c48bb2bcbb5591681fa460317a3d2bcd0574dbe37b54aa",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2985",
+              "digest": "2038cab7deb070ed6f34363bb235f53fb0b97eb723b3f4020691a03435bd03dd",
+              "probability": 0.48,
+              "distribution": {
+                "keep": 0.48,
+                "omit": 0.52
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L2990",
+              "digest": "06dab683b078c274fe24546612cc384cabb307ab38ef22b1636c12ed139bb079",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L2993",
+              "digest": "26cc3d1b26bfdabb4e9e0598f00df75b07146743666caf20356a212dae607c01",
+              "probability": 0.64,
+              "distribution": {
+                "keep": 0.64,
+                "omit": 0.36
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L3000",
+              "digest": "c2dd3e8060d18707573d4af96a866994fbce7fd17cb42b08c3417bfc026e7950",
+              "probability": 0.66,
+              "distribution": {
+                "keep": 0.66,
+                "omit": 0.33999999999999997
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L3006",
+              "digest": "bbca0c659592a68cf5a95e18b7ca2a1ca1036f32ed4ad6525710af73cf2db66c",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L3009",
+              "digest": "f9ae1893e681cbca4aeefd96b3a88fbeaef6bea4da756bf7c378eee4e59c54bc",
+              "probability": 0.55,
+              "distribution": {
+                "keep": 0.55,
+                "omit": 0.44999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L3074",
+              "digest": "38dfbe166cede69c5e7b0956839bf7ccd8fb4f087b8ed681fd0a7673054baff0",
+              "probability": 0.38,
+              "distribution": {
+                "keep": 0.38,
+                "omit": 0.62
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L3094",
+              "digest": "bad0b262367cb9d0b4e5f6a080c4634ad742386f89c2573467b2b84683563d4c",
+              "probability": 0.73,
+              "distribution": {
+                "keep": 0.73,
+                "omit": 0.27
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L3099",
+              "digest": "2f3c4e6d0ee539263624c34fbc5b0e695f269cf2852a79df77f1e4367f5b5a0b",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            },
+            {
+              "id": "L3102",
+              "digest": "10eec167da8cb1727a8130535c85816617f1fba3961e911ea925343614f8c107",
+              "probability": 0.52,
+              "distribution": {
+                "keep": 0.52,
+                "omit": 0.48
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L3158",
+              "digest": "05f36f3246f571556888b10b577de07fd629faf40e0375caaf726854341b0ef6",
+              "probability": 0.4,
+              "distribution": {
+                "keep": 0.4,
+                "omit": 0.6
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L3204",
+              "digest": "fc1e7008722303fd014129563ec3b40d89cd309c1616540455a88e18c6a67636",
+              "probability": 0.54,
+              "distribution": {
+                "keep": 0.54,
+                "omit": 0.45999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "L3229",
+              "digest": "4c0f6106dd2e6ce6502c9717e01b5ddf8c59a7ba305dbb66e7a31a41c5b2d654",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            },
+            {
+              "id": "L3234",
+              "digest": "f6c846e378da04b52b2c719cee3d9fd65ff29d7db15e5265a31d529b39980f10",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "historical_user_instruction"
+            }
+          ]
+        },
+        "status": "context-needs-review",
+        "error": "Context selection did not fit its unchanged production policy.",
+        "selectionLatencyMs": 2586,
+        "decisionUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 33285,
+          "totalTokens": 33285,
+          "measuredCost": 0.0013166999999999999
+        },
+        "decisionTokens": 33285,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 0,
+          "totalTokens": 0,
+          "measuredCost": 0
+        },
+        "measuredTokens": 33285,
+        "measuredCost": 0.0013166999999999999,
+        "costKnown": true,
+        "totalTokens": null,
+        "elapsedMs": 2588,
+        "evaluation": {
+          "passed": false,
+          "error": "No generated artifact"
+        }
+      },
+      "compactionOnlyRegression": false
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "trials": 1,
+      "artifactsGenerated": 1,
+      "passed": 0,
+      "checksPassed": 9,
+      "checksTotal": 12,
+      "totalTokens": 20811,
+      "measuredTokens": 20811,
+      "providerReportedCostUSD": 0.0092592,
+      "decisionTokens": 0,
+      "decisionCalls": 0,
+      "mainCalls": 1,
+      "elapsedMs": 7340
+    },
+    "compacted": {
+      "trials": 1,
+      "artifactsGenerated": 0,
+      "passed": 0,
+      "checksPassed": 0,
+      "checksTotal": null,
+      "totalTokens": null,
+      "measuredTokens": 33285,
+      "providerReportedCostUSD": 0.0013166999999999999,
+      "decisionTokens": 33285,
+      "decisionCalls": 7,
+      "mainCalls": 0,
+      "elapsedMs": 2588
+    },
+    "compactionOnlyRegressions": 0,
+    "comparison": "paired full-context and selected-context requests",
+    "savingsAttribution": "Selection did not fit. Paid partial usage is preserved; there is no completed comparison or savings claim.",
+    "compactionChangedInputs": true,
+    "tokenSavingsPercent": null,
+    "artifactAvailabilityRegressions": 1
+  },
+  "receiptAnnotation": "Artifact availability and failure attribution are deterministic post-run summaries. Provider receipts, implementation hashes and evaluator results are unchanged."
+}

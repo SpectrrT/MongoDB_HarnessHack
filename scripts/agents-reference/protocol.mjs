@@ -6,6 +6,8 @@ import {EVIDENCE_POLICY} from '../../server/context/evidence-policy.js';
 
 export const MODEL = process.env.BENCHMARK_MODEL || 'openai/gpt-4o-mini';
 if (!['openai/gpt-4o-mini', 'anthropic/claude-opus-5.5', 'openai/gpt-6-astra'].includes(MODEL)) throw Error('Model has no validated benchmark profile');
+export const JSON_MODE = process.env.BENCHMARK_JSON_MODE === '1';
+if (JSON_MODE && MODEL !== 'anthropic/claude-opus-5.5') throw Error('JSON mode probe is only registered for Opus');
 export const REASONING = MODEL !== 'openai/gpt-4o-mini' ? 'medium' : undefined;
 export const RESPONSES = MODEL === 'openai/gpt-6-astra';
 export const ENDPOINT = 'https://openrouter.ai/api/v1/' + (RESPONSES ? 'responses' : 'chat/completions');
@@ -109,7 +111,7 @@ export async function answer({engine, goal, units, compactor, runId, receipts, c
       const client = new OpenAI({apiKey, baseURL: 'https://openrouter.ai/api/v1', maxRetries: 0, timeout: BUDGET.timeoutMs, fetch: transport});
       const agent = new Agent({name: 'OpenAI Agents SDK reference harness', instructions: SYSTEM,
         model: RESPONSES ? new OpenAIResponsesModel(client, MODEL) : new OpenAIChatCompletionsModel(client, MODEL),
-        modelSettings: {temperature: BUDGET.temperature, maxTokens: BUDGET.maxOutputTokens, store: RESPONSES ? false : undefined, reasoning: REASONING ? {effort: REASONING} : undefined, retry: {maxRetries: 0}},
+        modelSettings: {providerData: JSON_MODE ? {response_format: {type: 'json_object'}} : undefined, temperature: BUDGET.temperature, maxTokens: BUDGET.maxOutputTokens, store: RESPONSES ? false : undefined, reasoning: REASONING ? {effort: REASONING} : undefined, retry: {maxRetries: 0}},
         tools: TOOLS.map(({function: definition}) => tool({...definition, execute: input => archiveCall(definition.name, input, archive)})),
       });
       const runner = new Runner({tracingDisabled: true});
@@ -120,7 +122,7 @@ export async function answer({engine, goal, units, compactor, runId, receipts, c
       for (let attempt = 0; attempt < BUDGET.modelCalls; attempt++) {
         const response = await transport(ENDPOINT, {method: 'POST', signal: AbortSignal.timeout(BUDGET.timeoutMs),
           headers: {Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json'},
-          body: JSON.stringify({model: MODEL, max_tokens: BUDGET.maxOutputTokens, temperature: BUDGET.temperature, reasoning_effort: REASONING, tools: TOOLS, stream: false, messages})});
+          body: JSON.stringify({model: MODEL, response_format: JSON_MODE ? {type: 'json_object'} : undefined, max_tokens: BUDGET.maxOutputTokens, temperature: BUDGET.temperature, reasoning_effort: REASONING, tools: TOOLS, stream: false, messages})});
         if (!response.ok) throw Error(`HTTP ${response.status}`);
         const body = await response.json(), message = body.choices?.[0]?.message;
         if (!message) throw Error('Missing answer message');

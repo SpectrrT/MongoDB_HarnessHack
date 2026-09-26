@@ -44,7 +44,7 @@ The intervention is jointly changed and follows inspection of earlier failures, 
 
 [Research pilot](evidence/personal-research-development-v3.json) and [onboarding pilot](evidence/personal-onboarding-development-v3.json).
 
-The complete ledger through this milestone includes **35 paid calls, 203,997 tokens and $0.0330104 provider-reported cost**. The 190,106 ms latency is a sum of individual provider calls, not elapsed wall time. It retains every failed batch, diagnostic and later trial; all usage is known. [Experiment ledger](evidence/personal-replay-experiment-ledger.json).
+The complete ledger through this milestone includes **43 paid calls, 258,093 tokens and $0.0435863 provider-reported cost**. The 199,923 ms latency is a sum of individual provider calls, not elapsed wall time. It retains every failed batch, diagnostic and later trial; all usage is known. [Experiment ledger](evidence/personal-replay-experiment-ledger.json).
 
 ## Full chronological history admission
 
@@ -53,3 +53,5 @@ The separately frozen onboarding variant contains all eligible pre-cutoff text: 
 No answer or Jev calls were made for this preflight. The production compactor now archives the source and detects an impossible protected floor before paying for selection. A regression verifies zero scorer calls and exact recovery. This preserves the admission failure as evidence. It does not demonstrate a successful full-history run. [Frozen preflight receipt](evidence/personal-onboarding-full-preflight.json).
 
 Public receipts contain hashes, counters and criteria outcomes. Raw private messages, complete provider requests, source manifests and generated artifacts remain outside Git. Reproduction requires the original locally authorized frozen packets and private evaluator files; they are intentionally not bundled in the public project.
+
+The full trusted-role onboarding replay also failed: the reference passed 9/12 checks with 20,811 tokens; Offload spent 33,285 selection tokens and retained 67,081 of 67,208 characters, above its unchanged 16,000-character budget. It produced no answer. See [the preserved failure](evidence/personal-onboarding-full-typed-development-v1.json).

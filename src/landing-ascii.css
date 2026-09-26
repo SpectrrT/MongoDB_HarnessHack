@@ -98,3 +98,17 @@
 .benchmark-method a { display:inline-block; text-decoration:underline; text-underline-offset:3px; color:var(--ink); }
 @media(max-width:1250px) { .ascii-site .benchmark-evidence { margin-left:6%; margin-right:6%; } }
 @media(max-width:700px) { .ascii-site .benchmark-evidence { margin:0 25px 45px; padding-top:30px; } .benchmark-figures { grid-template-columns:1fr; gap:36px; } .benchmark-intro { margin-bottom:25px; } .benchmark-figures figcaption { margin-bottom:18px; } }
+.benchmark-bar-track { position:relative; }
+.benchmark-range { position:absolute; top:5px; height:1px; background:var(--ink); }
+.benchmark-run { position:absolute; width:5px; height:5px; border:1px solid var(--ink); border-radius:50%; background:var(--paper,#fff); transform:translate(-50%,-50%); }
+.benchmark-checks { margin:10px 0 0; font-size:11px; color:var(--ink-2); }
+.benchmark-checks strong { color:var(--ink); font-weight:600; }
+.benchmark-legend { display:flex; gap:22px; font-size:11px; color:var(--ink-2); }
+.benchmark-legend span { display:flex; align-items:center; gap:7px; }
+.benchmark-legend i { width:9px; height:9px; }
+.benchmark-chart { height:280px; width:100%; }
+.benchmark-results { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.benchmark-results p { margin:0; display:flex; flex-direction:column; gap:6px; }
+.benchmark-results span { font-size:12px; color:var(--ink-2); }
+.benchmark-results strong { font-size:25px; font-weight:600; letter-spacing:-.035em; }
+.benchmark-results small { font-size:10px; line-height:1.6; color:var(--ink-2); }

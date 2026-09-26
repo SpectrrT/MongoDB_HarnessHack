@@ -1,5 +1,5 @@
 {
-  "createdAt": "2026-09-26T18:55:46.443Z",
+  "createdAt": "2026-09-26T19:07:24.574Z",
   "scope": "Every paid call in this personal replay experiment to this checkpoint, including original schema failures, diagnostic and subsequent failed-quality trials. Synthetic context development benchmarks are separate.",
   "entries": [
     {
@@ -65,14 +65,22 @@
       "usageKnown": true,
       "providerReportedCostUSD": 0.0046928000000000004,
       "summedProviderLatencyMs": 11237
+    },
+    {
+      "file": "personal-onboarding-full-typed-development-v1.json",
+      "calls": 8,
+      "measuredTokens": 54096,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.010575900000000001,
+      "summedProviderLatencyMs": 9817
     }
   ],
   "totals": {
-    "calls": 35,
-    "measuredTokens": 203997,
+    "calls": 43,
+    "measuredTokens": 258093,
     "usageKnown": true,
-    "providerReportedCostUSD": 0.03301040000000001,
-    "summedProviderLatencyMs": 190106
+    "providerReportedCostUSD": 0.04358630000000001,
+    "summedProviderLatencyMs": 199923
   },
-  "caveat": "Summed provider latency is not elapsed wall-clock duration; some independent pairs ran concurrently. No Jev calls occurred because curated histories were below the production selector budget. Differences between identical requests are generation variation, not compaction savings."
+  "caveat": "Summed provider latency is not elapsed wall-clock duration; some independent pairs ran concurrently. Curated under-budget trials made zero Jev calls and identical-request differences are generation variation. The full-history development variant made seven billed Jev calls but failed selection; those charges are included, without a completed savings comparison. Synthetic development benchmarks remain separate."
 }

@@ -32,25 +32,25 @@
     "contextSnapshots": 4,
     "selectionBudgetChars": 1600,
     "baselineLabel": "Same harness, full context",
-    "offloadLabel": "Offload + Jev"
+    "offloadLabel": "Offload"
   },
   "reliability": [
     {
-      "scope": "Live model \u00b7 3 synthetic tasks",
+      "scope": "Live model · 3 synthetic tasks",
       "title": "Assigned drafts",
-      "result": "2/3 \u2192 3/3",
+      "result": "2/3 → 3/3",
       "description": "Declared file checks passed after the prompt fix. Calls fell from 7 to 3, tokens from 1,721 to 815. These checks assess phrases, size and JSON, not broad quality.",
       "receipt": "/evidence/assigned-drafts.json"
     },
     {
-      "scope": "Scripted model \u00b7 300 steps",
+      "scope": "Scripted model · 300 steps",
       "title": "Bounded working memory",
       "result": "98.49% smaller",
       "description": "Maximum checkpoint: 18,852 bytes versus 1,245,224. The full 1,242,822-byte source remains recoverable. This measures bytes, not model tokens.",
       "receipt": "/evidence/transcript-storage.json"
     },
     {
-      "scope": "Live model \u00b7 real offline browser",
+      "scope": "Live model · real offline browser",
       "title": "Idle Sleep counter",
       "result": "10/10 checks",
       "description": "One paid call, 1,346 tokens, $0.0014084. Increment and Reset passed; restart added zero calls. One synthetic case with an injected idle clock.",
@@ -77,11 +77,19 @@
       "receipt": "/evidence/personal-onboarding-full-preflight.json"
     },
     {
+      "id": "onboarding-full-typed",
+      "title": "Full-history selection still needs work",
+      "status": "Selection failed before an answer",
+      "result": "The reference used 20,811 tokens and passed 9 of 12 checks. Offload used 33,285 selector tokens, retained 67,081 of 67,208 characters, and could not fit the 16,000-character budget. It produced no answer.",
+      "conditions": "One development pair with all 145 original messages and trusted roles. All user instructions remained protected. Seven selector calls retained 103 of 104 eligible assistant records. No token-savings or successful-output claim is possible.",
+      "receipt": "/evidence/personal-onboarding-full-typed-development-v1.json"
+    },
+    {
       "id": "all-spend",
       "title": "The failed experiments count, too",
       "status": "Complete usage ledger",
-      "result": "35 paid calls. 203,997 tokens. $0.0330104 reported cost, across all personal replay experiments recorded so far.",
-      "conditions": "Includes the failed original batch, diagnostic, twelve frozen follow-up artifacts and four development artifacts. No personal history or full artifact contents are in the public receipt.",
+      "result": "43 paid calls. 258,093 tokens. $0.0435863 reported cost, including every personal replay experiment.",
+      "conditions": "Includes the failed original batch, diagnostic, frozen follow-up artifacts, development artifacts and the failed full-history selection. No personal history or full artifact contents are in the public receipt.",
       "receipt": "/evidence/personal-replay-experiment-ledger.json"
     }
   ],
@@ -92,7 +100,7 @@
   "contextSnapshots": 12,
   "selectionBudgetChars": 3000,
   "baselineLabel": "Same harness, full context",
-  "offloadLabel": "Offload + Jev",
+  "offloadLabel": "Offload",
   "research": {
     "scope": "Development replay",
     "title": "Research replay",
@@ -140,5 +148,106 @@
     "description": "One paired artifact replay from frozen pre-cutoff personal history, with an independent evaluator kept out of model inputs. Both paths use the same model, task, tools and limits. The prompt and model changed jointly from the earlier failed runs.",
     "limitation": "Neither artifact fully passes. The two provider requests are identical and Jev is not activated. Differences are generation variation, not compaction benefits. Checks are limited proxies, not overall semantic quality.",
     "receipt": "/evidence/personal-onboarding-development-v3.json"
-  }
+  },
+  "presentationComparisons": [
+    {
+      "id": "astra",
+      "label": "GPT-6 Astra",
+      "baselineLabel": "SDK reference",
+      "baselineTokens": 53388,
+      "offloadTokens": 61790,
+      "baselinePassed": 24,
+      "offloadPassed": 24,
+      "stages": 24,
+      "trialCount": 2,
+      "answerModel": "openai/gpt-6-astra",
+      "decisionTokens": 40506,
+      "baselineCalls": 26,
+      "offloadCalls": 54,
+      "baselineLatencyMs": 80066,
+      "offloadLatencyMs": 116297,
+      "beforeContextChars": 155090,
+      "afterContextChars": 8875,
+      "receipt": "/evidence/reference-summary.json",
+      "description": "2 full paired trials, each with three synthetic tasks and twelve changing-context stages. Both arms use GPT-6 Astra, identical goals, checks, archive tools and per-call limits. SDK reference receives full history; Offload selects context and can recover the originals.",
+      "limitation": "Development fixtures, not independent unseen tasks or a broad reasoning benchmark. Exact JSON checks cover facts and required format. All-in Offload cost remains unknown because selector prices are absent. Request scheduling waits count in arm latency. Provider routing and caching are uncontrolled.",
+      "trials": [
+        "/evidence/agents-reference-astra-paced-1.json",
+        "/evidence/agents-reference-astra-paced-2.json"
+      ],
+      "runs": [
+        {
+          "baselineTokens": 26688,
+          "offloadTokens": 30971,
+          "baselinePassed": 12,
+          "offloadPassed": 12,
+          "checks": 12,
+          "beforeContextChars": 6462.083333333333,
+          "afterContextChars": 389.0833333333333,
+          "receipt": "/evidence/agents-reference-astra-paced-1.json"
+        },
+        {
+          "baselineTokens": 26700,
+          "offloadTokens": 30819,
+          "baselinePassed": 12,
+          "offloadPassed": 12,
+          "checks": 12,
+          "beforeContextChars": 6462.083333333333,
+          "afterContextChars": 350.5,
+          "receipt": "/evidence/agents-reference-astra-paced-2.json"
+        }
+      ]
+    },
+    {
+      "id": "opus",
+      "label": "Claude Opus 5.5",
+      "baselineLabel": "SDK reference",
+      "baselineTokens": 135119,
+      "offloadTokens": 119710,
+      "baselinePassed": 24,
+      "offloadPassed": 23,
+      "stages": 24,
+      "trialCount": 2,
+      "answerModel": "anthropic/claude-opus-5.5",
+      "decisionTokens": 40506,
+      "baselineCalls": 34,
+      "offloadCalls": 64,
+      "baselineLatencyMs": 140180,
+      "offloadLatencyMs": 203921,
+      "beforeContextChars": 155090,
+      "afterContextChars": 9432,
+      "receipt": "/evidence/reference-summary.json",
+      "description": "2 full paired trials, each with three synthetic tasks and twelve changing-context stages. Both arms use Claude Opus 5.5, identical goals, checks, archive tools and per-call limits. SDK reference receives full history; Offload selects context and can recover the originals.",
+      "limitation": "Development fixtures, not independent unseen tasks or a broad reasoning benchmark. Exact JSON checks cover facts and required format. All-in Offload cost remains unknown because selector prices are absent. Request scheduling waits count in arm latency. Provider routing and caching are uncontrolled.",
+      "trials": [
+        "/evidence/agents-reference-opus-paced-1.json",
+        "/evidence/agents-reference-opus-paced-2.json"
+      ],
+      "runs": [
+        {
+          "baselineTokens": 67555,
+          "offloadTokens": 60266,
+          "baselinePassed": 12,
+          "offloadPassed": 11,
+          "checks": 12,
+          "beforeContextChars": 6462.083333333333,
+          "afterContextChars": 443.3333333333333,
+          "receipt": "/evidence/agents-reference-opus-paced-1.json"
+        },
+        {
+          "baselineTokens": 67564,
+          "offloadTokens": 59444,
+          "baselinePassed": 12,
+          "offloadPassed": 12,
+          "checks": 12,
+          "beforeContextChars": 6462.083333333333,
+          "afterContextChars": 342.6666666666667,
+          "receipt": "/evidence/agents-reference-opus-paced-2.json"
+        }
+      ]
+    }
+  ],
+  "presentationTitle": "Same models. Same tasks.",
+  "presentationDescription": "Offload and an OpenAI Agents SDK reference, tested side by side.",
+  "presentationMethod": "Two runs per model. Three tasks, 24 exact checks. Same model and tools in each pair. Selector and retrieval tokens included."
 }

@@ -8,7 +8,7 @@ import {createContextCompactor} from '../../server/context/compaction.js';
 import {createJevScorer} from '../../server/context/jev.js';
 import {EVIDENCE_POLICY_VERSION} from '../../server/context/evidence-policy.js';
 import {evolvingCases, exactAnswer} from '../fixtures/evolving-context.mjs';
-import {answer, BUDGET, MODEL, REASONING, RESPONSES, REQUEST_INTERVAL_MS, ENDPOINT, recordingFetch, totals, sha256, loadSdk} from './protocol.mjs';
+import {answer, BUDGET, MODEL, JSON_MODE, REASONING, RESPONSES, REQUEST_INTERVAL_MS, ENDPOINT, recordingFetch, totals, sha256, loadSdk} from './protocol.mjs';
 
 const args = process.argv.slice(2), live = args.includes('--live');
 const output = args.includes('--output') ? args[args.indexOf('--output') + 1] : null;
@@ -25,7 +25,7 @@ const policy = {budgetChars: 3000, recentCount: 1, threshold: 0.25};
 const report = {
   createdAt: new Date().toISOString(), mode: live ? 'live paired reference comparison' : 'offline protocol fixture, not model quality evidence',
   reference: 'OpenAI Agents SDK reference harness', treatment: 'Offload context selection and archive recovery',
-  protocol: {model: MODEL, answerProvider: 'OpenRouter', requestIntervalMs: REQUEST_INTERVAL_MS, endpoint: ENDPOINT, budget: BUDGET, contextPolicy: policy, reasoningEffort: REASONING ?? null, evidencePolicy: EVIDENCE_POLICY_VERSION,
+  protocol: {model: MODEL, outputFormat: JSON_MODE ? 'json_object' : 'prompted JSON', answerProvider: 'OpenRouter', requestIntervalMs: REQUEST_INTERVAL_MS, endpoint: ENDPOINT, budget: BUDGET, contextPolicy: policy, reasoningEffort: REASONING ?? null, evidencePolicy: EVIDENCE_POLICY_VERSION,
     adapter: RESPONSES ? 'Responses SDK loop in both arms' : 'Chat Completions SDK reference and Offload loop',
     sdk: {'@openai/agents': '0.18.0', openai: '7.23.0', zod: '4.2.1'}, node: process.version, platform: `${process.platform}/${process.arch}`, tracing: false, automaticRetries: 0,
     sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim(),

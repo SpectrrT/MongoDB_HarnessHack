@@ -42,3 +42,9 @@ The first Astra run likewise hit the 20 requests/minute new-account limit, with 
 ### User-requested selector optimization and additional replications
 
 The user requested a fix for Astra's measured token regression and more trials for the homepage graphs. The registered development plan and every selector candidate outcome are in `docs/evidence/selector-v10-plan.md`. Rejected versions v10, v11 and v12 received no answer-model trials. v13 and v14 passed selector checks; v14 reduced twelve-stage selector usage from 20,253 to 15,361 tokens. Exactly three paired Astra runs and three paired Opus runs are now registered for v14, with all previous model results preserved separately. The answer prompts, tasks, checks, tools and budgets are unchanged. Version-specific results are never silently pooled.
+
+### Opus output-format repair plan
+
+During the first v14 Opus trial, the same format failure recurred: correct JSON followed by prose, rejected by the unchanged exact checker. The transport now offers opt-in `BENCHMARK_JSON_MODE=1` for Opus only, passing `response_format: {type: "json_object"}` identically to both arms. Default requests remain byte-equivalent, so ongoing v14 trials are unaffected. The provider catalog lists response_format support. No answer value or schema is derived from the expected answer.
+
+After the three unchanged v14 Opus trials finish, run one paired reproduction of the failing reopened stage with JSON mode. If the provider accepts the mode and both arms pass, run exactly three complete JSON-mode paired trials. Keep all original v14 results, the probe, and all new trials as separate versioned evidence. No retries or changed checkers. JSON mode fixes the output contract, not reasoning correctness.

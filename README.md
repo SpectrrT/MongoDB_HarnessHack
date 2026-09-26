@@ -19,14 +19,30 @@ both problem statements: recursive harnessing (the harness edits its own rules, 
 long-horizon engineering (durable execution, plus memory that gets smaller and more precise as it grows, judged by hard
 metrics).
 
+## Matched SDK comparisons (September 26, 2026)
+
+The homepage now shows two flat graphs using the site fonts and neutral palette. Every bar links to reproducible receipts through one methods report. These compare a configured OpenAI Agents SDK reference with Offload's context selection, using identical models, task inputs, tools and budgets within each pair.
+
+| Model | Paired runs | SDK tokens | Offload all-in tokens | Exact checks, SDK / Offload |
+| --- | ---: | ---: | ---: | --- |
+| GPT-4o-mini | 3 | 111,118 | 100,377 (9.7% fewer) | 35/36 / 36/36 |
+| GPT-6 Astra | 2 | 53,388 | 61,790 (15.7% more) | 24/24 / 24/24 |
+| Claude Opus 5.5 | 2 | 135,119 | 119,710 (11.4% fewer) | 24/24 / 23/24 |
+
+Each run contains the same three synthetic tasks and twelve chronological stages. Opus's missed check was extra prose after otherwise correct JSON; GPT-4o-mini's reference missed a schema check. These are exact task/format checks, not general reasoning scores. Selector and retrieval overhead count. Offload took longer and made more calls. All-in cost is unknown where TypeSafe omitted prices. Three additional infrastructure-failed frontier attempts preserve all 25 rate-limit responses and known charges. The two paced replacements per frontier model were fixed before execution; no outcome-based stopping or prompt tuning occurred.
+
+Astra uses a verified Responses tool adapter in both arms. Opus and GPT-4o-mini use the matched Chat Completions protocol. This does not benchmark the complete Codex or Claude Code products. [All trials](docs/evidence/reference-summary.json), [methods](scripts/agents-reference/README.md), and [public report](public/evidence/benchmark-report.html).
+
+The app now groups REM and Memory under Sleep, preserves old URLs, and keeps live execution separate from the static hosted preview. A completed local chat job is acknowledged only after its final checkpoint write finishes.
+
 ## Sleep: measured context compaction (September 26, 2026)
 
 Sleep now selects useful tool history with **Jev probabilities**, archives omitted records in **MongoDB**, and recovers
 original evidence by run-scoped id. It preserves complete tool exchanges and detected constraints, reuses decisions
 when the task state is unchanged, and removes identical read-only results without a model call. This is integrated
-before planner/executor calls in the REM runtime and displayed under **Sleep > Context memory**.
+before planner/executor calls in the REM runtime and displayed under **Sleep > Memory > Context memory**.
 
-**Latest complete development result: 17.69% fewer total tokens on evolving tasks, including Jev and recovery.**
+**Earlier same-harness development result: 17.69% fewer total tokens on evolving tasks, including Jev and recovery.**
 Full context uses 39,196 tokens; Offload uses 32,264. Offload passes 12/12 exact JSON checks, versus 11/12 for full
 context. The baseline failure is an extra `reason` field in an otherwise correct answer. The same GPT-4o-mini model,
 three synthetic tasks and twelve chronological stages are used on both paths. These inputs were used during
@@ -77,7 +93,7 @@ is claimed from this admission check. [Conditions, failures and receipts](docs/p
 
 A later one-pair development pilot jointly changes the task contract and answer model to production Sleep's
 GPT-4.1-mini. Research improves to **29/31 on both paths**, onboarding to **10/12 versus 9/12**. Neither fully passes.
-The complete personal experiment ledger is **35 calls, 203,997 tokens and $0.0330104**, including every failed attempt.
+The complete personal experiment ledger is **43 calls, 258,093 tokens and $0.0435863**, including every failed attempt.
 These are measured quality improvements under a joint configuration change, not isolated prompt effects or compaction
 savings. [Raw ledger](docs/evidence/personal-replay-experiment-ledger.json).
 
@@ -534,3 +550,5 @@ historical cumulative session tokens against a small reconstructed artifact. Fai
 The homepage now uses two flat graphs: total model tokens (including selection and recovery) and exact checks passed. The underlying measurements are unchanged: changing-task development replay 39,196 versus 32,264 tokens and 11/12 versus 12/12 checks; repeated-snapshot replay 26,640 versus 9,052 tokens and 20/20 on both paths. Both use GPT-4o-mini. The sole changing-task baseline failure was an extra JSON field, not an incorrect owner or readiness fact. Repeated snapshots favor reuse and are not independent task trials. No new performance experiment was run for this presentation change.
 
 `public/evidence/benchmark-report.html` retains detailed methods, failed personal replays, and raw-receipt links outside the presentation flow. Regenerate it with `node scripts/build-benchmark-report.mjs` after updating `src/data/benchmark-evidence.json`. New verified comparisons can populate `presentationComparisons`, `presentationDescription`, and `presentationMethod`; do not reuse old method text for a different experiment.
+
+The full trusted-role onboarding replay also failed: the reference passed 9/12 checks with 20,811 tokens; Offload spent 33,285 selection tokens and retained 67,081 of 67,208 characters, above its unchanged 16,000-character budget. It produced no answer. See [the preserved failure](docs/evidence/personal-onboarding-full-typed-development-v1.json).
