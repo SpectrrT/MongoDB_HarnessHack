@@ -68,6 +68,6 @@ export default function BenchmarkEvidence() {
         <BenchmarkChart context/>
       </figure>
     </div>
-    <p className="benchmark-method">Same models and tasks, with and without Offload. Offload keeps the history needed next and saves the rest for later. Choosing that history also uses tokens, so a much shorter history means a smaller saving in total tokens. Astra kept the same accuracy; Opus missed two checks. <a href="/evidence/benchmark-report.html">Methods and all results</a></p>
+    <p className="benchmark-method">Without Offload, the same model gets the full history. Offload keeps what the next step needs and saves the rest for later. Choosing what to keep also uses tokens, so the total saving is smaller than the drop in history size. Astra kept the same accuracy; Opus missed two checks. <a href="/evidence/benchmark-report.html">Methods and all results</a></p>
   </section>;
 }
