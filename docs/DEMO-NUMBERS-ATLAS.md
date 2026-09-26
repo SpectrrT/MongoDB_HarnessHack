@@ -49,7 +49,7 @@ embeddings). Every number below comes from that run; rerun the script to regener
 | 1 | W35 | v0→v1 | 2/4 | 3 | 21 | $0.0961 | 4 | 15 (30) | 0 (0.433) | 0 (1) | 1 (0.9) | 3/5 | 0.357 |
 | 2 | W36 | v1→v2 | 1/3 | 2 | 15 | $0.0744 | 2 | 19 (67) | 0 (0.657) | 0 (3) | 1 (0.6) | 4/5 | 0.113 |
 | 3 | W37 | v2→v3 | 4/4 | 0 | 20 | $0.0698 | 0 | 25 (82) | 0 (0.622) | 0 (4) | 1 (0.7) | 5/5 | 0.287 |
-| 4 | W38 | v3→v4 | 4/4 | 0 | 15 | $0.0240 | 0 | 29 (104) | 0 (0.644) | 0 (6) | 1 (0.5) | 5/5 | 0.344 |
+| 4 | W38 | v3→v4 | 4/4 | 0 | 15 | $0.0232 | 0 | 29 (104) | 0 (0.644) | 0 (6) | 1 (0.5) | 5/5 | 0.415 |
 | 5 | W39 | v4→v4 | 4/4 | 0 | 17 | $0.0079 | 0 | 32 (120) | 0 (0.642) | 0 (8) | 1 (0.4) | 5/5 | – |
 
 Memory columns: the searchable store after each night; in parentheses, a shadow store that never sleeps.
@@ -59,7 +59,7 @@ Memory columns: the searchable store after each night; in parentheses, a shadow 
 - Pass rate 0.5 → 1; collateral 3 → 0; cost per day $0.0961 → $0.0079; interventions 4 → 0.
 - Memory after five days: 32 memories vs 120 raw items without sleep; precision@k 1 vs 0.4.
 - Exactly-once: 10 effects committed, 10 executed in the world, 0 duplicates; 4 injected crashes reconciled from the ledger.
-- Proposer prediction error by night: 0.357 → 0.113 → 0.287 → 0.344 (lower once each edit type has a track record).
+- Proposer prediction error by night: 0.357 → 0.113 → 0.287 → 0.415 (lower once each edit type has a track record).
 - Gym: held-out 1/5 → 5/5, train 3/9 → 9/9, gym cost $0.3237 → $0.0334.
 - Harness diff gen 0 → v4:
 
@@ -70,7 +70,6 @@ Memory columns: the searchable store after each night; in parentheses, a shadow 
 + guardrail internal-recipients-only: Send only to internal recipients (@offload.test) unless approved.
 + guardrail list-before-delete: Delete requires a prior drive.list with the same filter and a count of at most 5.
 ~ contextPolicy.injectMemories: false → true
-~ contextPolicy.injectSkills: false → true
 ~ contextPolicy.recall: {"mode":"hybrid","k":5,"minScore":0.1,"kinds":null,"recencyHalfLifeDays":7,"budgetChars":1600} → {"mode":"hybrid","k":5,"minScore":0.1,"kinds":null,"recencyHalfLifeDays":0,"budgetChars":1600}
 ~ routing.planner: "large" → "medium"
 ~ routing.executor: "large" → "medium"
@@ -82,9 +81,9 @@ Track record by edit type (an aggregation over `edits`, fed back into the propos
 
 | Edit type | Edits | Accepted | Rejected | Mean prediction error |
 | --- | --- | --- | --- | --- |
-| context.set | 3 | 3 | 0 | 0.307 |
+| context.set | 2 | 2 | 0 | 0.395 |
 | guardrail.add | 2 | 2 | 0 | 0.155 |
 | routing.set | 4 | 3 | 1 | 0.193 |
-| rule.add | 3 | 3 | 0 | 0.433 |
+| rule.add | 3 | 3 | 0 | 0.41 |
 
-Engine: Atlas database rem, search $rankFusion over auto vector + Atlas Search indexes, ScriptedModel. Wall time 218057 ms.
+Engine: Atlas database rem_demo, search $rankFusion over auto vector + Atlas Search indexes, ScriptedModel. Wall time 331910 ms.
