@@ -1,5 +1,10 @@
 # Sleep context compaction
 
+This document records the initial `00a412b` milestone. Current causal-policy results, including regressions, are in
+[context-evolving-evidence.md](context-evolving-evidence.md). Canonical transcript storage now uses bounded checkpoints;
+see [sleep-transcript-storage.md](sleep-transcript-storage.md). Native OpenRouter selection is now supported with
+`OFFLOAD_COMPACTION=jev`; see [native-context.md](native-context.md). Historical counts below are not current suite totals.
+
 ## Problem statement and scope
 
 The project brief calls Statement Two **Long Horizon Engineering**: a harness should retain coherent memory over very long sessions, continue toward long-term goals, and learn from hard metrics. This change implements and measures a context-selection component for that goal. It does not demonstrate billions of tokens, weeks of operation, or general task improvement.
@@ -76,7 +81,7 @@ Automated checks cover archive isolation, complete tool exchanges, raw evidence 
 
 ## Remaining limits
 
-- The existing REM checkpoint still stores its canonical full transcript. This feature bounds the model's selected tool history, but that checkpoint has not been converted into an unbounded event stream. MongoDB's document size limit means this is not a billion-token implementation.
+- Initial limitation, since addressed: canonical transcript entries now live in indexed event/part documents, with a bounded working checkpoint. Billion-token performance remains untested.
 - Character budgets are not model-specific token budgets. System prompts, tools, archive notices and the current goal add overhead.
 - Regex protection supplements caller-supplied pins; it cannot identify every implicit constraint.
 - Whole records over 8,000 characters remain protected instead of being semantically split. Too much critical or recovered evidence pauses the run.
@@ -84,4 +89,4 @@ Automated checks cover archive isolation, complete tool exchanges, raw evidence 
 - The current REM API remains a shared local demo. Per-user authentication and production isolation are separate work.
 - Paid calls interrupted before their usage response may incur charges that the application cannot measure. Such failures are labeled unknown usage.
 
-The next substantive milestone is to move the canonical transcript out of the checkpoint into indexed event records, then run evolving multi-stage tasks with held-out checks, interruptions, retrieval, and total cost-per-success accounting. That work is required before claiming the full scale of Statement Two.
+Indexed event storage and evolving-stage evaluation are now implemented in the linked reports. Broad workload testing and sustained operational scale are still required before claiming the full scale of Statement Two.

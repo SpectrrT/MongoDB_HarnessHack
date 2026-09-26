@@ -26,38 +26,51 @@ original evidence by run-scoped id. It preserves complete tool exchanges and det
 when the task state is unchanged, and removes identical read-only results without a model call. This is integrated
 before planner/executor calls in the REM runtime and displayed under **Sleep > Context memory**.
 
-**Earlier live result (commit `00a412b`): 44.15% fewer total tokens across repeated context, with the same 20/20 exact-answer
-success rate.** Both paths used `openai/gpt-4o-mini`. Four synthetic task snapshots were each answered five times per
-path. Totals include provider-reported input/output tokens and Jev's initial screening overhead; cached tokens are not
-added twice. The compacted path used 14,878 tokens versus 26,640 for the full-context baseline.
+**Current live result: 41.66% fewer total tokens on repeated snapshots, with 20/20 exact answers on each path.**
+The same GPT-4o-mini answer model sees four synthetic snapshots five times per path. Totals include every reported
+Jev decision token. Changing evidence is more expensive: the separate evolving suite uses **29.95% more total tokens**,
+with 11/12 exact answers on both paths. One routing stage fails on both paths. No compaction-only answer regression
+was observed in these 12 stages. The suite reports that shared failure rather than hiding it.
 
-| Task snapshot | Full-context tokens, 5 answers | Sleep tokens including Jev, 5 answers | Exact JSON checks |
+| Live workload | Full context | Compacted, including Jev | Exact checks, baseline / compacted |
 | --- | ---: | ---: | --- |
-| release | 6,650 | 3,767 | 5/5, both paths |
-| meeting | 6,650 | 3,756 | 5/5, both paths |
-| retry | 6,695 | 3,826 | 5/5, both paths |
-| correction | 6,645 | 3,529 | 5/5, both paths |
-| **Total** | **26,640** | **14,878** | **20/20, both paths** |
+| Stable snapshots, current causal policy | 26,640 tokens | 15,543 tokens, 41.66% fewer | 20/20 / 20/20 |
+| Evolving tasks, initial causal policy | 43,623 tokens | 69,384 tokens, 59.05% more | 11/12 / 11/12 |
+| Evolving tasks, shorter decision prompt | 43,606 tokens | 56,664 tokens, 29.95% more | 11/12 / 11/12 |
 
-| Session/context check | Baseline or before | With this change | Measurement boundary |
+The shorter scoring prompt cuts Jev overhead from 52,238 to 41,865 tokens (19.86%) without changing these exact-check
+outcomes. Stable evidence reuses persisted decisions with zero new Jev calls after restart. Initial compaction still
+costs more than one full-context answer. The older 44.15% result belongs to commit `00a412b`, before causal invalidation.
+Monetary savings are unknown where the decision provider reports no cost. These tests do not establish universal
+savings, calibrated probabilities, or billion-token performance.
+
+[Current repeated evidence](docs/evidence/jev-context-repeated-causal-v3.json),
+[evolving results including the adverse run](docs/context-evolving-evidence.md),
+[historical result](docs/evidence/jev-context-repeated.json), and
+[research and configuration](docs/sleep-context-compaction.md).
+
+### Bounded memory and actual restart recovery
+
+REM now stores canonical exchanges in indexed MongoDB event/part documents and keeps only a bounded working transcript
+in each checkpoint. Source selection never deletes the originals. Changed goals reconsider bounded archive pages;
+new observations invalidate stale decisions, and the model can explicitly recover older parts. Guard proofs survive
+omission. Uncertain or protected context that cannot fit pauses for review.
+
+| Check | Before or comparison | Current observed result | Boundary |
 | --- | --- | --- | --- |
-| First answer, before reuse | 1,329 to 1,339 tokens | 3,157 to 3,414 tokens | **Compaction costs more initially**; reuse creates the measured savings |
-| Required fact retention | Full history: 8/8; newest-three-record window: 0/8 | Jev selection: 8/8 | Four synthetic tasks; labels never sent to Jev |
-| Selected record text | 7,219 to 7,235 characters | 149 to 165 characters | About 98% shorter record text, not a token-savings claim |
-| Atlas selection latency | 4.45 to 8.22 seconds with sequential database operations | 0.96 to 1.82 seconds with batched writes | Observed runs; includes storage and Jev, not just inference |
-| Repeated selection after restart | Initial selection needed 2 Jev calls per task | 0 new Jev calls for unchanged state | Durable decision reuse verified |
-| Additional challenge answers | Full context: 4/4 | Selected context: 4/4 | Changed owner, cross-record reference, denied permission, exact artifact/hash |
-| Automated checks | Existing suite plus new context checks | 97 passed, 1 Atlas smoke skipped; 4 browser checks passed | Local tests, desktop/mobile, production build passed |
+| 300-step checkpoint | Reconstructed full-history checkpoint: 1,245,224 bytes | Maximum working checkpoint: 18,852 bytes, 98.49% smaller | Deterministic fixture, not tokens |
+| Tool-message replay | Reconstructed full-history replay: 191,814,470 bytes | 2,832,660 bytes, 98.52% less | Same 300-step fixture; 179 scripted decision calls counted separately |
+| Restart and exact source recovery | Full canonical history: 1,242,822 bytes | All 300 steps retained; old source recovered after new worker | No billion-token claim |
+| Stale Mongo workers | Three reproduced overwrite races | All three rejected after fencing fixes | Local MongoDB 8.2.6 replica set |
+| Actual process termination | SIGKILL after simulated send, before ledger commit | Fresh process: exactly one send, one provider receipt, reconciled ledger | Real processes and MongoDB; fixture provider, no real email |
 
-**Limits:** these are repeated-snapshot microbenchmarks, not evolving multi-day tasks. Selection bounds active tool
-history, while the existing checkpoint still stores the full canonical transcript. This does **not** establish
-billion-token scalability or universal savings. The newer OpenRouter adapter supports opt-in selection with
-`OFFLOAD_COMPACTION=jev`; Codex manages its own context. Later evidence below reports the updated implementation.
+[Transcript evidence and limitations](docs/sleep-transcript-storage.md),
+[real Mongo race evidence](docs/evidence/rem-transcript-mongo.json), and
+[process-recovery contract](docs/completion-contract.md).
 
-Evidence and reproduction: [repeated live measurements](docs/evidence/jev-context-repeated.json),
-[first-call overhead](docs/evidence/jev-context-atlas-paired.json),
-[challenge measurements](docs/evidence/jev-context-challenge-verified.json), and
-[architecture, research, commands and limitations](docs/sleep-context-compaction.md).
+Completion requires valid evidence. Missing checks, failed checks, invalid probabilities and a configured Jev outage
+cannot become verified completion. Permission expansions are validated against train, held-out and adversarial cases,
+then promoted transactionally. The shared REM demo API remains local and is disabled in production.
 
 Enable with `REM_COMPACTION=jev`, a private Jev API key, and the intended Atlas environment. Run
 `npm run context:benchmark` for labeled deterministic fixtures, or the documented `--live --atlas` commands for paid
@@ -78,6 +91,15 @@ archive-recovery call. Model requests rise from **8 to 9**, and selection uses *
 measured prompt characters and a correctness test, not paid-model token savings. Native-context tests cover recovery, protocol, owner isolation, protected denials, images and provider-call prevention after overflow. Cancellation preserves 105 already-reported fixture tokens; a malformed paid reply preserves its 130 reported tokens instead of recording zero; duplicate tool IDs execute zero tools.
 Run `node scripts/benchmark-native-context.mjs docs/evidence/native-context-paired.json`.
 [Raw paired evidence](docs/evidence/native-context-paired.json) and [integration details](docs/native-context.md).
+
+### Source-backed next actions
+
+Next actions learns a repeated context-recovery habit from explicitly selected history. Reopening a project can propose
+one supported task. Accepting it runs four durable checkpoints, produces a source-checked Markdown artifact, and records
+feedback for a versioned policy change. Importing history alone cannot start work. No private history is imported automatically. Imported notes use configured MongoDB storage; remote model scoring
+requires explicit configuration. A five-read Atlas measurement beside 10,000 unrelated records reduced median
+read latency from 1,474 ms to 436 ms while examining three source documents; this is a small retrieval measurement,
+not a long-term usefulness score. [Behavior, tests and reproduction](docs/personal-suggestions.md).
 
 ## See the cycle in one minute
 

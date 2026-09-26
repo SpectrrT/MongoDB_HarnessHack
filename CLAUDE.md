@@ -61,22 +61,20 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - REM's agent runs on the scripted model by default. `REM_MODEL=openrouter` works (tested 1:30 PM): three real-model
   day runs cost $0.99 in total and all three failed the completion check (a customer-name leak, missed standup items, a
   stale blocker). The demo stays on the scripted model. Say so if a judge asks.
-- REM is the single Sleep engine (Ryan's `ryan/sleep-consolidated`, merged 1:13 PM). Sleep v2's recall and lessons
-  ideas live in `rem/`, REM runs on Atlas and has a REM page, and `server/sleep/` was removed in the cleanup. See
-  `docs/rem-engine.md`, "One Sleep". The moon "Sleep" nav item is the Sleep page as Floyd and Tensae built it, kept as
-  is.
-- Not merged yet: Ryan's Codex branch `ryan/jev-context` (Jev context compaction, bounded checkpoints, runs whose
-  completion gate never clears end `incomplete` instead of `done`) and `ryan/suggestive-tasks` (evidence-backed task
-  suggestions). `ryan/jev-context` also re-adds `server/sleep/` for Sleep task execution, which the 1:43 PM cleanup
-  removed; decide that before merging it.
+- REM remains the single consolidation/evolution engine. The retired Sleep v2 cycle, memory service and worker stay
+  removed. `server/sleep/execution-*` now contains a separate assigned-task executor for isolated local drafts; it does
+  not reintroduce a second night consolidation engine. Generic versioned policy storage lives in `server/harness/policy.js`.
+- This local `ryan/jev-context` integration includes bounded transcript events, causal Jev selection, incomplete-status
+  completion gates, transactional permission validation, actual process-restart fixture recovery, native OpenRouter
+  selection, assigned draft execution and source-backed suggestions. The Sleep tabs include Next actions, Overnight
+  tasks, Memory review and Context memory. Changes have not been pushed or deployed.
 - LangSmith: `rem/trace.js` traces day runs, night phases, recall, effects and model calls when `LANGSMITH_API_KEY` is
   set, and does nothing without it. `npm run rem:langsmith` runs the gym as two LangSmith experiments side by side.
-- Tests: `npm test` runs 107 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
-  `OFFLOAD_SKIP_ENV=1` (point `PW_BASE_URL` at it). Floyd's 1:12 PM redesign lands onboarding on the Overview and drops
-  the in-app recording checkbox (the browser's permission prompt remains); the e2e suite follows both.
-- The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). `/api/rem/reset` and `/api/rem/simulate`
-  only answer requests from this machine (`server/rem-guard.js`); set `REM_ADMIN_TOKEN` and send it as
-  `x-rem-admin-token` to allow them on a public deploy. The other REM routes stay open.
+- First combined integration check at `281af4a`: 208 unit/API tests passed, one optional Atlas smoke skipped, all 16
+  desktop/mobile browser checks passed, production build passed. Subsequent changes require the final integration check.
+- The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). Every shared REM route now requires local
+  transport/Host/Origin, mutations need the explicit local client header, and production mode disables that shared
+  demo API. REM_ADMIN_TOKEN alone does not make the full API a production service.
 - Submission: public repo, demo link, one-minute video, by 5:00 PM ET. All three teammates are on the repo. At 1:45 PM
   the repo was still private (only Tensae is an admin), with no demo link or video yet.
 

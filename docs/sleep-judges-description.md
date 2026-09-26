@@ -1,36 +1,39 @@
-# Judge-facing description: Sleep context compaction
+# Judge-facing description: Sleep
 
-Sleep lets the harness continue deliberate work with a smaller active memory. Jev assigns retention probabilities to
-older tool exchanges, while MongoDB preserves the originals, decision cache, and run checkpoints. The agent can recover
-omitted evidence by id. Critical records stay protected, identical reads are deduplicated without model calls, and
-unchanged task states reuse decisions after a restart.
+Problem Statement Two is Long Horizon Engineering: coherent memory over long sessions, continued progress toward goals,
+and learning from hard metric signals. Sleep combines bounded working memory, source recovery, verified execution and
+persisted improvement. Jev is actually integrated; it estimates retention probability for each record. The harness
+protects constraints, keeps complete tool exchanges, archives source records and owns the stopping rules.
 
-At the earlier `00a412b` revision, in a live Atlas-backed microbenchmark using the same GPT-4o-mini answer model on both paths, four synthetic task snapshots
-were answered five times each. Both paths passed all 20 exact-answer checks. Sleep used 14,878 total tokens including
-Jev screening, versus 26,640 with full context: 44.15% fewer. The first answer cost more; savings came from repeated use
-of the selected context. Batching storage operations brought observed selection latency from 4.45-8.22 seconds to
-0.96-1.82 seconds. A separate four-case challenge set also passed on both paths.
+Current live repeated-context evidence: four synthetic snapshots, five answers per path, GPT-4o-mini on both paths.
+Both score 20/20. Full context uses 26,640 tokens; selected context including Jev uses 15,543, or 41.66% fewer.
+First use costs more. A separate three-task, twelve-stage evolving suite scores 11/12 on both paths and costs 29.95%
+more overall, because rescoring outweighs answer-model savings. Shortening the decision prompt reduces Jev overhead
+19.86% without changing those checks. Both adverse runs are retained. [Raw evidence and conditions](context-evolving-evidence.md).
 
-This implements a measurable part of Statement Two, Long Horizon Engineering. It does not demonstrate billions of tokens
-or prove savings on arbitrary evolving tasks. The canonical REM checkpoint still retains the full trace; moving that
-trace to an indexed event stream is the next scale milestone. The feature is integrated into REM and shown inside Sleep,
-with 97 passing unit/API checks, one optional Atlas search smoke skipped, four passing desktop/mobile browser checks, and
-a passing production build. Code changes remain local.
+The checkpoint no longer contains the whole transcript. In a 300-step deterministic session with interruption and source
+recovery, the maximum working checkpoint is 18,852 bytes versus a reconstructed 1,245,224-byte full-history checkpoint.
+The 1,242,822-byte canonical source remains intact. This is byte evidence, not live token savings. Real local MongoDB
+testing exposed and fixed three stale-worker races. An actual SIGKILL after a fixture send and before ledger commit
+recovers in a different process with exactly one send and one provider receipt. This proves that fixture-provider
+restart case, not generic exactly-once behavior for real Gmail or Drive. [Storage evidence](sleep-transcript-storage.md).
 
-Raw measurements and reproduction commands are linked from README.md and docs/sleep-context-compaction.md.
+Sleep executes assigned local drafts with persisted budgets, deadlines, approvals and independent file checks. Three
+live GPT-4.1-mini tasks improved from 2/3 checked artifacts with 1,721 tokens and seven calls to 3/3 with 815 tokens and
+three calls. Provider cost for the second run was $0.000608. One approval pause resumed without regenerating its proposal.
+These short synthetic checks verify declared phrases, size and JSON syntax, not broad semantic correctness. An
+eight-attempt scripted task with no progress now pauses after three calls; explicit resume completes on call four.
+[Before/after execution evidence](sleep-task-execution.md).
 
-The native OpenRouter tool loop now also uses the selector when enabled. In a separate scripted-provider test with real
-local file tools, both paths recover the same archived key; serialized prompt text is 111,805 versus 45,148 characters
-(59.62% lower). The compacted path needs one additional model request (8 to 9) and 15 scripted decision calls. This
-checks integration and overhead accounting, not live model token efficiency. Evidence: `docs/evidence/native-context-paired.json`.
-## Assigned tasks that actually run
+Opt-in native OpenRouter selection is tested with real local file tools and a scripted provider: one exact archived-key
+task passes on both paths, with 111,805 versus 45,148 cumulative prompt characters. It requires one extra model request
+and 15 scripted decision calls. Those are integration measurements, not live token savings. Images remain intact,
+malformed tool IDs cannot execute, and known usage survives cancellation. [Native evidence](native-context.md).
 
-Sleep also executes assigned local drafts with MongoDB leases, persisted approvals, bounded generation, token reservations, and independent file checks. A failed check leads to a bounded repair; a deadline or exhausted budget ends as incomplete. Waiting itself is not the source of efficiency. Resuming a persisted proposal avoids regenerating it.
+Source-backed next actions can turn a repeated context-recovery habit into a supported task, four durable checkpoints,
+a checked artifact and a tested policy update. Explicitly selected history supplies provenance; import alone does not
+start execution. Five Atlas reads beside 10,000 unrelated rows improved from a 1,474 ms median to 436 ms while examining
+three source documents. [Personal workflow and limits](personal-suggestions.md).
 
-Three synthetic live OpenRouter `openai/gpt-4.1-mini` tasks produced three verified artifacts with 815 reported total tokens, three calls, $0.000608 provider cost, and 3.791 seconds of wall time. One draft resumed after an explicit approval pause without another model call. The initial implementation passed two of three with 1,721 tokens and seven calls. Clarifying exact acceptance phrases and carrying the failed draft into repairs eliminated unnecessary retries in the second run. The old overnight queue only saved briefs and produced no artifacts.
-
-This is a small local MongoDB execution smoke test, not a general quality or scale benchmark. File checks establish required phrases, size, and JSON syntax, not complete semantic correctness. The worker creates isolated local drafts only. It cannot autonomously send, publish, browse, or execute arbitrary shell commands. Raw before-and-after evidence and exact run instructions are in [Sleep task execution](sleep-task-execution.md).
-
-Sleep checks whether repeated repair attempts actually reduce failed acceptance criteria. In the scripted larger-budget test, an eight-attempt task pauses after three unchanged calls rather than continuing automatically. Explicit user resume and a corrected artifact complete on call four. The shared continuation policy and Sleep worker have 28 passing Node test results; this evidence supports the stopping behavior, not a general model-efficiency claim.
-
-Native failure accounting also retains 105 reported fixture tokens when a later selection batch is cancelled and 130 reported tokens when the paid reply has no message. Duplicate tool IDs execute zero tools, and a 40,000-character image remains intact. These are injected-provider regressions, not live spending measurements.
+The implementation is local and tested. It does not demonstrate billion-token sessions, weeks of autonomous operation,
+calibrated completion probabilities, or universal savings. Waiting more slowly is not itself a token optimization.
