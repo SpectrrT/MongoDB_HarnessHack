@@ -9,7 +9,7 @@ import { annotate, genomeSummary, traceable } from "./trace.js";
 import { randomUUID } from "node:crypto";
 import { ContextBudgetError } from "../server/context/compaction.js";
 import { completionRecord } from "./completion-record.js";
-import { createTranscriptStore } from "./transcript.js";
+import { createTranscriptStore, RunOwnershipError } from "./transcript.js";
 import { sha256 } from "./util.js";
 
 export const TOOL_LATENCY_MS = 250;
@@ -147,6 +147,13 @@ export function createAgent({
   const workerId = randomUUID();
   const lease = () => new Date(Date.now() + LEASE_MS);
   const now = () => new Date(clock.now());
+  const owning = cp => ({runId: cp.runId, step: cp.step, driver: workerId, status: "running"});
+  async function ownedUpdate(cp, update, options) {
+    const result = await checkpoints.updateOne(owning(cp), update, options);
+    if (!result.matchedCount) throw new RunOwnershipError();
+    return result;
+  }
+  const renewOwnership = cp => ownedUpdate(cp, {$set: {leaseUntil: lease()}});
 
   async function log(cp, docs) {
     if (!episodes || !docs.length) return;
@@ -266,7 +273,7 @@ export function createAgent({
         selection = {metrics: error.metrics};
       } finally { clearInterval(heartbeat); }
       const metrics = {...selection.metrics, latencyMs: Date.now() - started};
-      await checkpoints.updateOne({runId: cp.runId, driver: workerId}, {
+      await ownedUpdate(cp, {
         $set: {compaction: metrics, leaseUntil: lease()},
         $inc: {"usage.inputTokens": metrics.inputTokens, "usage.outputTokens": metrics.outputTokens,
           "usage.cost": metrics.reportedCost, "usage.compactionCalls": metrics.decisionCalls,
@@ -355,7 +362,7 @@ export function createAgent({
       update.$set.versionsOmitted = (cp.versionsOmitted || 0) + Math.max(0, cp.versions.length + 1 - 32);
       update.$set.replannedAt = now();
     }
-    await checkpoints.updateOne({ runId: cp.runId }, update);
+    await ownedUpdate(cp, update);
     const next = await checkpoints.findOne({ runId: cp.runId });
     if (replanning) {
       const committed = await db.collection("effects").countDocuments({runId: cp.runId, status: "committed"});
@@ -449,8 +456,7 @@ export function createAgent({
 
   async function pause(cp, provider, spent, call) {
     await db.withTransaction(async (session) => {
-      await checkpoints.updateOne(
-        { runId: cp.runId },
+      await ownedUpdate(cp,
         { $set: { status: "paused_for_auth", provider, pendingCall: call, pausedAt: now(), updatedAt: now() }, $inc: { turns: 1, ...spent } },
         { session },
       );
@@ -477,8 +483,7 @@ export function createAgent({
   }
 
   async function finish(cp, status, final, spent, gate = null) {
-    await checkpoints.updateOne(
-      { runId: cp.runId },
+    await ownedUpdate(cp,
       { $set: { status, final, finishedAt: now(), updatedAt: now(), ...(gate ? { completion: gate } : {}) }, $inc: { turns: 1, ...spent } },
     );
     const done = await checkpoints.findOne({ runId: cp.runId });
@@ -494,11 +499,10 @@ export function createAgent({
         await chaos?.point("after-commit");
       }
       const working = await transcripts.append(cp, entry, session);
-      const updated = await checkpoints.updateOne({runId: cp.runId, step: cp.step, driver: workerId}, {
+      await ownedUpdate(cp, {
         $set: {...working, step: entry.step, updatedAt: now(), leaseUntil: lease()},
         $inc: {turns: 1, ...spent},
       }, {session});
-      if (!updated.matchedCount) throw Error("Run ownership changed before transcript commit.");
     });
     return checkpoints.findOne({runId: cp.runId});
   }
@@ -520,6 +524,7 @@ export function createAgent({
   async function driveOnceImpl(runId, { onStep } = {}) {
     await transcripts.ready();
     let cp = await transcripts.migrate(await checkpoints.findOne({ runId }));
+    await renewOwnership(cp);
     const h = await harness();
     // Parent run: this day run (task id, harness version, genome summary), tagged for filtering.
     annotate({
@@ -532,6 +537,9 @@ export function createAgent({
       const tier = cp.context.executorTier,
         modelId = modelFor(tier);
       const reply = await model.chat({ model: modelId, messages: await prompt(cp, h, "executor"), tools: toolSchemas(cp.context.tools) });
+      // A model request can outlast the lease. Reject its late result before any tool or final
+      // write when a replacement worker has already claimed this run.
+      await renewOwnership(cp);
       const spent = account(reply.usage, modelId, tier);
       if (!reply.toolCall) {
         if (!completion) return finish(cp, "done", reply.final ?? "", spent);
@@ -545,7 +553,7 @@ export function createAgent({
         const gate = completionRecord({ verdict, evidence: found, threshold, attempts, at: now() });
         onEvent({ type: "completion", runId, ...gate });
         if (!gate.passed && attempts <= COMPLETION_RETRIES && cp.turns + 1 < h.genome.contextPolicy.stepBudget) {
-          await checkpoints.updateOne({ runId }, { $set: { completion: gate, updatedAt: now() }, $inc: { turns: 1, ...spent } });
+          await ownedUpdate(cp, { $set: { completion: gate, updatedAt: now() }, $inc: { turns: 1, ...spent } });
           cp = await checkpoints.findOne({ runId });
           continue;
         }
@@ -614,6 +622,7 @@ export function createAgent({
     const pending = await effects.find({ runId, status: "pending" }, { sort: { step: 1 } }).toArray();
     for (const p of pending) {
       const cp = await transcripts.migrate(await checkpoints.findOne({ runId }));
+      await renewOwnership(cp);
       const found = world.findEffect(p.effectKey);
       if (found && p.step === cp.step + 1) {
         const entry = {
@@ -628,8 +637,7 @@ export function createAgent({
         await db.withTransaction(async (session) => {
           await commitEffect(db, { effectKey: p.effectKey, result: found.result, outcome: "reconciled", now: clock.now() }, session);
           const working = await transcripts.append(cp, entry, session);
-          const updated = await checkpoints.updateOne({ runId, step: cp.step }, { $set: { ...working, step: p.step, updatedAt: now() } }, { session });
-          if (!updated.matchedCount) throw Error("Run cursor changed during effect recovery.");
+          await ownedUpdate(cp, { $set: { ...working, step: p.step, updatedAt: now() } }, { session });
         });
         onEvent({ type: "effect", runId, step: p.step, tool: p.tool, outcome: "reconciled", effectKey: p.effectKey });
       } else await effects.updateOne({ effectKey: p.effectKey }, { $set: { status: found ? "orphaned" : "abandoned" } });

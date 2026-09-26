@@ -13,6 +13,13 @@ const filterOf = (args = {}) => Object.fromEntries(
   ["folder", "week", "query", "titlePrefix", "olderThan"].filter(k => args[k] !== undefined).map(k => [k, args[k]]),
 );
 
+export class RunOwnershipError extends Error {
+  constructor() {
+    super("Run ownership changed before the checkpoint write.");
+    this.name = "RunOwnershipError";
+  }
+}
+
 // Separate helper keeps this migration additive for callers with an existing schema initializer.
 export function ensureTranscriptIndexes(db) {
   if (!readyByDb.has(db)) readyByDb.set(db, (async () => {
@@ -44,6 +51,9 @@ export function createTranscriptStore(db) {
     const text = JSON.stringify(entry), digest = sha256(text);
     const existing = await events.findOne({runId, step: entry.step}, {session});
     if (existing && existing.digest !== digest) throw Error(`Transcript step ${entry.step} already has different evidence.`);
+    // Existing events were committed atomically with their parts and proofs. Replaying a legacy
+    // snapshot must not roll the latest guard proof back to an older step.
+    if (existing) return existing.bytes;
     const count = Math.max(1, Math.ceil(text.length / TRANSCRIPT_PART_CHARS));
     for (let part = 0; part < count; part++) await parts.updateOne(
       {_id: key(runId, entry.step, part)},
@@ -123,7 +133,7 @@ export function createTranscriptStore(db) {
       let bytes = 0;
       for (const entry of cp.transcript || []) bytes += await db.withTransaction(session => write(cp.runId, entry, session));
       const fits = sizeOf(cp.transcript || []) <= WORKING_TRANSCRIPT_BYTES;
-      await checkpoints.updateOne({runId: cp.runId, step: cp.step}, {$set: {
+      await checkpoints.updateOne({runId: cp.runId, step: cp.step, "transcriptState.version": {$ne: 1}, ...(cp.driver ? {driver: cp.driver} : {})}, {$set: {
         transcriptState: {version: 1, count: cp.step, bytes},
         transcript: fits ? cp.transcript || [] : [], transcriptThrough: fits ? cp.step : 0,
       }});
@@ -145,7 +155,10 @@ export function createTranscriptStore(db) {
     async select(cp, transcript, revision) {
       if (sizeOf(transcript) > WORKING_TRANSCRIPT_BYTES) throw budgetError(transcript);
       const state = {transcript, transcriptThrough: cp.step, transcriptRevision: revision};
-      await checkpoints.updateOne({runId: cp.runId, step: cp.step}, {$set: state});
+      const updated = await checkpoints.updateOne({runId: cp.runId, step: cp.step,
+        ...(cp.driver ? {driver: cp.driver} : {}), ...(cp.status ? {status: cp.status} : {}),
+      }, {$set: state});
+      if (!updated.matchedCount) throw new RunOwnershipError();
       Object.assign(cp, state);
     },
     async result(cp) {

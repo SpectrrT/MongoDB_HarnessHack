@@ -50,3 +50,28 @@ Runtime context retrieval now reads the canonical transcript rather than relying
 Small completed runs, at most 262,144 canonical bytes, still return the complete `run.transcript` for existing gym and API consumers. Longer runs return only the working transcript with `transcriptComplete: false`. Use `agent.readTranscript(runId, {afterStep, limit})` to page through full records when an audit needs them. Limits are 16 entries by default and 100 maximum. The returned page is record-bounded, while individual very large records can still be large; model-facing retrieval uses the part API instead. Recent harness versions and searched-memory ids are capped at 32 and 128 respectively, with explicit truncation metadata.
 
 The 65,536-byte bound applies to the transcript field, not to arbitrary caller-supplied task instructions, generated plans, recalled skill definitions, or every possible checkpoint field. Database-wide storage grows with retained source history. This work has not validated billion-token sessions, weeks of operation, live Atlas transaction latency, or general model task quality. Those claims require separate measurements.
+
+## Actual MongoDB transaction and race validation
+
+The follow-up `tests/rem-transcript-mongo.test.js` starts a real local MongoDB 8.2.6 replica set through `mongodb-memory-server`, using WiredTiger and the production `createMongoDb` adapter. It does not use the in-memory database adapter. Task models and external effects remain deterministic test doubles. No Atlas, user data, or paid model API is involved.
+
+The first execution reproduced three failures. After the fixes, all six integration cases pass (seven Node test results including the containing test).
+
+| Reproduced race | Before | After |
+| --- | --- | --- |
+| Old legacy migration replays a completed event after newer history was committed | Latest guard count regressed from 9 to 1, incorrectly permitting deletion under a maximum of 2 | Latest count remains 9; deletion remains blocked |
+| Old selector writes after another worker takes ownership at the same step | Current revision overwritten | Old write rejected; replacement revision preserved |
+| Old executor returns after a replacement worker finishes | Completed final result overwritten | Two late replies rejected: one final answer and one send request; zero stale writes or external effects |
+
+Existing canonical events now return immediately during idempotent migration, without rewriting their original guard proofs. Working-context selection is fenced by cursor, worker identity, and status. Planner, completion, pause, effect recovery, and cursor writes use the same ownership check. Executor replies renew and verify ownership before any tool runs, preventing a delayed model response from acting after takeover.
+
+Additional checks verified:
+
+- A fresh MongoDB connection initialized already-existing transcript collections and read both persisted canonical events across eight parts. The largest actual BSON part was 17,909 bytes. The migrated checkpoint in this isolated storage fixture was 150 BSON bytes; this is not a full agent checkpoint performance comparison.
+- A forced transaction abort reverted writes across five collections: effect ledger, transcript events, transcript parts, guard proofs, and checkpoint. Zero transcript documents remained for the aborted step, and the effect claim remained pending.
+- The exact guard-proof query selected `transcript_guard_proof` without a hint and examined one document.
+- A fresh agent on a fresh MongoDB connection recovered the pending effect, committed one canonical event, and produced exactly one simulated external send.
+
+Raw evidence: [rem-transcript-mongo.json](evidence/rem-transcript-mongo.json). Reproduce with `node --test tests/rem-transcript-mongo.test.js`. The full suite with the causal-compaction and completion-safety integrations passed 158 tests with one live Atlas test skipped. The existing 300-step deterministic context test also continued to pass with the same 18,852-byte maximum working checkpoint and 13,992-byte maximum complete prompt.
+
+These checks establish local MongoDB transaction and ownership behavior under explicit faults. They do not measure Atlas network latency, model quality, distributed external-provider idempotency, or production throughput. A model request already in flight may still incur provider charges after ownership is lost; its late response is rejected before acting.
