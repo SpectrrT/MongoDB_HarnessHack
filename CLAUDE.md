@@ -40,12 +40,16 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - `.mcp.json` gives Claude Code a MongoDB MCP server that reads the same `MONGODB_URI`, read-only unless `.env` sets
   `MDB_MCP_READ_ONLY=false`. It loads when a session starts, so start a new one after editing `.env`.
 
-## Where things stand (Sat Sep 26, about 11:20 AM ET)
+## Where things stand (Sat Sep 26, about 12:05 PM ET)
 
-- Merged and green: the UI and polish pass, Floyd's transitions and ASCII landing, REM, Ryan's durable harness and
-  Sleep v2. 53 unit tests and the build pass; the 10 browser tests passed before Ryan's last batch.
-- Not connected yet: Atlas (the Sandbox cluster has no database user, so there is no connection string), OpenRouter and
-  Voyage. Everything MongoDB-backed stays dormant until `.env` has `MONGODB_URI`.
+- Merged and green: the UI and polish pass, Floyd's transitions, ASCII landing, ChatGPT chat through the local Codex
+  CLI and SlowMode's overnight queue, REM, Ryan's durable harness and Sleep v2. 62 unit tests, the build and the 10
+  browser tests pass.
+- Floyd's `MyName` branch is built on the old repo's history. Its latest commit is on main as `9fae769`. Start new work
+  from main; merging `MyName` directly would delete `rem/`, `server/harness/` and `server/sleep/`.
+- Not connected yet: Atlas (Cluster0 has no database user, so there is no connection string), OpenRouter and Voyage.
+  Everything MongoDB-backed stays dormant until `.env` has `MONGODB_URI`. The hosted MongoDB Atlas MCP connector
+  works, but it is read-only.
 - REM's agent uses a scripted model until OpenRouter is configured. Say so if a judge asks.
 - Open decisions: REM's night loop (`rem/`) and Sleep v2 (`server/sleep/`) overlap, so pick one for the demo or combine
   them. REM has no UI panel yet.
