@@ -62,11 +62,15 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
   day runs cost $0.99 in total and all three failed the completion check (a customer-name leak, missed standup items, a
   stale blocker). The demo stays on the scripted model. Say so if a judge asks.
 - REM is the single Sleep engine (Ryan's `ryan/sleep-consolidated`, merged 1:13 PM). Sleep v2's recall and lessons
-  ideas live in `rem/`, REM runs on Atlas and has a REM page, and `server/sleep/` was removed in the cleanup. See `docs/rem-engine.md`, "One Sleep". The moon "Sleep" nav item is the Sleep page as Floyd and Tensae
-  built it, kept as is.
+  ideas live in `rem/`, REM runs on Atlas and has a REM page, and `server/sleep/` was removed in the cleanup. See
+  `docs/rem-engine.md`, "One Sleep". The moon "Sleep" nav item is the Sleep page as Floyd and Tensae built it, kept as
+  is.
+- A run whose completion gate never clears now ends `unverified` (it used to say `done`) and queues one `verify` ask;
+  approving marks it done, denying marks it failed. The end-state checkers still judge the work. In the demo, day 0's
+  weekly brief (the customer-name leak) shows `unverified`; after a night it is `done`.
 - LangSmith: `rem/trace.js` traces day runs, night phases, recall, effects and model calls when `LANGSMITH_API_KEY` is
   set, and does nothing without it. `npm run rem:langsmith` runs the gym as two LangSmith experiments side by side.
-- Tests: `npm test` runs 113 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
+- Tests: `npm test` runs 107 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
   `OFFLOAD_SKIP_ENV=1` (point `PW_BASE_URL` at it). Floyd's 1:12 PM redesign lands onboarding on the Overview and drops
   the in-app recording checkbox (the browser's permission prompt remains); the e2e suite follows both.
 - The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). `/api/rem/reset` and `/api/rem/simulate`
