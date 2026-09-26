@@ -615,6 +615,23 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
         One consolidation run: replay the day, merge memories, distill repeated work into a skill, evolve the harness against the
         gym, then queue asks.
       </p>
+      <p className="muted">
+        Memory: {state.memory.active} active, {state.memory.retired} retired, {state.memory.episodes} episodes ({state.memory.unconsolidated}{" "}
+        unconsolidated).
+      </p>
+      {!!state.skills.length && (
+        <div className="rem-skills-catalog">
+          <span className="rem-eyebrow">Skills catalog</span>
+          <ul>
+            {state.skills.map((s) => (
+              <li key={s.name}>
+                {s.name}: {s.status}
+                {s.stats ? ` (${s.stats.practicePasses}/${s.stats.practiceRuns} sandbox passes, ${s.stats.evidence} traces)` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <button className="button" disabled={busy} onClick={runSleep}>
         {sleeping ? "Sleeping..." : "Sleep"}
       </button>

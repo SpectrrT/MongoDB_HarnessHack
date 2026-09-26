@@ -2367,6 +2367,8 @@ summary:focus-visible {
 .rem-night-live { max-height: 260px; overflow-y: auto; border: 1px solid #ececec; border-radius: 8px; padding: 6px 14px; margin: 10px 0 20px; }
 .rem-night-live p { margin: 6px 0; font-size: 12px; overflow-wrap: anywhere; }
 .rem-brief h3 { font-size: 15px; margin: 0; }
+.rem-skills-catalog { margin: 12px 0 20px; }
+.rem-skills-catalog ul { list-style: none; padding: 0; margin: 6px 0 0; font-size: 12px; color: #444; display: flex; flex-direction: column; gap: 4px; }
 .rem-patterns { list-style: none; padding: 0; margin: 10px 0 18px; display: flex; flex-direction: column; gap: 6px; }
 .rem-patterns li { font-size: 12px; color: #444; }
 .rem-edits { display: flex; flex-direction: column; gap: 14px; margin: 10px 0 22px; }
