@@ -8,7 +8,7 @@ export default function SuggestedTasks({onSelect,disabled}){
  const {state}=useWorkspace(),reduced=useReducedMotion();
  const [page,setPage]=useState(0),[paused,setPaused]=useState(false),[hover,setHover]=useState(false),[focused,setFocused]=useState(false);
  const pages=Math.ceil(PERSONAL_SUGGESTIONS.length/2);
- useEffect(()=>{if(reduced||paused||hover||focused||disabled)return;const timer=setInterval(()=>{if(!document.hidden)setPage(p=>(p+1)%pages)},2000);return()=>clearInterval(timer);},[reduced,paused,hover,focused,disabled,pages]);
+ useEffect(()=>{if(reduced||paused||hover||focused||disabled)return;const timer=setInterval(()=>{if(!document.hidden)setPage(p=>(p+1)%pages)},5000);return()=>clearInterval(timer);},[reduced,paused,hover,focused,disabled,pages]);
  if(!state.settings.suggestions)return null;
  return <section className="suggested-carousel" aria-label="Suggested for you" onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onFocusCapture={()=>setFocused(true)} onBlurCapture={e=>{if(!e.currentTarget.contains(e.relatedTarget))setFocused(false)}}>
   <div className="suggested-carousel-head"><h2>Suggested for you</h2><div><button aria-label="Previous suggestions" onClick={()=>setPage(p=>(p+pages-1)%pages)}><ChevronLeft size={15}/></button><span>{page+1} / {pages}</span>{!reduced&&<button aria-label={paused?'Rotate suggestions':'Pause suggestions'} aria-pressed={paused} onClick={()=>setPaused(p=>!p)}>{paused?<Play size={12}/>:<Pause size={12}/>}</button>}<button aria-label="Next suggestions" onClick={()=>setPage(p=>(p+1)%pages)}><ChevronRight size={15}/></button></div></div>

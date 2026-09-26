@@ -8,7 +8,7 @@ import Sleep from "./Sleep";
 import Rem from "./Rem";
 import HistoryPage from "./History";
 import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, Navigate, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   PanelLeft,
   PanelRight,
@@ -67,13 +67,14 @@ import LiveChat from "./LiveChat";
 import SidebarNav from "../vendor/beautiful/SidebarNav";
 import "../beautiful-workspace.css";
 import "../themes.css";
+import "../overview.css";
 import {resolveTheme,themeStyle} from "../../shared/themes";
 import Appearance from "../components/Appearance";
 import AgentSettings from "../components/AgentSettings";
 import ProfileMenu,{ProfileEditor} from "../components/ProfileMenu";
 const Gallery = lazy(() => import("./Gallery"));
 const nav = [
-  ["", "Overview", Home],
+  ["overview", "Overview", Home],
   ["tasks", "Tasks", ListTodo],
   ["rem", "REM", Sparkles],
   ["memory", "Memory", Brain],
@@ -111,10 +112,7 @@ export default function Workspace() {
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
         e.preventDefault();
-        const id = crypto.randomUUID();
-        act("new-conversation", { id })
-          .then(() => navigate("/app/chat/" + id))
-          .catch(() => {});
+        navigate("/app/chat");
       }
       if (e.key === "Escape") {
         setSearch(false);
@@ -139,11 +137,8 @@ export default function Workspace() {
     page = route[0] || "",
     count = activeSuggestions(state).length;
   const activeSession = state.sessions.find((x) => x.status === "active");
-  const newChat = async () => {
-    const id = crypto.randomUUID();
-    await act("new-conversation", { id });
-    navigate("/app/chat/" + id);
-  };
+  if (!page) return <Navigate to={"/app/chat" + location.search + location.hash} replace />;
+  const newChat = () => navigate("/app/chat");
   const run = async (id) => {
     const suggestion = PERSONAL_SUGGESTIONS.find(s=>s.id===id) || state.suggestions.find(s => s.id === id);
     if (!suggestion) return;
@@ -206,7 +201,7 @@ export default function Workspace() {
             <span className="breadcrumb">
               Personal <ChevronRight size={13} />{" "}
               <strong>
-                {nav.find((x) => x[0] === page)?.[1] || (page === "chat" ? "Conversation" : "Settings")}
+                {nav.find((x) => x[0] === page)?.[1] || (page === "chat" ? (route[1] ? "Conversation" : "New chat") : "Settings")}
               </strong>
             </span>
           </div>
@@ -242,7 +237,7 @@ export default function Workspace() {
           screenKey={location.pathname}
           className={"app-content page-" + (page || "home")}
         >
-          {page === "" && <Overview onRun={run} onSession={()=>setSession(true)} onSuggestions={()=>navigate("/app/chat")} />}
+          {page === "overview" && <Overview />}
           {page === "chat" && <LiveChat id={route[1]} onRevealSidebar={()=>setSidebar(true)} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
           {page === "memory" && <Memory />}
@@ -271,6 +266,7 @@ export default function Workspace() {
 }
 function Onboarding() {
   const { act } = useWorkspace();
+  const navigate = useNavigate();
   const [step, setStep] = useState(0),
     [name, setName] = useState(""),
     [role, setRole] = useState("Product team"),
@@ -279,6 +275,7 @@ function Onboarding() {
     setBusy(true);
     try {
       await act("onboard", { name, role });
+      navigate("/app/chat", { replace: true });
     } finally {
       setBusy(false);
     }
@@ -395,91 +392,45 @@ function Onboarding() {
     </div>
   );
 }
-function Overview({ onRun, onSession, onSuggestions }) {
+function Overview() {
   const { state } = useWorkspace();
-  const navigate = useNavigate();
-  const pending = state.settings.suggestions ? PERSONAL_SUGGESTIONS : [];
+  const [scheduled, setScheduled] = useState(null);
+  const [tasksUnavailable, setTasksUnavailable] = useState(false);
+  useEffect(() => {
+    let live = true;
+    const read = async () => {
+      try {
+        const result = await modelRequest('tasks');
+        if (live) { setScheduled(result.tasks); setTasksUnavailable(false); }
+      } catch {
+        if (live) setTasksUnavailable(true);
+      }
+    };
+    void read();
+    const timer = setInterval(read, 15000);
+    return () => { live = false; clearInterval(timer); };
+  }, []);
+  const conversations = state.conversations
+    .filter(c => !c.listStatus && (c.messages.length || c.pending))
+    .sort((a, b) => (b.messages.at(-1)?.at ?? b.createdAt) - (a.messages.at(-1)?.at ?? a.createdAt));
+  const running = conversations.filter(c => c.pending).length;
+  const memories = state.memory.filter(m => !m.example && !m.sample);
+  const tasks = scheduled?.filter(t => t.status === 'scheduled' || t.jobId);
   return (
-    <div className="overview">
-      <div className="greeting">
-        <p>
-          {new Date().getHours() < 12
-            ? "Good morning"
-            : new Date().getHours() < 18
-              ? "Good afternoon"
-              : "Good evening"}
-          , {state.profile.name}.
-        </p>
-        <h1>Your workspace,<br/><em>at a glance.</em></h1>
+    <div className="workspace-overview">
+      <header className="overview-heading">
+        <div><h1>Overview</h1><p>Your conversations, scheduled work, and saved context.</p></div>
+        <Link to="/app/chat" className="button small"><Plus size={16} />New chat</Link>
+      </header>
+      <div className="overview-stats">
+        <Link to="/app/chat"><MessageSquare size={19} /><span><strong>{conversations.length}</strong><span>Conversations</span><small>{running ? `${running} running` : 'No runs in progress'}</small></span><ArrowUpRight size={16} /></Link>
+        <Link to="/app/tasks"><ListTodo size={19} /><span><strong>{tasksUnavailable || !tasks ? '—' : tasks.length}</strong><span>Active tasks</span><small>{tasksUnavailable ? 'Status unavailable' : !tasks ? 'Loading schedule…' : 'Scheduled or running'}</small></span><ArrowUpRight size={16} /></Link>
+        <Link to="/app/memory"><Brain size={19} /><span><strong>{memories.length}</strong><span>Saved memories</span><small>Your notes and decisions</small></span><ArrowUpRight size={16} /></Link>
       </div>
-      <div className="section-line">
-        <h2>Ready when you are</h2>
-        <button className="text-button" onClick={onSuggestions}>
-          View all <ArrowRight size={14} />
-        </button>
-      </div>
-      <div className="home-tasks">
-        {pending.slice(0, 2).map((a) => (
-          <button key={a.id} onClick={() => onRun(a.id)}>
-            <div className="task-glyph">
-              <FileText size={19} />
-            </div>
-            <div>
-              <h3>{a.title}</h3>
-              <p>{a.reason}</p>
-            </div>
-            <ArrowUpRight size={18} />
-          </button>
-        ))}
-      </div>
-      <div className="activity-section">
-        <div className="section-line">
-          <h2>Your workspace</h2>
-          <span>On this device</span>
-        </div>
-        <div className="workspace-summary">
-          <Link to="/app/memory">
-            <Brain size={20} />
-            <span>
-              <strong>{state.memory.length} memories</strong>
-              <small>Details worth keeping</small>
-            </span>
-            <ChevronRight size={16} />
-          </Link>
-          <Link to="/app/sleep">
-            <Moon size={20} />
-            <span>
-              <strong>
-                {state.skills.length
-                  ? `${state.skills.length} saved routine`
-                  : "A quiet moment to learn"}
-              </strong>
-              <small>
-                {state.skills.length
-                  ? "Review what Offload learned"
-                  : "Review a day of work"}
-              </small>
-            </span>
-            <ChevronRight size={16} />
-          </Link>
-        </div>
-      </div>
-      {state.audit.length > 0 && (
-        <div className="recent-activity">
-          <h2>Last activity</h2>
-          {state.audit.slice(0, 4).map((a) => (
-            <p key={a.id}>
-              <span>{a.text}</span>
-              <time>
-                {new Date(a.at).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </time>
-            </p>
-          ))}
-        </div>
-      )}
+      <section className="overview-conversations" aria-labelledby="overview-conversations-title">
+        <div className="overview-section-heading"><h2 id="overview-conversations-title">Recent conversations</h2><Link to="/app/archive">Archive <ArrowRight size={14} /></Link></div>
+        {conversations.length ? <div className="overview-conversation-list">{conversations.slice(0, 5).map(c => <Link key={c.id} to={'/app/chat/' + c.id}><MessageSquare size={17} /><span>{c.title || 'Untitled conversation'}</span><small>{c.pending ? 'Running' : c.sleepEnabled ? 'Sleep enabled' : 'Open'}</small><ChevronRight size={16} /></Link>)}</div> : <p className="overview-empty">No conversations yet. Start a new chat when you have something to work on.</p>}
+      </section>
     </div>
   );
 }

@@ -17,6 +17,28 @@ import OpenRouterConnection,{useOpenRouterStatus} from '../components/OpenRouter
 import '../live-chat.css';
 import {AgentActivity,AgentApproval,AgentArtifacts} from '../components/AgentActivity';
 import ReasoningControl,{effortLabel} from '../components/ReasoningControl';
+
+const thinkingLabels = ['Thinking', 'Pondering', 'Deliberating'];
+
+function ThinkingStatus({reconnecting}) {
+  const [phrase,setPhrase] = useState(0);
+  useEffect(() => {
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let timer;
+    const updateMotion = () => {
+      clearInterval(timer);
+      setPhrase(0);
+      if (!motion.matches && !reconnecting) {
+        timer = setInterval(() => setPhrase(current => (current + 1) % thinkingLabels.length), 4000);
+      }
+    };
+    updateMotion();
+    motion.addEventListener('change', updateMotion);
+    return () => { clearInterval(timer); motion.removeEventListener('change', updateMotion); };
+  }, [reconnecting]);
+  return <div className="chat-thinking" data-reconnecting={reconnecting || undefined}><LoadingState label={reconnecting ? 'Reconnecting to your agent' : thinkingLabels[phrase]} variant="Dots"/></div>;
+}
+
 export default function LiveChat({id,onRevealSidebar}) {
   const {state,act,liveJobs,jobConnections}=useWorkspace(), navigate=useNavigate(),location=useLocation();
   const codex=useModelStatus(),openrouter=useOpenRouterStatus();
@@ -92,7 +114,7 @@ export default function LiveChat({id,onRevealSidebar}) {
         {m.role==='assistant' ? <>{m.sleep&&<div className="sleep-response-label"><Moon size={13}/>Sleep review</div>}<AgentActivity events={m.agent?.events}/><div className="beautiful-ui"><StreamingText content={[{text:m.text}]} sources={[]} followUps={[]} labels={{sources:'',followUps:''}} loop={false} fill live/></div>{m.notes?.length>0 && <details className="retrieved-notes"><summary>{m.notes.length} saved notes used</summary>{m.notes.map(n=><ContextCards key={n.id} labels={{header:"Retrieved context",count:1}} chunks={[{title:n.source,chars:`${n.text.length} characters`,body:n.text,source:n.source,badge:"TXT",tone:"bg-ink"}]}/>)}</details>}<AgentArtifacts agent={m.agent}/>{m.usage && <div className="response-receipt"><small className="token-receipt">{m.usage.input_tokens?.toLocaleString()} input tokens · {m.usage.output_tokens?.toLocaleString()} output tokens</small><small>{m.model} · {effortLabel(m.effort)}</small></div>}</> : <><div className="user-bubble"><p>{m.displayText??m.text}</p>{m.files?.length>0&&<div className="message-files">{m.files.map((f,i)=><span key={i}>{f.preview?<img src={f.preview} alt={f.name}/>:<FileText size={13}/>} {f.name}</span>)}</div>}</div><div className="message-actions"><button aria-label={savedNotes.includes(m.id)?'Saved to memory':'Save message to memory'} title={savedNotes.includes(m.id)?'Saved to memory':'Save to memory'} disabled={savedNotes.includes(m.id)} onClick={async()=>{try{await act('memory',{text:m.text,source:'Conversation'});setSavedNotes(current=>[...current,m.id]);}catch(e){setError(e.message);}}}>{savedNotes.includes(m.id)?<Check size={14}/>:<BookmarkPlus size={14}/>}</button></div></>}
       </div>)}
       {pending&&liveJob&&<><AgentActivity events={liveJob.events}/>{liveJob.stream&&<div className="agent-stream"><MarkdownContent text={liveJob.stream}/></div>}{liveJob.approvals?.map(request=><AgentApproval key={request.id} request={request} jobId={pending.id}/>)}</>}
-      {(pending||sending)&&<div className="beautiful-ui model-working"><LoadingState label={jobConnections[pending?.id]?"Reconnecting to your agent":"Working on your reply"} variant="Dots"/>{pending && <button className="text-button" onClick={()=>modelRequest('jobs/'+pending.id+'/stop',{}).catch(e=>setError(e.message))}><Square size={13}/>Stop</button>}</div>}
+      {(pending||sending)&&<div className="beautiful-ui model-working"><ThinkingStatus key={pending?.id || 'sending'} reconnecting={!!jobConnections[pending?.id]}/>{pending && <button className="text-button" onClick={()=>modelRequest('jobs/'+pending.id+'/stop',{}).catch(e=>setError(e.message))}><Square size={13}/>Stop</button>}</div>}
       <div ref={end}/>
     </div>}
     {jobConnections[pending?.id]&&<p className="chat-reconnecting" role="status">{jobConnections[pending.id]}</p>}

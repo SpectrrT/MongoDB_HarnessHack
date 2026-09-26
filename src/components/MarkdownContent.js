@@ -1,15 +1,23 @@
 import React from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import {normalizeMath} from '../../shared/normalize-math.js';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import rehypeHighlight from 'rehype-highlight';
 
 const h=React.createElement;
 const components={
   table:({children})=>h('div',{className:'response-table-scroll',role:'region','aria-label':'Response table',tabIndex:0},h('table',null,children)),
   th:({children,style})=>h('th',{scope:'col',style},children),
-  a:({href,children,title})=>href?h('a',{href,title,target:'_blank',rel:'noopener noreferrer'},children):h('span',null,children),
+  a:({href,children,title,id,'aria-label':label})=>href?h('a',{href,title,id,'aria-label':label,...(href.startsWith('#')?{}:{target:'_blank',rel:'noopener noreferrer'})},children):h('span',null,children),
   // Untrusted remote image URLs should not make requests just by rendering an answer.
   img:({src,alt})=>src?h('a',{href:src,target:'_blank',rel:'noopener noreferrer'},alt||'Open image'):null,
 };
-export default function MarkdownContent({text=''}){
-  return h('div',{className:'response-markdown'},h(Markdown,{remarkPlugins:[remarkGfm],components,skipHtml:true},text));
-}
+// Preserve prose prices such as “$10 and $20” that otherwise resemble dollar-delimited math.
+function remarkCurrency(){return tree=>{
+ const visit=node=>{for(const child of node.children||[]){if(child.type==='inlineMath'&&/^\d[\d,.]*(?:\s+(?:and|or|to)\s*|\s*[-–]\s*)$/.test(child.value)){child.type='text';child.value='$'+child.value+'$';delete child.data;}else visit(child);}};visit(tree);
+};}
+export default React.memo(function MarkdownContent({text=''}){
+  return h('div',{className:'response-markdown'},h(Markdown,{remarkPlugins:[remarkGfm,remarkMath,remarkCurrency],rehypePlugins:[[rehypeKatex,{trust:false,strict:'ignore',maxSize:20,maxExpand:1000}],[rehypeHighlight,{detect:false,ignoreMissing:true}]],components,skipHtml:true},normalizeMath(text)));
+});

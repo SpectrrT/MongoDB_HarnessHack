@@ -5,9 +5,8 @@ async function onboard(page) {
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Open my workspace" }).click();
-  // Onboarding lands on the Overview; the chat greeting lives at /app/chat.
-  await expect(page.getByRole("heading", { name: "Your workspace, at a glance." })).toBeVisible();
-  await expect(page.getByText(/^Good (morning|afternoon|evening), Alex\.$/)).toBeVisible();
+  await expect(page).toHaveURL(/\/app\/chat$/);
+  await expect(page.getByRole("heading", { name: "Hello Alex What can I help you with?" })).toBeVisible();
 }
 test("landing, onboarding, suggestions and memory persist", async ({
   page,
@@ -23,10 +22,13 @@ test("landing, onboarding, suggestions and memory persist", async ({
     fullPage: true,
   });
   await onboard(page);
-  // The Overview shows the first two personal suggestions; "View all" opens the chat.
-  await expect(page.locator(".home-tasks > button")).toHaveCount(2);
-  await expect(page.getByRole("heading", { name: "Find my homework for the week" })).toBeVisible();
-  await page.getByRole("button", { name: "View all" }).click();
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/app\/chat$/);
+  await page.goto("/app/overview");
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  await expect(page.getByText("No conversations yet. Start a new chat when you have something to work on.")).toBeVisible();
+  await expect(page.locator('.overview-stats a[href="/app/memory"] strong')).toHaveText("0");
+  await page.locator('.workspace-overview').getByRole("link", { name: "New chat", exact: true }).click();
   await expect(page).toHaveURL(/\/app\/chat$/);
   await expect(
     page.getByRole("heading", { name: "Hello Alex What can I help you with?" }),
@@ -48,6 +50,9 @@ test("landing, onboarding, suggestions and memory persist", async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBeTruthy();
+  await page.goto("/app/overview");
+  await expect(page.locator('.overview-stats a[href="/app/memory"] strong')).toHaveText("1");
+  await expect(page.locator('.overview-stats a[href="/app/chat"] strong')).toHaveText("0");
   expect(errors).toEqual([]);
 });
 test("connection setup and overnight tasks persist", async ({ page }) => {
