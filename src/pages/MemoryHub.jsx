@@ -8,6 +8,7 @@ import Sleep from './Sleep';
 import Rem from './Rem';
 import ContextMemory from '../components/ContextMemory';
 import PersonalSuggestions from '../components/PersonalSuggestions';
+import {SLEEP_EXAMPLE_TITLE,SLEEP_EXAMPLE_PROMPT} from '../../shared/sleep-example';
 import '../memory.css';
 import '../slow-mode.css';
 
@@ -52,16 +53,29 @@ function Notes({reviewOpen}){
 }
 
 function SleepingWork({view}){
- const {state,act}=useWorkspace();
+ const {state,act,sleepStates,updateSleepState}=useWorkspace();
  const navigate=useNavigate();
  const [error,setError]=useState(''),[busy,setBusy]=useState('');
- const conversations=state.conversations.filter(conversation=>conversation.sleepEnabled&&!conversation.listStatus);
- const wake=async conversation=>{setBusy(conversation.id);setError('');try{await modelRequest('sleep/'+conversation.id,{enabled:false});await act('conversation-sleep',{id:conversation.id,enabled:false});navigate('/app/chat/'+conversation.id);}catch(error){setError(error.message);}finally{setBusy('');}};
+ const conversations=state.conversations.filter(conversation=>!conversation.listStatus&&(conversation.sleepEnabled||conversation.messages.some(message=>message.sleep)));
+ const progress=conversation=>{
+  const snapshot=sleepStates[conversation.id];
+  if(snapshot?.connectionError&&conversation.sleepEnabled)return 'Reconnecting to Sleep';
+  if(conversation.sleepEnabled&&['starting','running'].includes(snapshot?.state))return 'Working in the background';
+  if(conversation.sleepEnabled&&snapshot?.state==='paused')return 'Paused. Review progress';
+  if(conversation.messages.some(message=>message.sleep))return 'Review available';
+  if(snapshot?.skipped)return 'No unfinished draft found';
+  if(snapshot?.state==='done')return 'Saving review';
+  return conversation.sleepEnabled?'Waiting for idle time':'Sleep off';
+ };
+ const tryExample=async()=>{setError('');try{const id=crypto.randomUUID();await act('prepare-conversation',{id,title:SLEEP_EXAMPLE_TITLE,text:SLEEP_EXAMPLE_PROMPT});navigate('/app/chat/'+id);}catch(error){setError(error.message);}};
+ const wake=async conversation=>{setBusy(conversation.id);setError('');try{const snapshot=await modelRequest('sleep/'+conversation.id,{enabled:false});updateSleepState(conversation.id,snapshot);await act('conversation-sleep',{id:conversation.id,enabled:false,jobId:snapshot.jobId||sleepStates[conversation.id]?.jobId});navigate('/app/chat/'+conversation.id);}catch(error){setError(error.message);}finally{setBusy('');}};
  return <section aria-label="Sleeping work">
-  <div className="memory-hub-section-heading"><h2>Sleeping conversations</h2><span>{conversations.length}</span></div>
-  <p className="memory-hub-intro">Leave a conversation here for a bounded local draft after 30 idle minutes. Open it whenever you’re ready.</p>
+  <div className="memory-hub-section-heading"><h2>Conversations and reviews</h2><span>{conversations.length}</span></div>
+  <p className="memory-hub-intro">Turn on Sleep in a conversation to prepare a local draft after 30 idle minutes, or choose Run Sleep now. Completed reviews stay here.</p>
+  <p><button className="button secondary small" onClick={tryExample}>Try Sleep example</button></p>
+  <p className="memory-hub-intro">Open a prepared query brief, turn on Sleep, then choose Run Sleep now. No database changes are made.</p>
   {error&&<p className="error-text" role="alert">{error}</p>}
-  <div className="memory-hub-sleeping">{conversations.map(conversation=><article key={conversation.id}><Moon size={18} strokeWidth={1.5} aria-hidden="true"/><Link to={'/app/chat/'+conversation.id}><strong>{conversation.title}</strong><span>{conversation.pending?'Working':conversation.sleepJobId?'Review available':'Sleep enabled'}</span></Link><button className="text-button" disabled={!!busy} onClick={()=>wake(conversation)}>{busy===conversation.id?'Waking…':'Wake'}</button><Link to={'/app/chat/'+conversation.id} aria-label={'Open '+conversation.title}><ArrowRight size={16}/></Link></article>)}</div>
+  <div className="memory-hub-sleeping">{conversations.map(conversation=><article key={conversation.id}><Moon size={18} strokeWidth={1.5} aria-hidden="true"/><Link to={'/app/chat/'+conversation.id}><strong>{conversation.title}</strong><span>{progress(conversation)}</span></Link>{conversation.sleepEnabled&&<button className="text-button" disabled={!!busy} onClick={()=>wake(conversation)}>{busy===conversation.id?'Waking...':'Wake'}</button>}<Link to={'/app/chat/'+conversation.id} aria-label={'Open '+conversation.title}><ArrowRight size={16}/></Link></article>)}</div>
   {!conversations.length&&<p className="memory-hub-empty">Use the moon beside a chat’s model controls to leave it here.</p>}
   <Disclosure defaultOpen={view==='tasks'} title="Overnight queue" description="Assign bounded tasks, inspect checks, and download verified outputs."><SleepTasks/></Disclosure>
   <Disclosure defaultOpen={view==='context'} title="Context memory" description="Inspect retained exchanges, archived context, and decision costs."><ContextMemory/></Disclosure>

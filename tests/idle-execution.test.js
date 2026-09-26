@@ -216,6 +216,33 @@ test('Opted-in idle Sleep performs bounded local work through the existing lifec
       await api('post','/api/model/sleep/'+conversationId).send({enabled:false}).expect(200);
       assert.equal((await mounted.idle.get('owner',conversationId)).enabled,false);
     });
+    await t.test('run-now endpoint requires local consent, complete foreground output and preserves draft bounds',async()=>{
+      const f=await fixture(),app=express();let finish,entered;
+      const starting=new Promise(resolve=>{entered=resolve;});
+      app.use(express.json());app.use((req,_res,next)=>{req.workspaceKey=req.get('x-owner')||'owner';next();});
+      const mounted=mountModel(app,{dataDir:f.dataDir,idleExecution:f.bridge,idleOptions:{now:()=>f.time,interval:0},enabled:true,
+        status:async()=>({connected:true,models:[{id:'fixture',efforts:['low']}]}),
+        run:async({onEvent})=>{onEvent({type:'messageStart',id:'partial',phase:'final_answer'});onEvent({type:'delta',id:'partial',text:'Partial reply'});entered();await new Promise(resolve=>{finish=resolve;});return{text:'Foreground result: counter starts at zero.'};}});
+      lifecycles.push(mounted.idle);
+      const api=(method,url)=>request(app)[method](url).set('host','localhost:5194').set('X-Offload-Client','local');
+      const endpoint='/api/model/sleep/'+conversationId+'/run-now';
+      await api('post',endpoint).send({}).expect(409);
+      await request(app).post(endpoint).set('host','localhost:5194').send({}).expect(403);
+      const requestId=crypto.randomUUID();
+      await api('post','/api/model/jobs').send({requestId,conversationId,provider:'codex',model:'fixture',effort:'low',messages:payload.messages,notes:[]}).expect(202);
+      await starting;
+      // Opting in while the foreground reply streams must still retain the final result.
+      await api('post','/api/model/sleep/'+conversationId).send({enabled:true,consent:DEFAULT_IDLE_LIMITS,
+        context:{provider:'codex',model:'fixture',effort:'low',messages:payload.messages,notes:[]}}).expect(200);
+      await api('post',endpoint).send({}).expect(409);assert.equal(f.calls,0);
+      finish();for(let n=0;n<100;n++){const job=await api('get','/api/model/jobs/'+requestId);if(job.body.status==='completed')break;await new Promise(resolve=>setTimeout(resolve,5));}
+      await api('post',endpoint).send({budget:999999}).expect(400);
+      await api('post',endpoint).set('x-owner','other').send({}).expect(409);
+      await api('post',endpoint).send({}).expect(202);await f.bridge.settle();
+      await api('post',endpoint).send({}).expect(202);assert.equal(f.calls,1);
+      const task=await f.store.tasks.findOne({origin:'idle'});assert.match(task.input.brief,/Foreground result: counter starts at zero/);
+      assert.doesNotMatch(task.input.brief,/Partial reply/);assert.equal(task.input.budget,10000);assert.equal(task.status,'completed');
+    });
     await t.test('Codex chat connectivity cannot enable Sleep without its own configured provider',async()=>{
       const f=await fixture(),app=express();app.use(express.json());app.use((req,_res,next)=>{req.workspaceKey='owner';next();});
       const bridge=createIdleExecution({store:f.store,executor:sleepOpenRouterExecutor({dataDir:f.dataDir,apiKey:'',model:'chosen-sleep-model'}),root:path.join(f.dataDir,'artifacts'),derive:deriveIdleDraft});

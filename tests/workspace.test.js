@@ -190,3 +190,13 @@ test('Sleep replies attach once without fabricating a user message',()=>{
  s=transition(s,{type:'chat-finish',payload:{id:'sleep-chat',jobId:'sleep-job',text:'Review ready.'}});
  s=transition(s,action);assert.equal(s.conversations[0].pending,null);assert.equal(s.conversations[0].messages.length,1);assert.equal(s.conversations[0].messages[0].sleep,true);
 });
+
+test('Sleep disable preserves unconsumed job identity and skipped work creates no message', () => {
+  let state = transition(createWorkspace(), { type: 'new-conversation', payload: { id: 'sleep-chat' } });
+  state = transition(state, { type: 'conversation-sleep', payload: { id: 'sleep-chat', enabled: false, jobId: 'finished-review' } });
+  assert.equal(state.conversations[0].sleepObservedJobId, 'finished-review');
+  assert.equal(state.conversations[0].sleepEnabled, false);
+  state = transition(state, { type: 'conversation-sleep-skipped', payload: { id: 'sleep-chat', jobId: 'no-work' } });
+  assert.equal(state.conversations[0].sleepJobId, 'no-work');
+  assert.deepEqual(state.conversations[0].messages, []);
+});

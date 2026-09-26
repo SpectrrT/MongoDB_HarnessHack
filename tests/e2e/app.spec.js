@@ -63,8 +63,8 @@ test("connection setup and unconfigured Sleep preserve existing briefs", async (
   await page.getByRole('button',{name:'Add to workspace',exact:true}).click();
   await expect(page.getByText('Added · setup needed')).toBeVisible();
   await page.goto('/app/sleep');
-  // Sleep opens on the conversations left for later; overnight tasks have their own tab.
-  await page.getByRole('tab',{name:'Overnight tasks',exact:true}).click();
+  // Sleep opens on conversations; bounded tasks are in the Overnight queue disclosure.
+  await page.locator('summary').filter({hasText:'Overnight queue'}).click();
   await expect(page.getByText('MongoDB task storage is not configured.',{exact:false})).toBeVisible();
   await page.getByRole('button',{name:'Add a task',exact:true}).click();
   await page.getByLabel('Task',{exact:true}).fill('Prepare a project update');
@@ -78,7 +78,7 @@ test("connection setup and unconfigured Sleep preserve existing briefs", async (
     localStorage.setItem(key,JSON.stringify(state));
   });
   await page.reload();
-  await page.getByRole('tab',{name:'Overnight tasks',exact:true}).click();
+  await page.locator('summary').filter({hasText:'Overnight queue'}).click();
   await expect(page.getByRole('heading',{name:'Previously saved briefs'})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Saved before worker integration'})).toBeVisible();
   await page.getByRole('button',{name:'Add output checks to assign'}).click();
@@ -111,8 +111,8 @@ test("sleep cancellation, scheduling, evidence and history persist", async ({ pa
   await page.clock.install({ time: new Date(2026, 8, 25, 12) });
   await onboard(page);
   await page.goto("/app/sleep");
-  await page.getByRole("tab", { name: "Memory", exact: true }).click();
-  await page.getByRole("tab", { name: "Memory review", exact: true }).click();
+  await page.getByRole("navigation", { name: "Memory views" }).getByRole("link", { name: "Notes", exact: true }).click();
+  await page.locator("summary").filter({hasText:"Review saved context"}).click();
   await page.getByRole("checkbox", { name: "Schedule daily review" }).click();
   await expect(page.getByRole("checkbox", { name: "Schedule daily review" })).toBeChecked();
   await page.getByLabel("Local review time").fill("23:59");
@@ -128,8 +128,8 @@ test("sleep cancellation, scheduling, evidence and history persist", async ({ pa
   await page.getByRole("button", { name: "Approve routine" }).click();
   await expect(page.getByRole("button", { name: "Pause routine" })).toBeVisible();
   await page.reload();
-  await page.getByRole("tab", { name: "Memory", exact: true }).click();
-  await page.getByRole("tab", { name: "Memory review", exact: true }).click();
+  await page.getByRole("navigation", { name: "Memory views" }).getByRole("link", { name: "Notes", exact: true }).click();
+  await page.locator("summary").filter({hasText:"Review saved context"}).click();
   await expect(page.getByRole("button", { name: "Pause routine" })).toBeVisible();
   await expect(page.locator(".sleep-history details")).toHaveCount(2);
   await page.getByRole("button", { name: "Needs approval", exact: true }).click();

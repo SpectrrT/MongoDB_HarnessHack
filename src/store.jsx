@@ -25,6 +25,12 @@ export function WorkspaceProvider({ children }) {
     [error, setError] = useState("");
   const [liveJobs,setLiveJobs]=useState({}),[jobConnections,setJobConnections]=useState({});
   const watchers=useRef(new Map());
+  const [sleepStates, setSleepStates] = useState({});
+  const sleepControlVersions = useRef({});
+  const updateSleepState = useCallback((id, snapshot) => {
+    sleepControlVersions.current[id] = (sleepControlVersions.current[id] || 0) + 1;
+    setSleepStates(current => JSON.stringify(current[id]) === JSON.stringify(snapshot) ? current : { ...current, [id]: snapshot });
+  }, []);
   const ref = useRef(null),
     queue = useRef(Promise.resolve());
   const put = useCallback((s) => {
@@ -147,6 +153,37 @@ export function WorkspaceProvider({ children }) {
     addEventListener("storage", h);
     return () => removeEventListener("storage", h);
   }, []);
+  const sleepSignature = JSON.stringify((state?.conversations || []).filter(conversation => conversation.sleepEnabled || (conversation.sleepObservedJobId && conversation.sleepObservedJobId !== conversation.sleepJobId)).map(conversation => conversation.id).sort());
+  useEffect(() => {
+    let stopped = false, timer;
+    const poll = async () => {
+      const conversations = (ref.current?.conversations || []).filter(conversation => conversation.sleepEnabled || (conversation.sleepObservedJobId && conversation.sleepObservedJobId !== conversation.sleepJobId));
+      await Promise.allSettled(conversations.map(async conversation => {
+        const controlVersion = sleepControlVersions.current[conversation.id] || 0;
+        try {
+          const snapshot = await modelRequest('sleep/' + conversation.id);
+          if (stopped || controlVersion !== (sleepControlVersions.current[conversation.id] || 0)) return;
+          setSleepStates(current => JSON.stringify(current[conversation.id]) === JSON.stringify(snapshot) ? current : { ...current, [conversation.id]: snapshot });
+          const latest = ref.current?.conversations.find(item => item.id === conversation.id);
+          if (!latest) return;
+          const jobId = snapshot.jobId || latest.sleepObservedJobId;
+          if (jobId && jobId !== latest.sleepObservedJobId) await act('conversation-sleep-job', { id: conversation.id, jobId });
+          if (snapshot.skipped && jobId && jobId !== latest.sleepJobId) await act('conversation-sleep-skipped', { id: conversation.id, jobId });
+          else if (jobId && jobId !== latest.sleepJobId && !latest.pending && !['starting','running'].includes(snapshot.state)) {
+            const job = await modelRequest('jobs/' + jobId);
+            if (stopped) return;
+            if (job.result?.text) await act('chat-sleep-start', { id: conversation.id, jobId, model: job.result.model || snapshot.model, effort: snapshot.effort || 'low' });
+          }
+          if (!snapshot.enabled && latest.sleepEnabled && controlVersion === (sleepControlVersions.current[conversation.id] || 0)) await act('conversation-sleep', { id: conversation.id, enabled: false });
+        } catch (failure) {
+          if (!stopped && controlVersion === (sleepControlVersions.current[conversation.id] || 0)) setSleepStates(current => ({ ...current, [conversation.id]: { ...current[conversation.id], connectionError: failure.message } }));
+        }
+      }));
+      if (!stopped) timer = setTimeout(poll, 3000);
+    };
+    if (sleepSignature !== '[]') void poll();
+    return () => { stopped = true; clearTimeout(timer); };
+  }, [sleepSignature, act, updateSleepState]);
   const pendingSignature=JSON.stringify((state?.conversations||[]).filter(c=>c.pending).map(c=>[c.id,c.pending.id]));
   useEffect(()=>{
     const pending=new Map((ref.current?.conversations||[]).filter(c=>c.pending).map(c=>[c.pending.id,c.id]));
@@ -156,7 +193,7 @@ export function WorkspaceProvider({ children }) {
         read:()=>modelRequest('jobs/'+jobId),
         onUpdate:job=>setLiveJobs(current=>({...current,[jobId]:job})),
         onConnection:message=>setJobConnections(current=>({...current,[jobId]:message})),
-        onFinish:job=>act('chat-finish',{id,jobId,...(job.status==='completed'?{text:job.result.text,usage:job.result.usage,agent:job.result.agent}:{error:job.error||'You stopped this reply.',...(job.stream?{text:'Partial reply:\n\n'+job.stream.slice(0,19000)}:{})})}),
+        onFinish:job=>act('chat-finish',{id,jobId,...(job.result?.text?{text:job.result.text,usage:job.result.usage,agent:job.result.agent}:job.stream?{text:'Partial reply:\n\n'+job.stream.slice(0,19000)}:{}),...(job.status==='completed'?{}:{error:job.error||'This reply paused before completion.'})}),
       }));
     }
   },[pendingSignature,act]);
@@ -187,7 +224,7 @@ export function WorkspaceProvider({ children }) {
   };
   return (
     <Context.Provider
-      value={{ state, act, error, setError, reset, mode: MODE, liveJobs, jobConnections }}
+      value={{ state, act, error, setError, reset, mode: MODE, liveJobs, jobConnections, sleepStates, updateSleepState }}
     >
       {children}
     </Context.Provider>

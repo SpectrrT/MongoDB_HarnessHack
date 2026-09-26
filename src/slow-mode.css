@@ -53,7 +53,7 @@
 .sleep-workspace .sleep-empty { padding: 24px; border: 1px solid var(--off-line); background: var(--off-inset); border-radius: 12px; }
 .sleep-workspace .sleep-empty a.button { text-decoration: none; }
 .sleep-workspace .sleep-consent-note { border-top: 1px solid var(--off-line); margin: 28px 0 0; padding-top: 18px; font-size: 12px; line-height: 1.75; color: var(--off-muted); }
-.sleep-workspace :is(.slow-label,.overnight-heading>span,.overnight-empty p,.overnight-task-head>span,.sleep-eyebrow,.sleep-disclosure,.sleep-footnote,.sleep-stats span,.sleep-progress li,.sleep-progress p,.sleep-schedule p,.sleep-empty p,.sleep-history p,.sleep-intro p) { color: var(--off-muted); }
+:is(.sleep-workspace,.memory-hub) :is(.slow-label,.overnight-heading>span,.overnight-empty p,.overnight-task-head>span,.sleep-eyebrow,.sleep-disclosure,.sleep-footnote,.sleep-stats span,.sleep-progress li,.sleep-progress p,.sleep-schedule p,.sleep-empty p,.sleep-history p,.sleep-intro p) { color: var(--off-muted); }
 .sleep-workspace .sleep-hero { background: var(--off-inset); border-color: var(--off-line); padding: 28px; gap: 24px; }
 .sleep-workspace .sleep-review-orb { flex-shrink: 0; }
 .sleep-workspace .sleep-hero h2 { font: 500 20px/1.4 Inter, sans-serif; margin-top: 10px; }

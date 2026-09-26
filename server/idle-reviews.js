@@ -29,7 +29,7 @@ export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now
     }
   })();
   const view = row => row ? { enabled: row.enabled, state: row.state, nextAt: row.nextAt, jobId: row.jobId,
-    model: row.latest?.model, effort: row.latest?.effort, error: row.error, consent: row.consent, outcome: row.outcome } : { enabled: false, state: 'off' };
+    skipped: row.skipped === true, model: row.latest?.model, effort: row.latest?.effort, error: row.error, consent: row.consent, outcome: row.outcome } : { enabled: false, state: 'off' };
   const reconcile = async row => {
     if (row && ['running','starting'].includes(row.state) && row.jobId) {
       const job = await getJob(row.owner,row.jobId);
@@ -49,7 +49,7 @@ export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now
       let row = rows.get(key(owner,id));
       if (!row) { row = { owner,id,enabled:false,state:'off',generation:0 }; rows.set(key(owner,id),row); }
       if (row.jobId && ['running','starting'].includes(row.state)) await cancel(owner,row.jobId);
-      row.generation++; row.enabled = enabled; row.nextAt = now() + IDLE_MS; row.state = enabled ? 'waiting' : 'off'; row.error = null;
+      row.generation++; if (enabled) row.skipped = false; row.enabled = enabled; row.nextAt = now() + IDLE_MS; row.state = enabled ? 'waiting' : 'off'; row.error = null;
       if (enabled) row.consent = { ...consent, grantedAt: now() };
       await save(row); return view(row);
     },
@@ -63,9 +63,32 @@ export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now
       while(overlap>0&&!previous.some((_message,start)=>start+overlap<=previous.length&&
         previous.slice(start,start+overlap).every((m,index)=>m.role===incoming[index].role&&m.text===incoming[index].text)))overlap--;
       const messages=[...previous,...incoming.slice(overlap)];
-      row.generation++; row.latest = { ...p, messages, images: [], notes: [], folder: '' }; row.nextAt = now() + IDLE_MS;
+      row.generation++; row.skipped = false; row.latest = { ...p, messages, images: [], notes: [], folder: '' }; row.nextAt = now() + IDLE_MS;
       row.state = row.enabled ? 'waiting' : 'off'; row.error = null; await save(row);
       if(messages.length>200||messages.reduce((n,m)=>n+m.text.length,0)>100000){row.state='paused';row.error='The conversation exceeds the bounded source limit. Start a scoped task without dropping its constraints.';await save(row);}
+    },
+    async complete(owner,id,requestId,text) {
+      await ready; const row = rows.get(key(owner,id));
+      // A late reply cannot replace a newer user turn or rearm a paused run.
+      if (!row || row.latest?.requestId !== requestId || !['waiting','off'].includes(row.state)) return;
+      const messages = row.latest.messages;
+      if (text && !(messages.at(-1)?.role === 'assistant' && messages.at(-1)?.text === text)) messages.push({role:'assistant',text});
+      row.nextAt = now() + IDLE_MS;
+      if (messages.length > 200 || messages.reduce((n,m)=>n+m.text.length,0)>100000) {
+        row.state = 'paused'; row.error = 'The conversation exceeds the bounded source limit. Start a scoped task without dropping its constraints.';
+      }
+      await save(row);
+    },
+    async runNow(owner,id) {
+      await ready; const row = rows.get(key(owner,id)); await reconcile(row);
+      const refuse = message => { throw Object.assign(Error(message),{status:409}); };
+      if (!row?.enabled || row.consent?.scope !== IDLE_SCOPE) refuse('Enable bounded local drafts before starting Sleep.');
+      if (!row.latest?.messages?.length) refuse('Send a message before starting Sleep.');
+      if (['starting','running','done'].includes(row.state)) return view(row);
+      if (row.state !== 'waiting') refuse('Send a new message or enable Sleep again before retrying a paused run.');
+      if (isBusy(owner,id)) refuse('Wait for the current chat reply before starting Sleep now.');
+      row.nextAt = now(); await save(row);
+      await api.tick(); return view(row);
     },
     async touch(owner,id) {
       await ready; const row = rows.get(key(owner,id));
@@ -89,18 +112,18 @@ export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now
         if (!recovering && (row.state !== 'waiting' || row.nextAt > now())) continue;
         const generation = row.generation;
         if (!recovering) {
-          row.state = 'starting'; row.jobId = crypto.randomUUID();
+          row.state = 'starting'; row.skipped = false; row.jobId = crypto.randomUUID();
           const last = await getJob(row.owner,row.latest.requestId);
           row.runPayload = { ...row.latest, requestId: row.jobId, images: [], notes: [], folder: '', background: true,
             scope: row.consent.scope, budget: row.consent.budget, deadline: now() + row.consent.durationMs,
             offlinePrototypeChecks: row.consent.offlinePrototypeChecks === true,
-            generation, messages: [...row.latest.messages,...(last?.result?.text ? [{role:'assistant',text:last.result.text.slice(0,16000)}] : [])] };
+            generation, messages: [...row.latest.messages,...(last?.result?.text && !(row.latest.messages.at(-1)?.role === 'assistant' && row.latest.messages.at(-1)?.text === last.result.text) ? [{role:'assistant',text:last.result.text}] : [])] };
           await save(row);
         }
         try {
           const result = await launch(row.owner,row.runPayload);
           if (!row.enabled || generation !== row.generation) { await cancel(row.owner,row.jobId); continue; }
-          row.state = result?.skipped ? 'done' : 'running'; row.error = result?.skipped ? result.reason : null;
+          row.skipped = result?.skipped === true; row.state = row.skipped ? 'done' : 'running'; row.error = result?.skipped ? result.reason : null;
         } catch (e) { if (row.enabled && generation === row.generation) { row.state = 'paused'; row.error = e.message; } }
         await save(row);
       } } finally { ticking = false; }

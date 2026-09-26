@@ -9,7 +9,7 @@ Offload combines recoverable context selection, MongoDB checkpoints, source-back
 | GPT-6 Astra | 3 | 80,092 | 77,523 | 36/36 / 36/36 |
 | Claude Opus 5.5 | 3 | 198,171 | 172,491 | 36/36 / 34/36 |
 
-The homepage shows only two interactive graphs: tokens per verified answer and context characters kept per step. All selector and retrieval tokens count. Trials use the same model, task, tools and limits within each pair. The repeated trials use three synthetic development tasks, not independent unseen workloads or a general intelligence ranking.
+The homepage shows only two interactive graphs: total tokens per verified answer and history characters kept for the next step. The history size is only part of the token total: choosing that history and producing an answer also use tokens. All selector and retrieval tokens count. Trials use the same model, task, tools and limits within each pair. The repeated trials use three synthetic development tasks, not independent unseen workloads or a general intelligence ranking.
 
 Astra passes all 36 checks on both paths. Opus's two Offload misses are invalid JSON outputs containing extra prose despite the JSON-mode request. These losses, earlier selectors, the three prompted-JSON Opus trials and infrastructure failures remain available in the [complete methods report](../public/evidence/benchmark-report.html). No universal quality or cost advantage is claimed.
 
@@ -26,3 +26,7 @@ The 300-step checkpoint test measured a 98.49% reduction in working-checkpoint b
 Personal-session experiments retain all failures: 43 paid calls, 258,093 tokens and $0.0435863 reported cost. Short histories below the selector threshold made zero Jev calls, so differences there cannot be attributed to compaction. The full-history onboarding selection exhausted its budget before producing an Offload answer. These results do not establish broad reasoning improvements.
 
 The hosted website is a static presentation. Agent execution and the isolated MongoDB demo run through the local service. No background computer capture has been enabled. There is no claim of billion-token sessions, weeks of autonomy or generic exactly-once external actions.
+
+## Immediate Sleep draft check
+
+An explicit, opted-in Run Sleep now request generated a proposed compound index and rollout/rollback checklist from the prepared query-regression example. One live OpenRouter GPT-4.1-mini call used 2,953 tokens (1,106 input and 1,847 output), cost $0.0033976 and saved two SHA-verified draft files. The proposed index has not been applied or benchmarked; file validation does not establish query correctness or performance. The regular idle delay stays 30 minutes. Receipt: `public/evidence/idle-query-live.json`.

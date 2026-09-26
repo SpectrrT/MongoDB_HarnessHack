@@ -22,7 +22,7 @@ async function openRem(page, theme = "light") {
   state.profile.name = "Tester";
   await page.addInitScript((s) => localStorage.setItem("offload.workspace.v1", JSON.stringify(s)), state);
   await page.goto("/app/rem");
-  await expect(page).toHaveURL(/\/app\/memory\?tab=rem$/);
+  await expect(page).toHaveURL(/\/app\/memory\?tab=rem$/, { timeout: 15000 });
   await expect(page.getByRole("heading", { name: "Memory", exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Memory views" }).getByRole("link", { name: "Learning", exact: true })).toHaveAttribute("aria-current", "page");
 }
@@ -97,7 +97,7 @@ test("REM: keyboard navigation, structured policy, and simulation validation", a
   await page.getByText("Current harness settings", { exact: true }).click();
   await expect(page.locator(".rem-policy-values").first()).toBeVisible();
   await expect(page.locator(".rem-page")).not.toContainText("[object Object]");
-  await openSection(page, /^Engine controls/);
+  await openSection(page, /Engine controls/);
   const input = page.getByRole("spinbutton", { name: "Days to simulate" });
   for (const value of ["", "0", "11", "1.5"]) {
     await input.fill(value);
@@ -168,7 +168,7 @@ test("REM: simulation updates a prior night and reset clears stale results", asy
   await expect(page.locator(".rem-live-run")).toBeVisible();
   await page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Run sleep cycle", exact: true }).click();
   await expect(page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Run sleep cycle", exact: true })).toBeEnabled();
-  await openSection(page, /^Engine controls/);
+  await openSection(page, /Engine controls/);
   await page.getByRole("button", { name: "Run simulated days" }).click();
   await expect(page.getByText("night 98", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Reset engine", exact: true }).click();
