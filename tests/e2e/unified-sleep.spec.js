@@ -83,6 +83,9 @@ for (const theme of ['light', 'monochrome-dark']) {
       await page.goto(url);
       await expect(page.getByRole('heading', { name: 'Memory', exact: true })).toBeVisible();
       await expect(page.locator('.workspace')).toHaveAttribute('data-palette', theme);
+      // Legacy Sleep links redirect into Memory, which replays the screen transition. Measuring mid-slide
+      // read a 44px tab as 43.99998px in CI, and a mid-fade audit would see lowered contrast.
+      await expect(page.locator('main.app-content')).toHaveCSS('opacity', '1');
       const navigation = await page.locator('[aria-label="Memory views"] a').evaluateAll(tabs => tabs.map(tab => {
         const box = tab.getBoundingClientRect();
         return { visible: box.left >= 0 && box.right <= innerWidth, height: box.height };
