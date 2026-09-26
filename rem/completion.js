@@ -15,6 +15,20 @@ const QUESTION =
 const lastSteps = (cp, n = 12) =>
   (cp.transcript || []).slice(-n).map((t) => `${t.step}. ${t.call.name} ${t.error ? `error: ${t.error}` : "ok"}`);
 
+// Only reported valid components are counted. A subtotal is not a complete usage receipt.
+export function decisionUsage(usage) {
+  const tokenCount = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
+  const inputTokens = tokenCount(usage?.input_tokens ?? usage?.prompt_tokens);
+  const outputTokens = tokenCount(usage?.output_tokens ?? usage?.completion_tokens);
+  const subtotal = (inputTokens ?? 0) + (outputTokens ?? 0);
+  const tokens = (inputTokens !== null || outputTokens !== null) && Number.isSafeInteger(subtotal) ? subtotal : null;
+  const cost = Number.isFinite(usage?.cost) && usage.cost >= 0 ? usage.cost : null;
+  return { inputTokens, outputTokens, tokens, cost,
+    usageKnown: inputTokens !== null && outputTokens !== null && tokens !== null && usage?.usageKnown !== false,
+    costKnown: cost !== null && usage?.costKnown !== false };
+}
+const noCallUsage = () => decisionUsage({ input_tokens: 0, output_tokens: 0, cost: 0 });
+
 // What the decision sees: the task, the plan, the last steps, the final answer and, when the
 // harness can run them, the end-state checks' findings.
 export function evidenceState({ cp, final, evidence }) {
@@ -48,7 +62,7 @@ export function createStubGate() {
   return {
     name: "stub",
     async check(input) {
-      return { ...stubVerdict(input), source: "stub" };
+      return { ...stubVerdict(input), source: "stub", available: true, ...noCallUsage() };
     },
   };
 }
@@ -58,7 +72,8 @@ export function createJevGate({ apiKey = process.env.OPENROUTER_API_KEY, model =
   return {
     name: "jev",
     async check(input) {
-      const fallback = (why) => ({ p: null, available: false, source: `jev unavailable: ${why}`, reasons: ["Configured completion evaluator is unavailable. Completion is unverified."] });
+      let receipt = decisionUsage();
+      const fallback = (why) => ({ p: null, available: false, source: `jev unavailable: ${why}`, reasons: ["Configured completion evaluator is unavailable. Completion is unverified."], ...receipt });
       try {
         const res = await fetchImpl(DECISIONS_URL, {
           method: "POST",
@@ -66,13 +81,14 @@ export function createJevGate({ apiKey = process.env.OPENROUTER_API_KEY, model =
           headers: { authorization: `Bearer ${apiKey}`, "content-type": "application/json" },
           body: JSON.stringify({ model, state: evidenceState(input), questions: { satisfied: { type: "noul", instructions: QUESTION } } }),
         });
+        let body;
+        try { body = await res.json(); } catch {}
+        receipt = decisionUsage(body?.usage);
         if (!res.ok) return fallback(res.status === 402 ? "402 payment required" : `HTTP ${res.status}`);
-        const body = await res.json();
-        const p = body.answers?.satisfied?.noul;
+        const p = body?.answers?.satisfied?.noul;
         if (!Number.isFinite(p) || p < 0 || p > 1) return fallback("invalid probability in reply");
-        const tokens = (body.usage?.input_tokens || 0) + (body.usage?.output_tokens || 0);
         const reasons = input.evidence?.failures?.slice(0, 4) || [];
-        return { p: Math.round(p * 1000) / 1000, reasons, source: model, tokens, cost: body.usage?.cost ?? null };
+        return { p: Math.round(p * 1000) / 1000, available: true, reasons, source: model, ...receipt };
       } catch (error) {
         return fallback(error.name === "TimeoutError" ? "timeout" : "request failed");
       }
@@ -89,7 +105,7 @@ function traceGate(gate) {
 export function createCompletionGate() {
   const gate = process.env.REM_COMPLETION === "jev"
     ? process.env.OPENROUTER_API_KEY ? createJevGate() : {
-      name: "jev", check: async () => ({ p: null, available: false, source: "jev unavailable: missing key", reasons: ["Configure the completion evaluator before verifying this task."] }),
+      name: "jev", check: async () => ({ p: null, available: false, source: "jev unavailable: missing key", reasons: ["Configure the completion evaluator before verifying this task."], ...noCallUsage() }),
     }
     : createStubGate();
   return traceGate(gate);
