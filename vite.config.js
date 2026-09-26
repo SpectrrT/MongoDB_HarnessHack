@@ -6,9 +6,9 @@ export default defineConfig({
   server: {
     host: "127.0.0.1",
     allowedHosts: ["offload.ai"],
-    port: Number(process.env.OFFLOAD_WEB_PORT || 5193),
+    port: Number(process.env.VITE_PORT || process.env.OFFLOAD_WEB_PORT || 5193),
     strictPort: true,
-    proxy: { "/api": { target: `http://127.0.0.1:${process.env.PORT || 5194}`, changeOrigin: false } },
+    proxy: { "/api": { target: process.env.VITE_API_PROXY || `http://127.0.0.1:${process.env.PORT || 5194}`, changeOrigin: false } },
   },
   build: {
     chunkSizeWarningLimit: 900,

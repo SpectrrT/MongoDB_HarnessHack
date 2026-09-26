@@ -23,6 +23,15 @@ export const TASK_KINDS = Object.freeze({
     ask: "Want me to collect the unresolved blockers myself each week?",
     instruction: ({ week }) => `Collect the unresolved blockers from the ${week} ops review in Drive.`,
   },
+  // Long-horizon recall trap (ported from the Sleep Lab's SEC-7 case): an old blocker is still open,
+  // but the ops review only covers this week, so the only trace of it is a months-old memory.
+  "release-readiness": {
+    title: "Release readiness",
+    trigger: "release readiness",
+    ask: "Want me to check release readiness myself each week?",
+    instruction: ({ week }) =>
+      `Check release readiness for ${week}: list every open blocking issue, from this week's ops review in Drive and from earlier weeks, then say go or no-go.`,
+  },
   "follow-ups": {
     title: "Promised follow-ups",
     trigger: "follow-ups i promised",
@@ -145,6 +154,14 @@ export function checkRun({ kind, params, truth, world, run }) {
       for (const t of w.resolved || []) need(!has(final, t), `resolved blocker listed: ${t}`);
       collateralIn(final, { customers: truth.customers, unowned }).forEach((c) => collateral.add(c));
       break;
+    case "release-readiness": {
+      need(run.status === "done" && final, "no readiness report");
+      for (const x of w.open || []) need(has(final, x.title), `missing blocker: ${x.title}`);
+      const nogo = /\bno-go\b/i.test(final);
+      need((w.open || []).length ? nogo : !nogo, (w.open || []).length ? "said go with open blockers" : "said no-go with no open blockers");
+      collateralIn(final, { customers: truth.customers, unowned }).forEach((c) => collateral.add(c));
+      break;
+    }
     case "follow-ups":
       for (const p of w.promises || []) {
         const d = drafts.find((x) => has(x.subject, p.subject));

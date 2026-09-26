@@ -12,7 +12,17 @@ export const GEN0 = deepFreeze({
     gmail: ["search", "read", "draft", "send"],
     calendar: ["list"],
   },
-  contextPolicy: { injectMemories: false, memoryTopK: 5, injectSkills: false, stepBudget: 40 },
+  contextPolicy: {
+    injectMemories: false,
+    memoryTopK: 5,
+    injectSkills: false,
+    stepBudget: 40,
+    // Recall favors recent memory (7-day half-life), a common default that can bury old open work.
+    recall: { mode: "hybrid", k: 5, minScore: 0.1, kinds: null, recencyHalfLifeDays: 7, budgetChars: 1600 },
+    // P(goal satisfied | evidence) a run needs before it may finish. Jev measured 0.60 on passing and
+    // 0.05 on failing release evidence (Sep 26), so 0.5 separates them; Evolve may raise it.
+    completionThreshold: 0.5,
+  },
   routing: {
     planner: "large",
     executor: "large",
@@ -30,6 +40,37 @@ export function allowedTools(genome) {
   );
   return [...scoped.filter((name) => TOOLS[name]), ...BUILTIN_TOOLS];
 }
+
+// Hard bounds on the context-policy knobs Evolve may tune. Out-of-bounds edits throw.
+export const RECALL_MODES = ["lexical", "vector", "hybrid"];
+export const MEMORY_KINDS = ["fact", "blocker", "decision", "preference", "team", "owner", "digest", "correction", "recipients"];
+export const RECALL_DEFAULTS = Object.freeze({ mode: "hybrid", k: 5, minScore: 0.1, kinds: null, recencyHalfLifeDays: 7, budgetChars: 1600 });
+export const COMPLETION_BOUNDS = Object.freeze({ min: 0.5, max: 0.95 });
+
+function inRange(name, v, lo, hi, int = false) {
+  if (typeof v !== "number" || Number.isNaN(v) || v < lo || v > hi || (int && !Number.isInteger(v)))
+    throw new RangeError(`${name} must be ${int ? "an integer " : ""}between ${lo} and ${hi}.`);
+  return v;
+}
+
+export function normalizeRecall(value = {}) {
+  const r = { ...RECALL_DEFAULTS, ...value };
+  const extra = Object.keys(r).filter((k) => !(k in RECALL_DEFAULTS));
+  if (extra.length) throw new RangeError(`Unknown recall fields: ${extra.join(", ")}.`);
+  if (!RECALL_MODES.includes(r.mode)) throw new RangeError(`recall.mode must be one of ${RECALL_MODES.join(", ")}.`);
+  inRange("recall.k", r.k, 1, 20, true);
+  inRange("recall.minScore", r.minScore, 0, 0.9);
+  inRange("recall.recencyHalfLifeDays", r.recencyHalfLifeDays, 0, 365);
+  inRange("recall.budgetChars", r.budgetChars, 300, 6000, true);
+  if (r.kinds !== null && (!Array.isArray(r.kinds) || !r.kinds.length || r.kinds.some((k) => !MEMORY_KINDS.includes(k))))
+    throw new RangeError(`recall.kinds must be null or a non-empty subset of ${MEMORY_KINDS.join(", ")}.`);
+  return { mode: r.mode, k: r.k, minScore: r.minScore, kinds: r.kinds ? [...r.kinds] : null, recencyHalfLifeDays: r.recencyHalfLifeDays, budgetChars: r.budgetChars };
+}
+
+// Genomes committed before recall existed read as the defaults.
+export const recallOf = (genome) =>
+  normalizeRecall({ ...(genome.contextPolicy.recall || {}), k: genome.contextPolicy.recall?.k ?? genome.contextPolicy.memoryTopK ?? 5 });
+export const completionThresholdOf = (genome) => genome.contextPolicy.completionThreshold ?? 0.5;
 
 export function editSignature(edit) {
   return canonicalJson({ type: edit.type, target: edit.target ?? null, value: edit.value ?? null });
@@ -67,7 +108,10 @@ export function applyEdit(genome, edit) {
       break;
     }
     case "context.set":
-      next.contextPolicy[edit.target] = clone(edit.value);
+      if (edit.target === "recall") next.contextPolicy.recall = normalizeRecall({ ...recallOf(genome), ...edit.value });
+      else if (edit.target === "completionThreshold")
+        next.contextPolicy.completionThreshold = inRange("completionThreshold", edit.value, COMPLETION_BOUNDS.min, COMPLETION_BOUNDS.max);
+      else next.contextPolicy[edit.target] = clone(edit.value);
       break;
     case "routing.set":
       next.routing[edit.target] = clone(edit.value);
@@ -114,7 +158,36 @@ export function renderDiff(changes) {
   });
 }
 
-export function renderSystemPrompt({ genome, version, role, tools, memories = [], skills = [] }) {
+// The capped lessons block: recalled memories in rank order until budgetChars is spent, then the
+// source of each (memory id, episodes it came from, recall score) and of each active rule (the edit
+// and night that added it). Deterministic: lower-ranked memories are dropped first.
+export function buildLessons({ genome, memories = [], ruleSources = [], budgetChars = recallOf(genome).budgetChars }) {
+  const kept = [];
+  let used = 0;
+  for (const m of memories) {
+    const cost = m.text.length + 3;
+    if (used + cost > budgetChars) continue;
+    kept.push(m);
+    used += cost;
+  }
+  const sources = [
+    ...kept.map((m) =>
+      `- memory ${m.id}${m.provenance?.length ? ` from episodes ${m.provenance.slice(0, 3).join(", ")}${m.provenance.length > 3 ? ` (+${m.provenance.length - 3})` : ""}` : ""}${
+        typeof m.score === "number" ? ` (score ${m.score.toFixed(2)})` : ""}`,
+    ),
+    ...ruleSources.map((r) => `- rule ${r.id}: ${r.editId ? `edit ${r.editId}, night ${r.night}${r.pattern ? `, pattern ${r.pattern}` : ""}` : "gen 0"}`),
+  ];
+  return {
+    memories: kept,
+    sources,
+    injectedIds: kept.map((m) => m.id),
+    dropped: memories.filter((m) => !kept.includes(m)).map((m) => m.id),
+    chars: used,
+    budgetChars,
+  };
+}
+
+export function renderSystemPrompt({ genome, version, role, tools, memories = [], skills = [], lessonSources = [] }) {
   const lines = [
     `You are the Offload agent running inside the REM harness (version ${version}).`,
     `Role: ${role}`,
@@ -129,6 +202,7 @@ export function renderSystemPrompt({ genome, version, role, tools, memories = []
     );
   lines.push("", `Tools: ${tools.join(", ")}`, `Step budget: ${genome.contextPolicy.stepBudget}`);
   if (memories.length) lines.push("", "Memories:", ...memories.map((m) => `- ${m.text}`));
+  if (lessonSources.length) lines.push("", "Lesson sources:", ...lessonSources);
   for (const s of skills)
     lines.push(
       "",

@@ -108,6 +108,51 @@ approval, read-only skills are approved automatically; sends always ask.
 
 The full design is in [docs/rem-engine.md](docs/rem-engine.md). The vocabulary is in [CONTEXT.md](CONTEXT.md).
 
+## Computer history
+
+Offload learns the work you repeat from which app, window and page you are on, the way you would describe your day,
+not by recording your screen. It lives at **Computer history** in the app (`/app/history`).
+
+- **Capture** (`npm run activity:collector`, macOS). Every 5 seconds: the frontmost app (`lsappinfo`), its window
+  title (System Events, which needs Accessibility access), the browser's page (AppleScript, which needs Automation
+  access), and whether you have been idle for 2 minutes (`ioreg`). No screenshots, no keystrokes, no page contents.
+  Emails, long numbers, query strings and URL fragments are removed before anything is stored. Excluded apps
+  (1Password, Keychain Access, System Settings and others you add) and private browser windows are kept as "private"
+  time with no details. Pausing in the app reaches the collector through a change stream.
+- **Sessions.** Raw samples go to `activity_events`, a time-series collection that deletes them after 7 days. One
+  aggregation folds them into `activity_sessions`: `$setWindowFields` finds where the app, window or page changes, a
+  running `$sum` numbers the sessions, `$group` builds them and `$merge` upserts them. Session ids are the device plus
+  the start time, so rerunning the pipeline extends the open session instead of duplicating it.
+- **Search.** Each session is embedded (Voyage `voyage-4` when `VOYAGE_API_KEY` is set, a local hashing embedder
+  otherwise) and indexed by Atlas Vector Search and Atlas Search. One `$rankFusion` query fuses the two, so "when did
+  I work on the weekly brief" finds the document by its words and by meaning. Visits to the same window on several days
+  come back as one result. Without Atlas Search the same fusion runs in the app.
+- **Routines.** A second aggregation splits each day into stretches at breaks (idle time or a gap over 5 minutes),
+  keeps stretches of 2 to 6 steps that take under an hour, and groups identical stretches across days (`$group` on the
+  step array, `$median` for the usual time). One that recurs on 3 days, or 4 times, becomes a routine in
+  `activity_routines`, which the page offers to hand off. `$merge` keeps each routine's decision across reruns.
+- **Live.** A change stream on `activity_sessions` feeds the page over Server-Sent Events.
+
+Routines need several days of history, so `npm run activity:seed` adds a sample work week (the five weekdays before
+today) on a device called `sample-week`. Every seeded sample is stored with `source: "seed"`, and the app labels it as
+sample data. From that week the miner finds two routines: Gmail → Google Docs ("Weekly brief") → Slack around 9 AM,
+and Linear → Slack → Gmail around 5 PM.
+
+History is keyed by this computer's user name (`ACTIVITY_WORKSPACE` overrides it) and device. The team shares one
+cluster, so anyone with database access can read it; a real deployment would give each person their own database
+user and database.
+
+| Route | Does |
+| --- | --- |
+| `GET /api/activity/status` | whether MongoDB is configured, search mode, embedder, devices |
+| `GET /api/activity/timeline?day=` | the day's sessions |
+| `GET /api/activity/stats?day=` | active time, time per app and hour, focus blocks, app switches |
+| `GET /api/activity/search?q=` | hybrid search over sessions |
+| `GET /api/activity/routines`, `POST /api/activity/routines/:id` | routines, and approve or dismiss one |
+| `GET`/`POST /api/activity/settings` | pause, excluded apps, capture of titles and page addresses |
+| `POST /api/activity/forget` | delete samples and sessions in a time range |
+| `GET /api/activity/stream` | Server-Sent Events from change streams |
+
 ## MongoDB
 
 | Collection | Holds | MongoDB feature |
@@ -133,7 +178,9 @@ Two more MongoDB-backed services live under `server/`:
   produces internal artifacts only; it sends nothing external.
 - **Sleep v2** (`server/sleep/`): memories in Atlas Vector Search with Voyage embeddings, versioned harness policies,
   promotion only on held-out improvement with no regression, and a guarded rollback. Promotion is one compare-and-swap
-  on the policy head. Tool-access requests are never promoted automatically.
+  on the policy head. Tool-access requests are never promoted automatically. Its recall and lessons ideas now live in
+  REM, the single Sleep engine (see [docs/rem-engine.md](docs/rem-engine.md), "One Sleep"). `server/sleep/` stays in
+  the repo and its API is still mounted, but REM doesn't use it and its pages are out of the app's navigation.
 
 ## What is real
 
@@ -144,24 +191,29 @@ Environment variables switch on the external services:
 | --- | --- | --- |
 | REM database | in-memory store with the Node driver's call shapes: unique indexes, TTL sweep, change streams, transactions | `MONGODB_URI` (Atlas Sandbox), optional `REM_DB_NAME` (default `rem`); gym and practice runs still use in-memory scratch databases |
 | REM model | `ScriptedModel`: deterministic, follows the rules, guardrails, memories and skills in its prompt | `REM_MODEL=openrouter`, `OPENROUTER_API_KEY` |
-| REM embeddings and search | local hashing embedder; app-side BM25 and cosine fused by reciprocal rank | `REM_EMBEDDINGS=voyage`, `VOYAGE_API_KEY`; `REM_ATLAS_SEARCH=1` for `$rankFusion` (MongoDB 8.1+) |
+| REM embeddings and search | local hashing embedder; app-side BM25 and cosine fused by reciprocal rank | on Atlas: `autoEmbed` (voyage-4) vector indexes and Atlas Search, fused with `$rankFusion` by default (`REM_ATLAS_SEARCH=0` turns it off); `REM_VECTOR_MODE=explicit` for clusters without autoEmbed |
 | REM proposer | a fixed catalog of 12 bounded edits, with predictions calibrated by the track record | an LLM proposer exists in `rem/proposer.js` but is not wired to an env switch |
 | REM consolidator | a deterministic fact extractor over the fixture notes | not yet model-backed |
 | Accounts and reviewer | a fixture Drive, Gmail and Calendar workspace with a deterministic revoke; day-one corrections come from the gym's checkers | no real OAuth yet |
 | Durable harness | integration tests against a disposable local `mongod` | `MONGODB_URI`, `OPENROUTER_API_KEY`, `OFFLOAD_MODEL` |
 | Sleep v2 | integration tests against a local `mongod`, with exact cosine in process instead of `$vectorSearch` | the harness variables plus `VOYAGE_API_KEY` |
+| Computer history | integration tests against a local `mongod`, with the fusion computed in the app | `MONGODB_URI`; Atlas Search, Vector Search and `$rankFusion` verified on the event cluster (MongoDB 8.0); `VOYAGE_API_KEY` for semantic embeddings |
+| REM tracing | nothing: every trace call in `rem/trace.js` is a plain pass-through, no LangSmith call is made | `LANGSMITH_API_KEY` traces day runs, planning, recall, tool calls, effects, the completion gate, model calls and night phases as nested LangSmith runs; `npm run rem:langsmith` also runs the gym as two comparable LangSmith experiments |
 
 Limits, stated plainly:
 
 - The numbers above come from the scripted model, which responds to the catalog's rules by design, so the improvements
   are expected rather than discovered. The loop around it (mining, predictions, validation, the gate, the ledger) is
   real code. Running a real model through OpenRouter is what tests whether the edits help.
-- Live runs against Atlas, OpenRouter and Voyage are not yet verified. `npm run rem:demo` always runs in memory; REM
-  reaches Atlas only through the server and `/api/rem/*`.
-- REM has no panel in the app yet. Its demo is the terminal story and the API.
-- The Offload workspace in the app still runs on a deterministic mock engine (`shared/workspace.js`) in browser
-  storage. The **Durable handoff** (`/app/harness`) and **Harness sleep** (`/app/adapt`) pages use the MongoDB-backed
-  services.
+- REM is verified on the Atlas Sandbox (MongoDB 8.0.32): all 8 `autoEmbed` indexes reach READY and hybrid recall runs
+  as `$rankFusion`. `node --env-file=.env scripts/rem-demo.mjs --atlas` runs the five-day story in the `rem_demo`
+  database and writes [docs/DEMO-NUMBERS-ATLAS.md](docs/DEMO-NUMBERS-ATLAS.md); plain `npm run rem:demo` still runs in
+  memory. OpenRouter is used for the completion check when `REM_COMPLETION=jev`; the day agent stays scripted unless
+  `REM_MODEL=openrouter`.
+- REM has its own page in the app (**REM**, `/app/rem`), showing the day, night and morning from the live API.
+- Suggestions, routines and the sample account in the Offload workspace still come from the deterministic engine in
+  `shared/workspace.js`. Workspaces live in browser storage by default; with `VITE_STORAGE_MODE=api` and `MONGODB_URI`,
+  the local API keeps them in Atlas (`offload.workspaces`). Chat runs on Codex or OpenRouter with local tools.
 
 ## Run the app
 
@@ -178,10 +230,13 @@ npm run build
 npm run harness:server   # site and API on http://127.0.0.1:5194
 npm run harness:worker   # second terminal
 npm run sleep:worker     # third terminal
+npm run activity:collector   # computer history; add -- --dry-run to print samples without storing them
+npm run activity:seed        # optional: the labeled sample week, so routines show up
 ```
 
-Open http://127.0.0.1:5194/app/harness to create a durable handoff and http://127.0.0.1:5194/app/adapt to add
-corrections and run a sleep review. With Sleep v2 configured, the server creates the `memory_vector` Atlas Vector Search
+Open http://127.0.0.1:5194/app/rem for REM and http://127.0.0.1:5194/app/history for computer history. The older
+Sleep v2 pages still work at http://127.0.0.1:5194/app/harness (durable handoff) and /app/adapt (sleep review), but
+they are no longer in the navigation. With Sleep v2 configured, the server creates the `memory_vector` Atlas Vector Search
 index on first start; wait until it is READY.
 
 ### REM API
@@ -221,7 +276,7 @@ The composer has Light, Medium, High, Extra high, Max and Ultra reasoning option
 ## Tests
 
 ```sh
-npm test          # 53 unit and integration tests
+npm test          # unit and integration tests
 npm run test:e2e  # Playwright in Google Chrome, desktop and mobile; start npm run dev first
 npm run build
 ```
@@ -230,7 +285,8 @@ npm run build
 inside the commit, plus random auth expiries: every effect runs exactly once and every task finishes), the gym's
 read-only boundary, the no-regression gate, Merge and Distill, asks and risk tolerance, and the durable harness and
 Sleep v2 against a disposable local `mongod` (concurrent claims, stale-worker fencing, crash recovery, concurrent
-promotions, rollback).
+promotions, rollback), and computer history on the same `mongod` (redaction and private windows, sessions from one
+aggregation, routines, search, forgetting, the API).
 
 ## Desktop and deployment
 
@@ -249,11 +305,14 @@ keep `VITE_STORAGE_MODE=browser` for a public demo, since the static site does n
 | Path | What |
 | --- | --- |
 | `rem/` | REM engine: day loop, ledger, night, evolution, gym, asks, database adapters |
-| `server/index.js` | Express API: workspace, durable harness, Sleep v2, and REM (`server/rem.js`) |
+| `rem/trace.js` | optional LangSmith tracing (`traceable`, `annotate`, `traceModel`); a no-op without `LANGSMITH_API_KEY` |
+| `server/index.js` | Express API: workspace, durable harness, Sleep v2, computer history and REM (`server/rem.js`) |
 | `server/harness/`, `server/sleep/` | durable harness and Sleep v2 |
+| `server/activity/` | computer history: macOS capture, collector, sessions, search, routines, sample week |
 | `src/` | React 19 + Vite app and landing site |
 | `shared/workspace.js` | the mock engine behind the Offload workspace |
 | `scripts/rem-demo.mjs` | the terminal demo |
+| `scripts/rem-langsmith.mjs` | `npm run rem:langsmith`: uploads the gym as a LangSmith dataset and runs two genomes as two LangSmith experiments |
 | `desktop/` | Electron wrapper |
 | `.mcp.json`, `scripts/mongodb-mcp.mjs` | a MongoDB MCP server for Claude Code sessions, read-only on the same `MONGODB_URI` |
 | `tests/` | `node:test` suites and Playwright specs |

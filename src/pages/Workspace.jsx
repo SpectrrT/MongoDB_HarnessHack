@@ -5,6 +5,8 @@ import Session from "../components/Session";
 import Harness from "./Harness";
 import Adapt from "./Adapt";
 import Sleep from "./Sleep";
+import Rem from "./Rem";
+import HistoryPage from "./History";
 import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -43,6 +45,8 @@ import {
   GitPullRequest,
   CalendarDays,
   TimerReset,
+  Sparkles,
+  History as HistoryIcon,
 } from "lucide-react";
 import {
   ThinkingOrb,
@@ -71,7 +75,9 @@ const Gallery = lazy(() => import("./Gallery"));
 const nav = [
   ["", "Overview", Home],
   ["tasks", "Tasks", ListTodo],
+  ["rem", "REM", Sparkles],
   ["memory", "Memory", Brain],
+  ["history", "Computer history", HistoryIcon],
   ["sleep", "Sleep", Moon],
   ["connections", "Connections", Plug],
 ];
@@ -241,9 +247,11 @@ export default function Workspace() {
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
           {page === "memory" && <Memory />}
           {page === "archive" && <ConversationArchive/>}
+          {page === "history" && <HistoryPage />}
           {page === "sleep" && <SlowMode><Sleep /></SlowMode>}
           {page === "harness" && <Harness />}
           {page === "adapt" && <Adapt />}
+          {page === "rem" && <Rem />}
           {page === "connections" && <Connections onConnect={setConnect} />}
           {page === "settings" && <SettingsPage />}
           {page === "library" && (
