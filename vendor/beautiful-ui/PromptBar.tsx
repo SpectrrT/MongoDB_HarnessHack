@@ -192,6 +192,8 @@ export default function PromptBar({
   const [modelHovered, setModelHovered] = useState<number | null>(null);
   const [modelMenuLeft, setModelMenuLeft] = useState(0);
   const [modelMenuBottom, setModelMenuBottom] = useState(0);
+  const [modelMenuMaxHeight, setModelMenuMaxHeight] = useState(340);
+  const modelListRef = useRef<HTMLDivElement>(null);
   const composerAnchorRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -235,21 +237,36 @@ export default function PromptBar({
 
   /* same gliding highlight in the model menu — floats to the hovered
    * row, falling back to the currently-selected model */
-  const modelIndex = modelOptions.findIndex((m) => m.key === model.key);
+  const filteredModels = modelOptions.filter(m=>m.name.toLowerCase().includes(modelQuery.toLowerCase()));
+  const modelIndex = filteredModels.findIndex((m) => m.key === model.key);
+  useLayoutEffect(() => {
+    setModelHovered(null);
+    if (modelListRef.current) modelListRef.current.scrollTop = 0;
+  }, [modelQuery]);
   useLayoutEffect(() => {
     if (!modelOpen) return;
     const target = modelRowRefs.current[modelHovered ?? modelIndex];
-    if (target) setModelBox({ top: target.offsetTop, height: target.offsetHeight });
-  }, [modelOpen, modelHovered, modelIndex]);
+    setModelBox(target ? { top: target.offsetTop, height: target.offsetHeight } : null);
+  }, [modelOpen, modelHovered, modelIndex, modelQuery]);
 
   /* The menu is outside the clipped composer, so align it to the model
    * trigger by measurement instead of pinning it to the far-right edge. */
   useLayoutEffect(() => {
     if (!modelOpen || !composerAnchorRef.current || !modelRef.current) return;
-    const anchorRect = composerAnchorRef.current.getBoundingClientRect();
-    const triggerRect = modelRef.current.getBoundingClientRect();
-    setModelMenuLeft(Math.max(0, Math.min(triggerRect.left - anchorRect.left, anchorRect.width - 176)));
-    setModelMenuBottom(anchorRect.bottom - triggerRect.top + 8);
+    const position = () => {
+      const anchorRect = composerAnchorRef.current!.getBoundingClientRect();
+      const triggerRect = modelRef.current!.getBoundingClientRect();
+      const contentTop = composerAnchorRef.current!.closest('.app-content')?.getBoundingClientRect().top || 0;
+      const headerBottom = composerAnchorRef.current!.closest('.workspace-main')?.querySelector('.app-header')?.getBoundingClientRect().bottom || 0;
+      const visibleTop = Math.max(0, contentTop, headerBottom) + 12;
+      setModelMenuLeft(Math.max(0, Math.min(triggerRect.left - anchorRect.left, anchorRect.width - 256)));
+      setModelMenuBottom(anchorRect.bottom - triggerRect.top + 8);
+      setModelMenuMaxHeight(Math.max(0, Math.min(340, triggerRect.top - 8 - visibleTop)));
+    };
+    position();
+    window.addEventListener('resize', position);
+    window.addEventListener('scroll', position, true);
+    return () => { window.removeEventListener('resize', position); window.removeEventListener('scroll', position, true); };
   }, [modelOpen, wide, model.name]);
 
   useEffect(() => {
@@ -502,10 +519,12 @@ export default function PromptBar({
       {modelOpen && (
         <div
           onMouseLeave={() => setModelHovered(null)}
-          className="absolute z-10 w-64 rounded-[10px] bg-surface p-1 shadow-raised"
-          style={{ left: modelMenuLeft, bottom: modelMenuBottom, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" }}
+          className="prompt-model-menu absolute z-10 w-64 rounded-[10px] bg-surface p-1 shadow-raised"
+          style={{ left: modelMenuLeft, bottom: modelMenuBottom, maxHeight: modelMenuMaxHeight, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" }}
         >
-          {modelOptions.length > 10 && <input aria-label="Find a model" placeholder="Find a model…" value={modelQuery} onChange={e=>setModelQuery(e.target.value)} className="w-full rounded-md p-2 text-[12px]"/>}
+          {modelOptions.length > 10 && <div className="prompt-model-search"><input aria-label="Find a model" placeholder="Find a model…" value={modelQuery} onChange={e=>setModelQuery(e.target.value)} className="w-full rounded-md p-2 text-[12px]"/></div>}
+          <div ref={modelListRef} className="prompt-model-scroll">
+          <div className="prompt-model-rows">
           {/* single gliding highlight — floats to the hovered / selected row */}
           <span
             aria-hidden
@@ -518,8 +537,7 @@ export default function PromptBar({
                 "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
             }}
           />
-          <div style={{maxHeight:280,overflowY:"auto"}}>
-          {modelOptions.filter(m=>m.name.toLowerCase().includes(modelQuery.toLowerCase())).map((m, i) => (
+          {filteredModels.map((m, i) => (
             <button
               key={m.key}
               type="button"
@@ -541,6 +559,7 @@ export default function PromptBar({
               </span>
             </button>
           ))}
+          </div>
           </div>
         </div>
       )}

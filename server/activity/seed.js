@@ -3,11 +3,13 @@
 // source "seed" on the device "sample-week", and the app labels it as sample data.
 //   npm run activity:seed             seed once
 //   npm run activity:seed -- --reset  replace an earlier sample week
+//   npm run activity:seed -- --engineering  add labeled MongoDB engineering demo history; never delete
 import { MongoClient } from 'mongodb';
 import { fileURLToPath } from 'node:url';
 import { createActivity, workspaceId, SAMPLE_MS } from './store.js';
 
 export const SAMPLE_DEVICE = 'sample-week';
+export const ENGINEERING_DEVICE = 'demo-engineering-week';
 const BUNDLES = {
   'Google Chrome': 'com.google.Chrome',
   Slack: 'com.tinyspeck.slackmacgap',
@@ -50,6 +52,29 @@ const dayPlan = (week) => [
   { minutes: 6, ...gmail },
 ];
 
+// A separate, additive demo device keeps engineering examples distinct from captured history.
+const engineeringPlan = date => {
+  const focus = ['aggregation regression', 'resumable backfill', 'change-stream recovery', 'schema validation rollout', 'query regression verification'][Math.max(0, date.getDay() - 1) % 5];
+  return [
+    { at: [9, 2], minutes: 10, app: 'Google Chrome', url: 'https://github.com/SpectrrT/MongoDB_HarnessHack/issues', title: 'Engineering triage — slow tenant aggregation', active: .5 },
+    { minutes: 16, app: 'Code', title: 'fixtures/query-demo/pipeline.json — inspect aggregation stages', active: .8 },
+    { minutes: 9, app: 'Terminal', title: 'node scripts/query-demo.mjs --baseline — query plan measurement', active: .6 },
+    { minutes: 12, app: 'Google Chrome', url: 'https://cloud.mongodb.com/', title: 'MongoDB Atlas — orders query plan and examined documents', active: .4 },
+    { at: [10, 15], minutes: 22, app: 'Google Chrome', url: 'https://www.mongodb.com/docs/manual/core/query-plans/', title: 'Query plans — MongoDB documentation', active: .2 },
+    { minutes: 65, app: 'Code', title: `${focus} — implementation and regression checks`, active: .85 },
+    { minutes: 13, app: 'Terminal', title: 'node --test — checkpoint, retry, and query regression checks', active: .6 },
+    { at: [12, 35], minutes: 42, app: 'Code', idle: true },
+    { at: [13, 30], minutes: 14, app: 'Google Chrome', url: 'https://github.com/SpectrrT/MongoDB_HarnessHack/pulls', title: `${focus} — review diff and rollout notes`, active: .4 },
+    { minutes: 18, app: 'Code', title: 'docs/QUERY-DEMO.md — candidate index and rollback evidence', active: .8 },
+    { minutes: 10, app: 'Terminal', title: 'node scripts/query-demo.mjs --candidate-index — compare query plans', active: .6 },
+    { minutes: 12, app: 'Google Chrome', url: 'https://cloud.mongodb.com/', title: 'MongoDB Atlas — compare keys examined and result counts', active: .4 },
+    { at: [15, 0], minutes: 26, app: 'Google Chrome', url: 'https://www.mongodb.com/docs/manual/changeStreams/', title: 'Change streams — resume token and recovery constraints', active: .2 },
+    { minutes: 58, app: 'Code', title: `${focus} — failure recovery and idempotency tests`, active: .85 },
+    { minutes: 12, app: 'Terminal', title: 'Regression verification — restart and duplicate-write checks', active: .65 },
+    { minutes: 16, app: 'Google Chrome', url: 'https://github.com/SpectrrT/MongoDB_HarnessHack/pulls', title: 'Release handoff — evidence, open risks, and rollback steps', active: .6 },
+  ];
+};
+
 // Small deterministic generator so every run seeds the same week.
 function random(seed) {
   let a = seed >>> 0;
@@ -72,12 +97,12 @@ export function sampleWeekDays(today = new Date(), count = 5) {
   return days;
 }
 
-export function sampleDay(date) {
+export function sampleDay(date, plan = dayPlan(isoWeek(date))) {
   const rand = random(date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate());
   const samples = [];
   const blocks = [];
   let cursor = null;
-  for (const block of dayPlan(isoWeek(date))) {
+  for (const block of plan) {
     if (block.at) {
       const start = new Date(date.getFullYear(), date.getMonth(), date.getDate(), block.at[0], block.at[1]);
       start.setMinutes(start.getMinutes() + Math.round(rand() * 6 - 2));
@@ -109,26 +134,28 @@ export function sampleDay(date) {
   return samples;
 }
 
-export async function seedSampleWeek(activity, { workspace = workspaceId(), reset = false, today = new Date() } = {}) {
-  const existing = await activity.sessions.countDocuments({ workspace, device: SAMPLE_DEVICE });
+export async function seedSampleWeek(activity, { workspace = workspaceId(), reset = false, today = new Date(), device = SAMPLE_DEVICE, plan } = {}) {
+  const existing = await activity.sessions.countDocuments({ workspace, device });
   if (existing && !reset) return { skipped: true, existing };
   if (existing) {
-    await activity.events.deleteMany({ 'meta.workspace': workspace, 'meta.device': SAMPLE_DEVICE });
-    await activity.sessions.deleteMany({ workspace, device: SAMPLE_DEVICE });
+    await activity.events.deleteMany({ 'meta.workspace': workspace, 'meta.device': device });
+    await activity.sessions.deleteMany({ workspace, device });
     await activity.routinesCollection.deleteMany({ workspace, source: 'seed' });
   }
   let samples = 0;
   const days = sampleWeekDays(today);
   for (const date of days) {
-    const day = sampleDay(date);
-    for (let i = 0; i < day.length; i += 5000) await activity.ingest(workspace, SAMPLE_DEVICE, day.slice(i, i + 5000));
+    const day = sampleDay(date, plan?.(date));
+    for (let i = 0; i < day.length; i += 5000) await activity.ingest(workspace, device, day.slice(i, i + 5000));
     samples += day.length;
-    await activity.sessionize(workspace, SAMPLE_DEVICE, { from: day[0].ts, to: new Date(+day.at(-1).ts + 1) });
+    await activity.sessionize(workspace, device, { from: day[0].ts, to: new Date(+day.at(-1).ts + 1) });
   }
-  const sessions = await activity.sessions.countDocuments({ workspace, device: SAMPLE_DEVICE });
+  const sessions = await activity.sessions.countDocuments({ workspace, device });
   const routines = await activity.routines(workspace);
   return { days: days.length, samples, sessions, routines };
 }
+
+export const seedEngineeringWeek = (activity, options = {}) => seedSampleWeek(activity, { ...options, device: ENGINEERING_DEVICE, plan: engineeringPlan, reset: false });
 
 async function main() {
   if (!process.env.MONGODB_URI) {
@@ -139,10 +166,11 @@ async function main() {
   await client.connect();
   try {
     const activity = await createActivity(client.db(process.env.MONGODB_DATABASE || 'offload_hackathon'), { log: console.warn });
-    const result = await seedSampleWeek(activity, { reset: process.argv.includes('--reset') });
-    if (result.skipped) console.log(`A sample week already exists (${result.existing} sessions). Use -- --reset to replace it.`);
+    const engineering = process.argv.includes('--engineering');
+    const result = engineering ? await seedEngineeringWeek(activity) : await seedSampleWeek(activity, { reset: process.argv.includes('--reset') });
+    if (result.skipped) console.log(`Demo history already exists (${result.existing} sessions). Existing sessions were preserved.`);
     else {
-      console.log(`Seeded a sample week: ${result.days} days, ${result.samples} samples, ${result.sessions} sessions (source "seed").`);
+      console.log(`Seeded demo history: ${result.days} days, ${result.samples} samples, ${result.sessions} sessions (source "seed").`);
       for (const r of result.routines) console.log(`  routine: ${r.steps.join(' → ')} · ${r.dayCount} days · ${r.count} times`);
     }
   } finally {

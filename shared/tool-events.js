@@ -1,10 +1,66 @@
 // Labels describe the tool request; completion always comes from runtime events.
+function commandTokens(command){
+ const tokens=[];let value='',quote=null,started=false;
+ const flush=()=>{if(started)tokens.push({value});value='';started=false;};
+ for(let i=0;i<command.length;i++){
+  const char=command[i];
+  if(quote==="'"){if(char==="'")quote=null;else value+=char;continue;}
+  if(char==='\\'&&quote!=="'"){
+   const next=command[i+1];
+   if(next===undefined)return [];
+   if(!quote||['"','\\','$','`','\n'].includes(next)){if(next!=='\n')value+=next;i++;started=true;continue;}
+  }
+  if(quote==='"'){if(char==='"')quote=null;else value+=char;continue;}
+  if(char==='"'||char==="'"){quote=char;started=true;continue;}
+  if(/[;&|\n]/.test(char)){
+   flush();let separator=char;
+   if((char==='&'||char==='|')&&command[i+1]===char)separator+=command[++i];
+   tokens.push({value:separator,separator:true});continue;
+  }
+  if(/\s/.test(char)){flush();continue;}
+  value+=char;started=true;
+ }
+ if(quote)return []; // Incomplete shell text is not enough evidence to label an action.
+ flush();return tokens;
+}
+function queryDemoPresentation(event,item,args,tool){
+ const evidence=path=>/(?:^|\/)scripts\/query-demo\.mjs$/.test(path)||/(?:^|\/)(?:\.data|artifacts)\/query-demo\/[^/]+\/(?:report|(?:baseline|candidate)-(?:explain|results))\.json$/.test(path);
+ const source=path=>/(?:^|\/)docs\/QUERY-DEMO\.md$/.test(path)?'Read query demo guide':/(?:^|\/)fixtures\/query-demo(?:\/|$)/.test(path)?'Read query demo fixtures':evidence(path)?'Inspect query evidence':null;
+ if(tool==='read_file'){
+  const label=source(String(args.path||''));
+  return label?{label,service:'mongodb'}:null;
+ }
+ if(event.type!=='commandExecution'&&tool!=='run_command'&&tool!=='exec_command')return null;
+ let command=String(item.command||args.command||args.cmd||event.label||'');
+ // Match actual executable/argument positions, never strings in output or an echo.
+ let words=commandTokens(command);
+ if(/(?:^|\/)(?:ba|z)?sh$/.test(words[0]?.value||'')&&/^-[a-z]*c$/.test(words[1]?.value||'')&&words.length===3&&!words.some(word=>word.separator))words=commandTokens(words[2].value);
+ const commands=[[]];for(const word of words){if(word.separator)commands.push([]);else commands.at(-1).push(word.value);}
+ for(const [executable,script,...flags] of commands){
+  if(/(?:^|\/)node$/.test(executable||'')&&/(?:^|\/)scripts\/query-demo\.mjs$/.test(script||'')){
+   if(flags.includes('--candidate-index'))return {label:'Test candidate index',service:'mongodb'};
+   if(flags.includes('--baseline'))return {label:'Measure baseline query plan',service:'mongodb'};
+  }
+ }
+ for(const [executable,...paths] of commands){
+  if(/(?:^|\/)jq$/.test(executable||'')){
+   // Recognize the simple filter + file form; option values and filter strings are not files.
+   if(paths.length>1&&!paths[0].startsWith('-')&&paths.slice(1).some(evidence))return {label:'Inspect query evidence',service:'mongodb'};
+   continue;
+  }
+  if(!/(?:^|\/)(?:cat|head|tail|sed|rg)$/.test(executable||''))continue;
+  const label=paths.map(source).find(Boolean);if(label)return {label,service:'mongodb'};
+ }
+ return null;
+}
 export function toolPresentation(event){
  let item={};try{item=JSON.parse(event.detail||'{}');}catch{}
  let supplied={};try{supplied=JSON.parse(event.arguments||'{}');}catch{}
  const tool=String(item.tool||event.tool||event.label||''),args=item.arguments||supplied,text=JSON.stringify(args);
  let label,service;
- if(/gmail[._]/i.test(tool)){service='gmail';label=/search/i.test(tool)?'Search email':/read/i.test(tool)?'Read email':'Use Gmail';}
+ const demo=queryDemoPresentation(event,item,args,tool);
+ if(demo){({label,service}=demo);}
+ else if(/gmail[._]/i.test(tool)){service='gmail';label=/search/i.test(tool)?'Search email':/read/i.test(tool)?'Read email':'Use Gmail';}
  else if(/calendar[._]/i.test(tool)){service='calendar';label='Check calendar';}
  else if(/google_drive[._]/i.test(tool)){service='drive';label='Check Google Drive';}
  else if(/github[._]/i.test(tool)){service='github';label='Check GitHub';}

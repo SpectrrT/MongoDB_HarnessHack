@@ -70,12 +70,19 @@ html[data-offload-workspace] :is(body,#root,.app-screen) {min-height:100dvh;back
 .workspace[data-palette] .suggestion-source {color:var(--off-muted);}
 @media(prefers-reduced-motion:reduce){.workspace .suggestion{transition:none;}}
 
-/* Keep the wordmark and chevron together, separate from the collapse control. */
-.beautiful-sidebar [data-workspace-trigger] {left:12px;width:max-content;max-width:156px;padding-inline:8px;}
+/* Center the compact brand between the 16px left inset and the collapse control's 8px gutter. */
+.beautiful-sidebar [data-workspace-trigger] {left:calc((100% - 40px)/2);top:8px;translate:-50% 0;width:max-content;max-width:152px;padding-inline:8px;}
 .beautiful-sidebar [data-workspace-trigger] > .sidebar-copy:first-of-type {flex:0 1 auto;text-align:left;}
 .beautiful-sidebar [data-workspace-trigger] > .sidebar-copy:last-child {margin-left:7px;}
 .beautiful-sidebar [data-workspace-trigger] > .sidebar-copy:last-child svg {width:14px;height:14px;}
-.beautiful-sidebar .sidebar-collapse-control {right:16px;}
+.beautiful-sidebar .sidebar-collapse-control {right:16px;top:8px;}
+
+/* The model search occupies its own header; only result rows scroll. */
+[data-promptbar] .prompt-model-menu {display:flex;flex-direction:column;overflow:hidden;max-width:calc(100vw - 32px);}
+[data-promptbar] .prompt-model-search {position:relative;flex:none;padding:4px 4px 8px;background:var(--surface);border-bottom:1px solid var(--line);}
+[data-promptbar] .prompt-model-search input {position:static;display:block;width:100%;min-width:0;margin:0;font:inherit;font-size:12px;line-height:20px;}
+[data-promptbar] .prompt-model-scroll {min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-gutter:stable;}
+[data-promptbar] .prompt-model-rows {position:relative;padding:4px 0;}
 
 .conversation-row{position:relative;min-width:0;}
 .conversation-row>.sidebar-row{width:calc(100% - 16px);gap:6px;}

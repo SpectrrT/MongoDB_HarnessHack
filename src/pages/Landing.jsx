@@ -18,10 +18,10 @@ export default function Landing(){
    <div className="preview-window"><div className="preview-top"><span className="wordmark">offload</span><span>Suggested for you</span><span className="ascii-small">YOUR NEXT MOVE</span></div><div className="preview-content">
     <div className="preview-message"><h3>From an open issue<br/>to a verified fix.</h3><p>Reproduce the failure. Trace the cause.<br/>Prepare the patch and run the checks.</p><Link className="text-link" to="/app">Try Offload <ArrowRight size={16}/></Link></div>
     <div className="preview-suggestions">{[
-     {title:'Investigate a failing build',detail:'Read the failure logs, trace the change, and prepare a fix.',category:'Development',services:['GitHub']},
-     {title:'Prepare a migration plan',detail:'Map dependencies and write the rollout and rollback steps.',category:'Infrastructure',services:['GitHub','Google Drive']},
-     {title:'Review the release handoff',detail:'Collect open issues, decisions, and checks before release.',category:'Delivery',services:['GitHub','Linear']},
-     {title:'Turn feedback into a patch',detail:'Connect review comments to the code and verify the change.',category:'Engineering',services:['GitHub','Figma']},
+     {title:'Fix a slow aggregation',detail:'Inspect the query plan, test an index, and compare the results.',category:'Performance',services:['MongoDB','GitHub']},
+     {title:'Ship a resumable backfill',detail:'Plan bounded batches, save checkpoints, and verify a safe restart.',category:'Migration',services:['MongoDB','GitHub']},
+     {title:'Recover a change-stream pipeline',detail:'Trace the interruption and test recovery from a saved resume token.',category:'Reliability',services:['MongoDB','GitHub']},
+     {title:'Roll out a document schema change',detail:'Check existing documents and plan validation, rollout, and rollback.',category:'Schema',services:['MongoDB','GitHub']},
     ].map(({title,detail,category,services})=><Link className="preview-row" to="/app" key={title}><div className="landing-task-meta"><span>{category}</span><ArrowRight size={17} strokeWidth={1.5}/></div><strong>{title}</strong><p>{detail}</p><div className="landing-task-tools">{services.map(source=><span key={source}><ConnectionLogo source={source} size={20}/>{source}</span>)}</div></Link>)}</div>
    </div></div>
   </section>

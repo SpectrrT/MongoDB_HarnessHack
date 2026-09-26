@@ -123,7 +123,7 @@ app.whenReady().then(() => {
         if (url.startsWith("https://")) shell.openExternal(url);
       }
     });
-    window.loadURL(origin + "/app");
+    window.loadURL(origin + "/");
   });
 });
 app.on("window-all-closed", () => app.quit());

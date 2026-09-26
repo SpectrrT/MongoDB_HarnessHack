@@ -1,10 +1,13 @@
 import MarkdownContent from '../components/MarkdownContent';
+import {ArtifactProvider} from '../components/ArtifactLink';
 import {modelChoices,modelSettings} from '../../shared/model-picker';
 import SuggestedTasks from '../components/SuggestedTasks';
+import {QUERY_DEMO_MARKER,QUERY_DEMO_BRIEF} from '../../shared/personal-suggestions';
+import {ConnectionLogo} from '../components/ConnectionLogo';
 import {currentScreenImage} from '../session-capture';
 import { useState,useEffect,useRef } from 'react';
 import { useNavigate,useLocation } from 'react-router-dom';
-import { Square,FileText,X,BookmarkPlus,Check,Moon } from 'lucide-react';
+import { Square,FileText,X,BookmarkPlus,Check,Moon,ChevronDown } from 'lucide-react';
 import PromptBar from '../vendor/beautiful/PromptBar';
 import StreamingText from '../vendor/beautiful/StreamingText';
 import LoadingState from '../vendor/beautiful/LoadingState';
@@ -18,6 +21,11 @@ import ConnectModelNotice from '../components/ConnectModelNotice';
 import '../live-chat.css';
 import {AgentActivity,AgentApproval,AgentArtifacts} from '../components/AgentActivity';
 import ReasoningControl,{effortLabel} from '../components/ReasoningControl';
+
+function AgentCommentary({items,active=false}) {
+  if(!items?.length)return null;
+  return <details className="agent-commentary" open={active||undefined}><summary>{active?'Thinking':'Progress notes'}</summary>{items.map(item=><MarkdownContent key={item.id} text={item.text}/>)}</details>;
+}
 
 const thinkingLabels = ['Thinking', 'Pondering', 'Deliberating'];
 
@@ -49,6 +57,7 @@ export default function LiveChat({id,onRevealSidebar}) {
   const [sending,setSending]=useState(false),[error,setError]=useState(''),[prefill,setPrefill]=useState('');
   const c=state.conversations.find(c=>c.id===id), pending=c?.pending;
   const liveJob=pending?liveJobs[pending.id]:null;
+  const preparedDemo=c?.messages.some(message=>message.role==='user'&&message.text.startsWith(QUERY_DEMO_MARKER));
   const chosen=provider === 'openrouter' ? state.settings.openrouterModel || status?.models.find(m=>m.price.input===0&&m.price.output===0)?.id || status?.models[0]?.id : state.settings.modelSelection || 'gpt-5.5';
   const selectedModel=status?.models.find(m=>m.id===chosen);
   const effort=selectedModel?.efforts.includes(state.settings.reasoningEffort)?state.settings.reasoningEffort:'low';
@@ -111,10 +120,11 @@ export default function LiveChat({id,onRevealSidebar}) {
   useEffect(()=>{if(prefill && ready && !sending && !pending){const text=prefill;setPrefill('');send(text);}},[prefill,ready]);
   return <div ref={chatSurface} aria-busy={movingToSleep||undefined} className={"chat-page live-chat " + (!c?.messages.length ? "empty-thread" : "")}>
     {!c?.messages.length ? <div className="chat-empty"><h1><span>Hello {state.profile.name}</span><br/>What can I help you with?</h1>{prefill && <button className="button secondary" disabled={!ready||sending} onClick={()=>send(prefill)}>Use this brief: {prefill}</button>}</div> : <div className="messages">
+      {preparedDemo&&<details className="engineering-brief beautiful-ui"><summary><ConnectionLogo source="MongoDB" size={20}/><span>{QUERY_DEMO_BRIEF.title}</span><small>3 sources</small><ChevronDown size={15}/></summary><div className="engineering-brief-content"><p>{QUERY_DEMO_BRIEF.summary} Prepared example context; query measurements are collected live.</p><ContextCards className="engineering-context-cards" labels={{header:'Prepared context',count:3}} chunks={QUERY_DEMO_BRIEF.sources.map(source=>({...source,chars:'Reference'}))}/></div></details>}
       {c.messages.map(m=><div key={m.id} className={'message '+(m.role==='user'?'user-message-group':'assistant')}>
-        {m.role==='assistant' ? <>{m.sleep&&<div className="sleep-response-label"><Moon size={13}/>Sleep review</div>}<AgentActivity events={m.agent?.events}/><div className="beautiful-ui"><StreamingText content={[{text:m.text}]} sources={[]} followUps={[]} labels={{sources:'',followUps:''}} loop={false} fill live/></div>{m.notes?.length>0 && <details className="retrieved-notes"><summary>{m.notes.length} saved notes used</summary>{m.notes.map(n=><ContextCards key={n.id} labels={{header:"Retrieved context",count:1}} chunks={[{title:n.source,chars:`${n.text.length} characters`,body:n.text,source:n.source,badge:"TXT",tone:"bg-ink"}]}/>)}</details>}<AgentArtifacts agent={m.agent}/>{m.usage && <div className="response-receipt"><small className="token-receipt">{m.usage.input_tokens?.toLocaleString()} input tokens · {m.usage.output_tokens?.toLocaleString()} output tokens</small><small>{m.model} · {effortLabel(m.effort)}</small></div>}</> : <><div className="user-bubble"><p>{m.displayText??m.text}</p>{m.files?.length>0&&<div className="message-files">{m.files.map((f,i)=><span key={i}>{f.preview?<img src={f.preview} alt={f.name}/>:<FileText size={13}/>} {f.name}</span>)}</div>}</div><div className="message-actions"><button aria-label={savedNotes.includes(m.id)?'Saved to memory':'Save message to memory'} title={savedNotes.includes(m.id)?'Saved to memory':'Save to memory'} disabled={savedNotes.includes(m.id)} onClick={async()=>{try{await act('memory',{text:m.text,source:'Conversation'});setSavedNotes(current=>[...current,m.id]);}catch(e){setError(e.message);}}}>{savedNotes.includes(m.id)?<Check size={14}/>:<BookmarkPlus size={14}/>}</button></div></>}
+        {m.role==='assistant' ? <ArtifactProvider value={m.agent}>{m.sleep&&<div className="sleep-response-label"><Moon size={13}/>Sleep review</div>}<AgentActivity events={m.agent?.events}/><AgentCommentary items={m.agent?.commentary}/><div className="beautiful-ui"><StreamingText content={[{text:m.text}]} sources={[]} followUps={[]} labels={{sources:'',followUps:''}} loop={false} fill live/></div>{m.notes?.length>0 && <details className="retrieved-notes"><summary>{m.notes.length} saved notes used</summary>{m.notes.map(n=><ContextCards key={n.id} labels={{header:"Retrieved context",count:1}} chunks={[{title:n.source,chars:`${n.text.length} characters`,body:n.text,source:n.source,badge:"TXT",tone:"bg-ink"}]}/>)}</details>}<AgentArtifacts agent={m.agent}/>{m.usage && <div className="response-receipt"><small className="token-receipt">{m.usage.input_tokens?.toLocaleString()} input tokens · {m.usage.output_tokens?.toLocaleString()} output tokens</small><small>{m.model} · {effortLabel(m.effort)}</small></div>}</ArtifactProvider> : <><div className="user-bubble"><p>{m.displayText??m.text}</p>{m.files?.length>0&&<div className="message-files">{m.files.map((f,i)=><span key={i}>{f.preview?<img src={f.preview} alt={f.name}/>:<FileText size={13}/>} {f.name}</span>)}</div>}</div><div className="message-actions"><button aria-label={savedNotes.includes(m.id)?'Saved to memory':'Save message to memory'} title={savedNotes.includes(m.id)?'Saved to memory':'Save to memory'} disabled={savedNotes.includes(m.id)} onClick={async()=>{try{await act('memory',{text:m.text,source:'Conversation'});setSavedNotes(current=>[...current,m.id]);}catch(e){setError(e.message);}}}>{savedNotes.includes(m.id)?<Check size={14}/>:<BookmarkPlus size={14}/>}</button></div></>}
       </div>)}
-      {pending&&liveJob&&<><AgentActivity events={liveJob.events}/>{liveJob.stream&&<div className="agent-stream"><MarkdownContent text={liveJob.stream}/></div>}{liveJob.approvals?.map(request=><AgentApproval key={request.id} request={request} jobId={pending.id}/>)}</>}
+      {pending&&liveJob&&<><AgentActivity events={liveJob.events}/><AgentCommentary items={liveJob.commentary} active/>{liveJob.stream&&<div className="agent-stream"><MarkdownContent text={liveJob.stream}/></div>}{liveJob.approvals?.map(request=><AgentApproval key={request.id} request={request} jobId={pending.id}/>)}</>}
       {(pending||sending)&&<div className="beautiful-ui model-working"><ThinkingStatus key={pending?.id || 'sending'} reconnecting={!!jobConnections[pending?.id]}/>{pending && <button className="text-button" onClick={()=>modelRequest('jobs/'+pending.id+'/stop',{}).catch(e=>setError(e.message))}><Square size={13}/>Stop</button>}</div>}
       <div ref={end}/>
     </div>}

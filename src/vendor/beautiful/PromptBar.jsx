@@ -140,6 +140,8 @@ function PromptBar({
   const [modelHovered, setModelHovered] = useState(null);
   const [modelMenuLeft, setModelMenuLeft] = useState(0);
   const [modelMenuBottom, setModelMenuBottom] = useState(0);
+  const [modelMenuMaxHeight, setModelMenuMaxHeight] = useState(340);
+  const modelListRef = useRef(null);
   const composerAnchorRef = useRef(null);
   const controlsRef = useRef(null);
   const inputRef = useRef(null);
@@ -166,18 +168,36 @@ function PromptBar({
     const target = rowRefs.current[active];
     if (target) setRowBox({ top: target.offsetTop, height: target.offsetHeight });
   }, [menu, query, active, connected, rows.length]);
-  const modelIndex = modelOptions.findIndex((m) => m.key === model.key);
+  const filteredModels = modelOptions.filter((m) => m.name.toLowerCase().includes(modelQuery.toLowerCase()));
+  const modelIndex = filteredModels.findIndex((m) => m.key === model.key);
+  useLayoutEffect(() => {
+    setModelHovered(null);
+    if (modelListRef.current) modelListRef.current.scrollTop = 0;
+  }, [modelQuery]);
   useLayoutEffect(() => {
     if (!modelOpen) return;
     const target = modelRowRefs.current[modelHovered ?? modelIndex];
-    if (target) setModelBox({ top: target.offsetTop, height: target.offsetHeight });
-  }, [modelOpen, modelHovered, modelIndex]);
+    setModelBox(target ? { top: target.offsetTop, height: target.offsetHeight } : null);
+  }, [modelOpen, modelHovered, modelIndex, modelQuery]);
   useLayoutEffect(() => {
     if (!modelOpen || !composerAnchorRef.current || !modelRef.current) return;
-    const anchorRect = composerAnchorRef.current.getBoundingClientRect();
-    const triggerRect = modelRef.current.getBoundingClientRect();
-    setModelMenuLeft(Math.max(0, Math.min(triggerRect.left - anchorRect.left, anchorRect.width - 176)));
-    setModelMenuBottom(anchorRect.bottom - triggerRect.top + 8);
+    const position = () => {
+      const anchorRect = composerAnchorRef.current.getBoundingClientRect();
+      const triggerRect = modelRef.current.getBoundingClientRect();
+      const contentTop = composerAnchorRef.current.closest(".app-content")?.getBoundingClientRect().top || 0;
+      const headerBottom = composerAnchorRef.current.closest(".workspace-main")?.querySelector(".app-header")?.getBoundingClientRect().bottom || 0;
+      const visibleTop = Math.max(0, contentTop, headerBottom) + 12;
+      setModelMenuLeft(Math.max(0, Math.min(triggerRect.left - anchorRect.left, anchorRect.width - 256)));
+      setModelMenuBottom(anchorRect.bottom - triggerRect.top + 8);
+      setModelMenuMaxHeight(Math.max(0, Math.min(340, triggerRect.top - 8 - visibleTop)));
+    };
+    position();
+    window.addEventListener("resize", position);
+    window.addEventListener("scroll", position, true);
+    return () => {
+      window.removeEventListener("resize", position);
+      window.removeEventListener("scroll", position, true);
+    };
   }, [modelOpen, wide, model.name]);
   useEffect(() => {
     if (!modelOpen) setModelHovered(null);
@@ -395,45 +415,47 @@ function PromptBar({
           "div",
           {
             onMouseLeave: () => setModelHovered(null),
-            className: "absolute z-10 w-64 rounded-[10px] bg-surface p-1 shadow-raised",
-            style: { left: modelMenuLeft, bottom: modelMenuBottom, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" },
+            className: "prompt-model-menu absolute z-10 w-64 rounded-[10px] bg-surface p-1 shadow-raised",
+            style: { left: modelMenuLeft, bottom: modelMenuBottom, maxHeight: modelMenuMaxHeight, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" },
             children: [
-              modelOptions.length > 10 && /* @__PURE__ */ jsx("input", { "aria-label": "Find a model", placeholder: "Find a model\u2026", value: modelQuery, onChange: (e) => setModelQuery(e.target.value), className: "w-full rounded-md p-2 text-[12px]" }),
-              /* @__PURE__ */ jsx(
-                "span",
-                {
-                  "aria-hidden": true,
-                  className: "pointer-events-none absolute inset-x-1 rounded-[6px] bg-hover",
-                  style: {
-                    top: modelBox?.top ?? 0,
-                    height: modelBox?.height ?? 0,
-                    opacity: modelBox && modelHovered !== null ? 1 : 0,
-                    transition: "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease"
+              modelOptions.length > 10 && /* @__PURE__ */ jsx("div", { className: "prompt-model-search", children: /* @__PURE__ */ jsx("input", { "aria-label": "Find a model", placeholder: "Find a model\u2026", value: modelQuery, onChange: (e) => setModelQuery(e.target.value), className: "w-full rounded-md p-2 text-[12px]" }) }),
+              /* @__PURE__ */ jsx("div", { ref: modelListRef, className: "prompt-model-scroll", children: /* @__PURE__ */ jsxs("div", { className: "prompt-model-rows", children: [
+                /* @__PURE__ */ jsx(
+                  "span",
+                  {
+                    "aria-hidden": true,
+                    className: "pointer-events-none absolute inset-x-1 rounded-[6px] bg-hover",
+                    style: {
+                      top: modelBox?.top ?? 0,
+                      height: modelBox?.height ?? 0,
+                      opacity: modelBox && modelHovered !== null ? 1 : 0,
+                      transition: "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease"
+                    }
                   }
-                }
-              ),
-              /* @__PURE__ */ jsx("div", { style: { maxHeight: 280, overflowY: "auto" }, children: modelOptions.filter((m) => m.name.toLowerCase().includes(modelQuery.toLowerCase())).map((m, i) => /* @__PURE__ */ jsxs(
-                "button",
-                {
-                  type: "button",
-                  ref: (el) => {
-                    modelRowRefs.current[i] = el;
+                ),
+                filteredModels.map((m, i) => /* @__PURE__ */ jsxs(
+                  "button",
+                  {
+                    type: "button",
+                    ref: (el) => {
+                      modelRowRefs.current[i] = el;
+                    },
+                    onMouseDown: (event) => event.preventDefault(),
+                    onMouseEnter: () => setModelHovered(i),
+                    onClick: () => {
+                      selectModel(m);
+                      inputRef.current?.focus();
+                    },
+                    className: "relative z-10 flex h-7.5 w-full items-center gap-2 rounded-[6px] px-2 text-left",
+                    children: [
+                      /* @__PURE__ */ jsx("span", { className: "min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink", children: m.name }),
+                      /* @__PURE__ */ jsx("span", { className: "shrink-0 text-[11px] text-ink-3", children: m.tag }),
+                      /* @__PURE__ */ jsx("span", { className: `shrink-0 text-ink ${m.key === model.key ? "" : "invisible"}`, children: /* @__PURE__ */ jsx(Icon, { size: 13, strokeWidth: 2.5, children: /* @__PURE__ */ jsx("path", { d: "M20 6L9 17l-5-5" }) }) })
+                    ]
                   },
-                  onMouseDown: (event) => event.preventDefault(),
-                  onMouseEnter: () => setModelHovered(i),
-                  onClick: () => {
-                    selectModel(m);
-                    inputRef.current?.focus();
-                  },
-                  className: "relative z-10 flex h-7.5 w-full items-center gap-2 rounded-[6px] px-2 text-left",
-                  children: [
-                    /* @__PURE__ */ jsx("span", { className: "min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink", children: m.name }),
-                    /* @__PURE__ */ jsx("span", { className: "shrink-0 text-[11px] text-ink-3", children: m.tag }),
-                    /* @__PURE__ */ jsx("span", { className: `shrink-0 text-ink ${m.key === model.key ? "" : "invisible"}`, children: /* @__PURE__ */ jsx(Icon, { size: 13, strokeWidth: 2.5, children: /* @__PURE__ */ jsx("path", { d: "M20 6L9 17l-5-5" }) }) })
-                  ]
-                },
-                m.key
-              )) })
+                  m.key
+                ))
+              ] }) })
             ]
           }
         ),

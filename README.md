@@ -218,6 +218,8 @@ Limits, stated plainly:
 npm run dev      # web on http://127.0.0.1:5193, API on 5194
 ```
 
+Open the [Offload homepage](http://127.0.0.1:5193/), then choose **Try Offload** to start a new chat.
+
 `npm run dev` reads the local `.env` for the API. Existing browser workspaces stay local unless `VITE_STORAGE_MODE=api` is selected. For
 the MongoDB-backed services, copy `.env.example` to `.env`, fill in the event Atlas Sandbox connection string and keys,
 then:
@@ -230,8 +232,10 @@ npm run activity:collector   # computer history; add -- --dry-run to print sampl
 npm run activity:seed        # optional: the labeled sample week, so routines show up
 ```
 
-Open http://127.0.0.1:5194/app/rem for REM and http://127.0.0.1:5194/app/history for computer history. The durable
-handoff page still works at http://127.0.0.1:5194/app/harness, but it is no longer in the navigation.
+For the built site, open the [Offload homepage](http://127.0.0.1:5194/). The workspace opens at
+[New Chat](http://127.0.0.1:5194/app). Feature links remain available for
+[REM](http://127.0.0.1:5194/app/rem) and [computer history](http://127.0.0.1:5194/app/history). The durable
+[handoff page](http://127.0.0.1:5194/app/harness) still works, but it is no longer in the navigation.
 
 ### REM API
 
@@ -290,6 +294,7 @@ npm run desktop:package
 ```
 
 The Electron wrapper disables Node integration and remote pages, and enables context isolation and the sandbox.
+Desktop and installed web app launches open the public homepage; **Try Offload** opens New Chat.
 Packaging is unsigned. `npm run build` produces `dist/`, which deploys to Vercel as a static site with `vercel.json`;
 keep `VITE_STORAGE_MODE=browser` for a public demo, since the static site does not include the API.
 

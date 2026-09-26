@@ -1,0 +1,6 @@
+[
+  {"$match":{"tenantId":"northstar-engineering","status":"failed","createdAt":{"$gte":{"$date":"2026-08-27T12:00:00.000Z"},"$lt":{"$date":"2026-09-26T12:00:00.000Z"}}}},
+  {"$sort":{"createdAt":-1,"_id":-1}},
+  {"$limit":50},
+  {"$project":{"_id":1,"tenantId":1,"status":1,"createdAt":1,"service":1,"durationMs":1}}
+]

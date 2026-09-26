@@ -562,3 +562,8 @@
   .hx-forget { flex-wrap: wrap; }
   .hx-privacy .setting-row { gap: 14px; }
 }
+
+/* App identity follows the recorded app or domain; demo provenance stays on each session. */
+.hx-app-icon {display:inline-flex;align-items:center;justify-content:center;flex:none;vertical-align:middle;}
+.hx-app-label,.hx-apps .hx-app-name {display:inline-flex;align-items:center;gap:7px;}
+.hx-app-icon img {object-fit:contain;flex:none;}
