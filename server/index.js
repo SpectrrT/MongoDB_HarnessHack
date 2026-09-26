@@ -19,7 +19,6 @@ import { connectStore, RunConflict } from './harness/store.js';
 import { inputSchema } from './harness/workflow.js';
 import { sleepRoutes } from './sleep/routes.js';
 import { activityRoutes } from './activity/routes.js';
-import { fitRoutes } from './fit/routes.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const types = [
   "request-connection",
@@ -134,7 +133,6 @@ export function createApp({
   sleep = null,
   atlas = null,
   activity = null,
-  fit = null,
 } = {}) {
   const app = express(),
     queues = new Map(),
@@ -236,7 +234,6 @@ export function createApp({
   });
   sleepRoutes(app, { sleep, harnessStore });
   activityRoutes(app, { activity });
-  fitRoutes(app, { fit });
   async function access(req, fn) {
     const key = req.workspaceKey;
     const previous = queues.get(key) || Promise.resolve();
@@ -335,12 +332,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         .createActivity(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon'), { log: console.warn })
         .catch((error) => (console.warn('Computer history is off:', error.message), null))
     : null;
-  const fit = connection
-    ? await (await import('./fit/store.js'))
-        .createFit(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon'))
-        .catch((error) => (console.warn('Harness fit is off:', error.message), null))
-    : null;
-  createApp({ harnessStore: connection?.store, sleep, atlas, activity, fit }).listen(port, "127.0.0.1", () =>
+  createApp({ harnessStore: connection?.store, sleep, atlas, activity }).listen(port, "127.0.0.1", () =>
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
 }

@@ -153,40 +153,6 @@ user and database.
 | `POST /api/activity/forget` | delete samples and sessions in a time range |
 | `GET /api/activity/stream` | Server-Sent Events from change streams |
 
-## Harness fit
-
-Statement One asks how agents can adapt their whole environment to one person. Harness fit watches how an agent
-actually worked with you, finds where it frustrated you, and evolves that agent's harness.
-
-- **Turns.** `npm run fit` reads this project's Claude Code session logs (`~/.claude/projects/<project>/`) and splits
-  them into turns: your prompt, the tools the agent used and how (what failed, what a permission or safety check
-  blocked, whether it retried), and whether it asked, refused or went quiet. Your next message says how the turn went:
-  a correction, insisting, granting permission it should have assumed, impatience, repeating yourself, or
-  interrupting. `fit_turns` stores only redacted excerpts: never tool output, never raw prompts, and never anything
-  that looks like a password, key, token, email address or connection string.
-- **Diagnosis.** One aggregation reports friction by signal, by intent and by tool, including how many of each tool's
-  calls happened in turns that ended badly and how many were blocked.
-- **Edits with a backtest.** Each mechanism is a bounded edit to the harness (a rule, a context policy, a guardrail
-  or tool access) with a test over your recorded turns: which frustrated turns it would have addressed and which
-  turns it could have hurt. The gate accepts an edit only if it addresses at least two frustrated turns and more than
-  it puts at risk. Standing instructions you gave ("from now on…", "you can commit on main") become rules in your
-  own words.
-- **Never looser around safety.** No edit widens tool access or loosens a guardrail on its own. A tool that keeps
-  hitting permission prompts becomes an ask for you to approve. A block by a safety check never becomes an access
-  change; instead the harness learns to hand you the exact steps.
-- **Versions.** Accepted edits commit a new harness version in `fit_harness` (parent, diff, and the turns it was based
-  on) under a unique index, and `npm run fit` prints the block to add to `CLAUDE.md`. Each edit keeps an outcome: how
-  often its pattern shows up before and after the version that added it.
-
-The first run on this repo's three Claude Code sessions (September 26) read 31 turns and 431 tool calls. 9 turns (29%)
-ended in friction. The gate accepted four edits (act on routine steps without asking, hand over steps when a safety
-rule applies, post status during long work, and don't retry around blocks) plus two sets of stated preferences, and
-rejected one (confirming the target had a single supporting turn). All five blocks that day were safety checks, so
-no tool access changed.
-
-`/api/fit/report`, `/api/fit/evolve` and `/api/fit/edits/:id` serve the same data. The server reads session logs only
-when `FIT_READ_CLAUDE_LOGS=1`; otherwise it works from turns that `npm run fit` already stored.
-
 ## MongoDB
 
 | Collection | Holds | MongoDB feature |
@@ -260,7 +226,6 @@ npm run harness:worker   # second terminal
 npm run sleep:worker     # third terminal
 npm run activity:collector   # computer history; add -- --dry-run to print samples without storing them
 npm run activity:seed        # optional: the labeled sample week, so routines show up
-npm run fit                  # Harness fit: read this project's Claude Code sessions and evolve its harness
 ```
 
 Open http://127.0.0.1:5194/app/harness to create a durable handoff and http://127.0.0.1:5194/app/adapt to add
@@ -336,7 +301,6 @@ keep `VITE_STORAGE_MODE=browser` for a public demo, since the static site does n
 | `server/index.js` | Express API: workspace, durable harness, Sleep v2, computer history and REM (`server/rem.js`) |
 | `server/harness/`, `server/sleep/` | durable harness and Sleep v2 |
 | `server/activity/` | computer history: macOS capture, collector, sessions, search, routines, sample week |
-| `server/fit/` | Harness fit: session logs to turns, friction signals, backtested edits, versioned harnesses |
 | `src/` | React 19 + Vite app and landing site |
 | `shared/workspace.js` | the mock engine behind the Offload workspace |
 | `scripts/rem-demo.mjs` | the terminal demo |
