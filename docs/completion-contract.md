@@ -54,3 +54,10 @@ A transaction commits the mutated fixture snapshot and its uniquely keyed provid
 `tests/persistent-world.test.js` covers facade selection, snapshots, concurrent adapters, argument conflict, no-op receipts, correction persistence and rollback. `tests/rem-process.test.js` kills an actual worker after its provider transaction and before the effects ledger commit, then resumes in a different process after natural lease expiry. The model is scripted and completion scoring is off in this durability test: its success assertion concerns checkpoint recovery and one simulated send, not task quality or model calibration.
 
 The provider snapshot is one bounded demo document and remains subject to MongoDB's document size limit. This adapter does not make unsupported exactly-once claims for real external services. Those require service-side idempotency or a reliable external reconciliation API.
+
+
+# Skill approval consistency
+
+A skill decision and its promotion now commit in one transaction. Concurrent approval and denial resolve to one recorded decision; duplicate approvals append promotion history once. Unknown or malformed tool scopes cannot inherit read-only automatic approval. Both manual and automatic promotion require a practiced skill with an explicit passing practice result and supported tools. Manual approval must also match the scopes originally shown in the ask; a later change to sending cannot inherit an earlier read-only ask. Automatic approval also rereads eligibility inside its transaction. A failed promotion rolls the ask back rather than recording an approval that did not happen.
+
+`tests/skill-authority.test.js` reproduces concurrent decisions and injected failures against a disposable MongoDB replica set. Existing five-day learning tests still cover practiced skills, human send approval and learned read-only approval.
