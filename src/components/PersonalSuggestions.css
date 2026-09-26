@@ -38,3 +38,7 @@
 .suggestion-action-items ul { list-style:none; padding:0; }
 .suggestion-action-items li { border-top:1px solid var(--off-line); padding:16px 0; }
 .suggestion-action-items blockquote,.suggestion-action-quote { margin:0 0 14px; border-left:2px solid var(--off-line); padding-left:12px; font-size:14px; line-height:1.6; }
+
+.suggestion-example-link { display:flex; flex-wrap:wrap; gap:8px 16px; font-size:13px; }
+.suggestion-example-link a { color:var(--off-ink); text-decoration:underline; text-underline-offset:4px; }
+.suggestion-example-link span { color:var(--off-muted); }

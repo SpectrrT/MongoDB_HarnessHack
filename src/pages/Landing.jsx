@@ -5,6 +5,7 @@ import Net from '../components/Net';
 import BenchmarkEvidence from '../components/BenchmarkEvidence';
 import {WorkDiagram,MemoryDiagram} from '../components/LandingDiagrams';
 import '../landing-ascii.css';
+import '../example-workflow.css';
 export default function Landing(){
  return <div className="site ascii-site landing-focused">
   <nav className="site-nav"><Link to="/" className="wordmark">offload</Link><Link to="/app" className="button small">Try Offload <ArrowRight size={16}/></Link></nav>
@@ -13,6 +14,7 @@ export default function Landing(){
    <h1>Your agent should<br/><em>finish the job.</em></h1>
    <p className="hero-description">Offload keeps useful context, checks outcomes, and improves its rules from measured results.</p>
    <Link to="/app" className="button">Try Offload <ArrowRight size={17}/></Link>
+   <Link to="/example" className="hero-example-link">Example workflow</Link>
    <div className="hero-engineering"><span>Persistent memory</span><span>Verified outcomes</span><span>Evolving rules</span></div>
   </div><WorkDiagram/></section>
    <BenchmarkEvidence/>

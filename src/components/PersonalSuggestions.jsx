@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CalendarDays, History, Upload } from 'lucide-react';
 import { Modal } from './Modal';
 import SleepServiceNotice from './SleepServiceNotice';
+import { mongodbDemoSources, MONGODB_DEMO } from '../../shared/mongodb-demo';
 import './PersonalSuggestions.css';
 
 const api = async (path = '', body) => {
@@ -23,7 +24,7 @@ const defaultDeadline = () => { const value = new Date(); value.setDate(value.ge
 
 export default function PersonalSuggestions() {
   const navigate = useNavigate();
-  const [actionDraft, setActionDraft] = useState(null);
+  const [actionDraft, setActionDraft] = useState(null), [exampleOpen, setExampleOpen] = useState(false);
   const fileInput = useRef(null);
   const [state, setState] = useState(null), [project, setProject] = useState('');
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
@@ -78,6 +79,11 @@ export default function PersonalSuggestions() {
       setNotice('Meeting notes saved. Review any suggested draft below before starting it.');
     });
   };
+  const loadExample = () => act(async () => {
+    await api('/import', { events: mongodbDemoSources() });
+    setProject(MONGODB_DEMO.projectId); setExampleOpen(false);
+    setNotice('Example notes loaded. Choose Start once to prepare a checklist, then Draft this to assign a model task.');
+  });
   const queueActionDraft = async event => {
     event.preventDefault(); setBusy(true); setError('');
     try {
@@ -96,14 +102,16 @@ export default function PersonalSuggestions() {
   };
   return <div className="standard-page personal-suggestions" aria-label="Personal task suggestions">
     <div className="page-title"><div><h1>Next actions</h1><p>Prepare for a meeting, follow up on notes, or resume work from saved evidence.</p></div></div>
-    {error && !meeting && !actionDraft && <SleepServiceNotice message={error} onRetry={!state ? retry : undefined} busy={checking} />}
+    {error && !meeting && !actionDraft && !exampleOpen && <SleepServiceNotice message={error} onRetry={!state ? retry : undefined} busy={checking} />}
     {notice && <p className="suggestion-notice" role="status">{notice}</p>}
     <div className="suggestion-source-actions">
       <button className="button secondary" disabled={busy} onClick={addMeeting}><CalendarDays size={16} />Add meeting notes</button>
       <button className="text-button" disabled={busy} onClick={() => fileInput.current?.click()}><Upload size={15} />Import selected sessions</button>
       <Link to="/app/history"><History size={15} />Computer history</Link>
+      <button className="text-button" disabled={busy} onClick={() => setExampleOpen(true)}>Try an example</button>
     </div>
     <input ref={fileInput} type="file" accept="application/json,.json" disabled={busy} onChange={importFile} hidden />
+    {!state && error && <p className="suggestion-example-link"><Link to="/example">Example workflow</Link><span>Prepared from sample data.</span></p>}
     <p className="muted">Suggestions use the sources you save here. Start once authorizes a local draft. Sending, publishing and completing action items require a separate decision.</p>
     {!state && !error && <p role="status">Loading saved evidence...</p>}
     {state && <>
@@ -141,6 +149,13 @@ export default function PersonalSuggestions() {
         {versions?.versions.find(version => version._id === versions.activeId)?.parent && <button className="button secondary" disabled={busy} onClick={() => act(async () => { await api('/policy/rollback', { expectedActiveId: versions.activeId }); setVersions(await api('/policy')); })}>Restore previous policy</button>}
       </details>}
     </>}
+    {exampleOpen && <Modal title="Try an example" onClose={() => !busy && setExampleOpen(false)}><div className="meeting-note-form">
+      <p>Sample meeting notes for a MongoDB engineer. Load them here, then choose Start once to prepare a source-linked checklist.</p>
+      <p>Draft this can turn one selected action into a model task after you choose its budget and deadline.</p>
+      {!state && <p>The local service must be connected to load the notes. You can still open the prepared example.</p>}
+      {error && <p role="alert">{error}</p>}
+      <div className="button-row"><button className="button" disabled={busy || !state} onClick={loadExample}>{busy ? 'Loading...' : 'Load sample notes'}</button><Link to="/example">Example workflow</Link></div>
+    </div></Modal>}
     {actionDraft && <Modal title="Draft an action item" onClose={() => !busy && setActionDraft(null)}><form className="meeting-note-form" onSubmit={queueActionDraft}>
       <blockquote className="suggestion-action-quote">{actionDraft.text}</blockquote>
       <p>Sleep will use the cited notes to prepare action-draft.md and source-evidence.md. This queues a model task. You will review the proposed local files before they are saved.</p>
