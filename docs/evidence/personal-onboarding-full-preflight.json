@@ -1,0 +1,51 @@
+{
+  "createdAt": "2026-09-26T18:47:16.626Z",
+  "mode": "Offline protection and reservation preflight, no decision or answer model calls",
+  "packetSha256": "41a76e84f461a4041a7311a7a5a2bd1a66643588306763946b159e3489aa143c",
+  "records": 145,
+  "roles": {
+    "user": 39,
+    "assistant": 106
+  },
+  "authoredTextChars": 56637,
+  "serializedUnitChars": 67208,
+  "maximumUnitChars": 2739,
+  "budgetChars": 16000,
+  "protectedRecords": 57,
+  "protectedChars": 31287,
+  "protection": {
+    "historical_user_instruction": {
+      "records": 39,
+      "chars": 8109
+    },
+    "constraint_or_open_loop": {
+      "records": 17,
+      "chars": 20508
+    },
+    "recent": {
+      "records": 1,
+      "chars": 2670
+    }
+  },
+  "scoringCalls": 0,
+  "scoringTokens": 0,
+  "currentBriefChars": 3151,
+  "fullPromptUtf8Bytes": 77092,
+  "conservativeReservation": 79404,
+  "taskTokenBudget": 100000,
+  "models": [
+    {
+      "id": "openai/gpt-4o-mini",
+      "contextLength": 128000,
+      "maxCompletionTokens": 16384
+    },
+    {
+      "id": "openai/gpt-4.1-mini",
+      "contextLength": 1047576,
+      "maxCompletionTokens": 32768
+    }
+  ],
+  "modelMetadataSource": "https://openrouter.ai/api/v1/models",
+  "admitted": false,
+  "reason": "Protected context alone exceeds the unchanged selector budget. No scoring can make it fit."
+}

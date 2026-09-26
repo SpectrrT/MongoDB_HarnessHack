@@ -5,11 +5,12 @@ import {spawnSync} from 'node:child_process';
 import {MongoMemoryServer} from 'mongodb-memory-server';
 import {MongoClient} from 'mongodb';
 import {SleepExecutionStore} from '../server/sleep/execution-store.js';
-import {sleepExecutionTick, taskDirectory} from '../server/sleep/execution.js';
+import {sleepExecutionTick, taskDirectory, executionPrompt} from '../server/sleep/execution.js';
 import {sleepOpenRouterExecutor} from '../server/sleep/execution-provider.js';
 import {createContextCompactor} from '../server/context/compaction.js';
 import {createJevScorer} from '../server/context/jev.js';
 import {normalizeReplayEvaluation} from './lib/real-replay-evaluation.mjs';
+import {normalizeReplayPacket, replayUnits, attachReplayContext} from './lib/replay-packet.mjs';
 
 const args = process.argv.slice(2);
 const value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : null;
@@ -19,15 +20,7 @@ const trials = Number(value('--trials') || 3), startTrial = Number(value('--star
 if (!Number.isInteger(trials) || trials < 1 || trials > 3 || !Number.isInteger(startTrial) || startTrial < 1 || startTrial + trials > 4) throw Error('Trial numbers must be within 1 to 3.');
 if (!process.env.OPENROUTER_API_KEY) throw Error('Configure the existing private OpenRouter key.');
 const sourceBytes = await fs.readFile(packetPath), sourcePacket = JSON.parse(sourceBytes);
-const onboarding = typeof sourcePacket.task === 'string' && sourcePacket.outputSchema;
-const packet = onboarding ? {
-  id: 'personal-onboarding-routing', title: 'Reconcile onboarding routing from chronological history',
-  history: sourcePacket.history, goal: sourcePacket.task,
-  input: Object.fromEntries(Object.entries(sourcePacket).filter(([key]) => !['task', 'history'].includes(key))),
-  source: {origin: 'Claude authored requests and selected actual earlier assistant reports'},
-  disclosure: ['The frozen onboarding packet uses 39 authored requests and four curated actual earlier assistant reports.',
-    'The output is a reconstructed text-only routing configuration. Its twelve criteria are structural and lexical proxies, not a runnable UI or semantic-quality evaluation.'],
-} : sourcePacket;
+const packet = normalizeReplayPacket(sourcePacket);
 if (!Array.isArray(packet.history) || typeof packet.goal !== 'string' || !packet.id) throw Error('Invalid frozen packet.');
 const evaluatorPath = value('--evaluator') || path.join(path.dirname(packetPath), 'evaluate.mjs');
 const evaluatorCommand = evaluatorPath.endsWith('.py') ? 'python3' : process.execPath;
@@ -40,8 +33,7 @@ const audit = value('--audit-manifest') ? JSON.parse(await fs.readFile(value('--
 const auditedSpan = audit ? (Date.parse(audit.sourceLastTimestamp) - Date.parse(audit.sourceFirstTimestamp)) / 3600000 : null;
 const brief = JSON.stringify({goal: packet.goal, input: packet.input || {}});
 if (brief.length > 4000) throw Error('Packet current task exceeds the production Sleep brief limit.');
-const units = packet.history.map(record => ({id: record.id, text: JSON.stringify({role: record.role, timestamp: record.timestamp, text: record.text}),
-  pinned: ['user', 'system'].includes(record.role) ? 'historical_user_instruction' : null}));
+const units = replayUnits(packet);
 const rawChars = units.reduce((n, record) => n + record.text.length, 0);
 const report = {
   schema: 2, createdAt: new Date().toISOString(), id: packet.id, title: packet.title,
@@ -69,7 +61,7 @@ const report = {
     'Source session duration and observed idle gaps do not establish historical background execution or elapsed-time speedup.'],
   implementation: {}, pairs: [],
 };
-for (const file of ['server/context/compaction.js', 'server/context/jev.js', 'server/context/repeat-evidence.js', 'server/sleep/execution.js', 'server/sleep/execution-store.js', 'server/sleep/execution-provider.js', 'scripts/benchmark-real-sleep.mjs', 'scripts/lib/real-replay-evaluation.mjs']) report.implementation[file] = hash(await fs.readFile(new URL('../' + file, import.meta.url)));
+for (const file of ['server/context/compaction.js', 'server/context/jev.js', 'server/context/repeat-evidence.js', 'server/sleep/execution.js', 'server/sleep/execution-store.js', 'server/sleep/execution-provider.js', 'scripts/benchmark-real-sleep.mjs', 'scripts/lib/real-replay-evaluation.mjs', 'scripts/lib/replay-packet.mjs']) report.implementation[file] = hash(await fs.readFile(new URL('../' + file, import.meta.url)));
 await fs.mkdir(privateRoot, {recursive: true, mode: 0o700});
 await fs.mkdir(path.dirname(publicOutput), {recursive: true});
 async function save() {await fs.writeFile(publicOutput, JSON.stringify(report, null, 2) + '\n');}
@@ -105,14 +97,14 @@ async function runArm(pair, arm) {
     row.totalTokens = null; row.elapsedMs = Math.round(performance.now() - started);
     return {row};
   }
-  const history = kept.map(({id, text}) => ({id, ...JSON.parse(text)}));
-  const contextBrief = JSON.stringify({task: JSON.parse(brief), history});
-  // The adapter expands the brief before provider execution. Extend the same
-  // production reservation by a conservative byte bound for that added context.
-  const contextBytes = Buffer.byteLength(contextBrief);
+  const expandPrompt = prompt => attachReplayContext(prompt, JSON.parse(brief), kept);
+  // Reserve against the exact expanded prompt, including escaped context strings.
   const armStore = new SleepExecutionStore(db, {leaseMs: 120000});
   const reserve = armStore.reserve.bind(armStore);
-  armStore.reserve = (task, amount) => reserve(task, amount + contextBytes);
+  armStore.reserve = (task, amount) => {
+    const original = executionPrompt(task);
+    return reserve(task, amount + Math.max(0, Buffer.byteLength(expandPrompt(original)) - Buffer.byteLength(original)));
+  };
   const workspace = `real-replay-${randomUUID()}`;
   const task = await armStore.enqueue(workspace, 'artifact', {title: packet.title.slice(0, 160), brief,
     deadline: Date.now() + 900000, budget: report.policy.tokenBudget, maxAttempts: report.policy.maxAttempts,
@@ -144,8 +136,7 @@ async function runArm(pair, arm) {
   };
   const productionProvider = sleepOpenRouterExecutor({model, fetcher});
   const executor = async options => {
-    const prompt = JSON.parse(options.prompt);
-    return productionProvider({...options, prompt: JSON.stringify({...prompt, brief: contextBrief})});
+    return productionProvider({...options, prompt: expandPrompt(options.prompt)});
   };
   executor.retrySafe = productionProvider.retrySafe;
   const artifactRoot = path.join(privateRoot, `trial-${pair.trial}`, arm);
