@@ -86,7 +86,7 @@ test("capture modes and chat requires account setup", async ({ page }, info) => 
   });
   await page.reload();
   await page.getByRole('button', { name: 'Start a session', exact: true }).click();
-  // Session modes have no in-app consent checkbox (HANDOFF.md); the browser's media permission prompt is the gate.
+  // Session modes have no in-app consent checkbox; the browser's media permission prompt is the gate.
   await expect(page.getByRole('checkbox', { name: 'Everyone involved agrees to this recording.' })).toHaveCount(0);
   for (const name of ['Screen', 'Microphone', 'Both']) {
     await page.getByRole('button', { name, exact: true }).click();

@@ -17,7 +17,7 @@ export function evaluate(draft, notes) {
     checks: ['Every claim cites at least one source.', 'Every cited source exists in this run.'],
     limitation: 'Citation integrity only. Semantic factuality requires a separate evaluator.' };
 }
-// Optional hooks (server/sleep/cycle.js harnessHooks) add the active policy and recalled memories.
+// Optional hooks can add context before the draft and extra checks after it.
 export async function executeStep(run, provider, hooks = {}) {
   const step = steps[run.checkpoint];
   if (step === 'context') return hooks.context ? hooks.context(run) : { instructions: run.input.instructions, notes: run.input.notes };

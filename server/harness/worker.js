@@ -23,7 +23,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   process.on('SIGINT', () => { stopping = true; });
   const { client, store } = await connectStore();
   const provider = openRouterProvider(), worker = randomUUID();
-  const hooks = process.env.VOYAGE_API_KEY ? await (await import('../sleep/index.js')).liveHooks(client) : {};
+  const hooks = {};
   console.log('Durable worker started.');
   try {
     while (!stopping) {
