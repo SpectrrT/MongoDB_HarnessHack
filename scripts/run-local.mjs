@@ -13,12 +13,13 @@ function stop(code=0){
  stopping=true;exitCode=code;
  for(const child of children)if(child.exitCode===null)child.kill('SIGTERM');
 }
-function launch(args){
+// An optional helper (the local HTTPS domain) may exit on its own without taking the app down.
+function launch(args,{optional=false}={}){
  const child=spawn(process.execPath,args,{cwd:root,stdio:'inherit',env:process.env});
  children.push(child);
- child.on('error',error=>{console.error(error.message);stop(1);});
+ child.on('error',error=>{console.error(error.message);if(!optional)stop(1);});
  child.on('exit',code=>{
-  if(!stopping)stop(code||0);
+  if(!stopping&&!optional)stop(code||0);
   if(children.every(c=>c.exitCode!==null||c.signalCode!==null))process.exitCode=exitCode;
  });
 }
@@ -28,5 +29,5 @@ if(mode!=='web')launch([...(mode==='dev'&&process.env.OFFLOAD_WATCH_SERVER==='1'
 if(mode!=='start')launch(['node_modules/vite/bin/vite.js','--host','127.0.0.1']);
 // Domain setup is a local macOS convenience, never a production service.
 if(process.platform==='darwin'&&process.env.NODE_ENV!=='production'&&process.env.OFFLOAD_LOCAL_DOMAIN!=='0'){
- launch(['scripts/local-https.mjs','watch']);
+ launch(['scripts/local-https.mjs','watch'],{optional:true});
 }
