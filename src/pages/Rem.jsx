@@ -404,6 +404,9 @@ function ControlsBar({ state, busy, setBusy, setError, reload, onReset }) {
   return (
     <div className="rem-controls">
       <span className="status-label">Harness v{state.harness.version}</span>
+      {state.engine?.database?.startsWith("atlas:") && (
+        <span className="status-label">MongoDB Atlas · {state.engine.database.slice(6)} · search {state.engine.search}</span>
+      )}
       <span className="muted">
         Day {state.day} · {state.week}
       </span>
