@@ -94,6 +94,10 @@ function Disclosure({ title, children, open = false }) {
   return <details className="rem-disclosure" open={open}><summary>{title}</summary><div className="rem-disclosure-body">{children}</div></details>;
 }
 
+function CompactDisclosure({ compact, title, children, open = false }) {
+  return compact ? <details className="rem-compact-section" open={open}><summary>{title}</summary><div className="rem-compact-details">{children}</div></details> : <>{children}</>;
+}
+
 function useRemEvents() {
   const [events, setEvents] = useState([]);
   const [hello, setHello] = useState(null);
@@ -438,7 +442,7 @@ function RunLog({ events }) {
   );
 }
 
-function ControlsBar({ state, busy, setBusy, setError, reload, onReset }) {
+function ControlsBar({ state, busy, setBusy, setError, reload, onReset, compact = false }) {
   const [simulating, setSimulating] = useState(false);
   const [days, setDays] = useState(3);
   const [simResult, setSimResult] = useState(null);
@@ -462,7 +466,7 @@ function ControlsBar({ state, busy, setBusy, setError, reload, onReset }) {
   };
   return (
     <details className="rem-demo-tools">
-      <summary><FlaskConical size={16} aria-hidden="true" /> Simulation tools <span>Run several days or reset the shared engine</span></summary>
+      <summary><FlaskConical size={16} aria-hidden="true" /> {compact ? "Engine controls" : "Simulation tools"}{!compact && <span>Run several days or reset the shared engine</span>}</summary>
       <div className="rem-controls">
       <div className="button-row">
         <label className="rem-select">
@@ -516,7 +520,7 @@ function ControlsBar({ state, busy, setBusy, setError, reload, onReset }) {
   );
 }
 
-function DayPanel({ state, events, busy, setBusy, setError, reload }) {
+function DayPanel({ state, events, busy, setBusy, setError, reload, compact = false }) {
   const [taskId, setTaskId] = useState(TASKS[0][0]);
   const [activeRunId, setActiveRunId] = useState(null);
   const [lastRun, setLastRun] = useState(null);
@@ -560,12 +564,12 @@ function DayPanel({ state, events, busy, setBusy, setError, reload }) {
   return (
     <section className="rem-section" aria-label="Day">
       <div className="section-line">
-        <h2>Day: run a task</h2>
+        <h2>{compact ? "Run a task" : "Day: run a task"}</h2>
         <span>{state.week}</span>
       </div>
-      <p className="muted">
+      {!compact && <p className="muted">
         Choose a task, follow its progress, and inspect the result. The harness saves its place after each step.
-      </p>
+      </p>}
       <div className="rem-day-controls button-row">
         <label className="rem-select">
           Task
@@ -595,6 +599,8 @@ function DayPanel({ state, events, busy, setBusy, setError, reload }) {
       </div>
       </Disclosure>
       {running && <div className="beautiful-ui rem-loading"><LoadingState label="Running the task" variant="Dots" /></div>}
+      <CompactDisclosure compact={compact} title={`Run details · ${state.runs.length} runs`} open={!!activeRunId}>
+      {compact && <p className="muted">Follow task progress and inspect results. The harness saves its place after each step.</p>}
       {activeRunId && (
         <div className="rem-live-run">
           <div className="section-line">
@@ -647,11 +653,12 @@ function DayPanel({ state, events, busy, setBusy, setError, reload }) {
         ))}
         {!recent.length && <p className="muted">No runs yet. Pick a task and click Run.</p>}
       </div>
+      </CompactDisclosure>
     </section>
   );
 }
 
-function NightPanel({ state, events, busy, setBusy, setError, reload }) {
+function NightPanel({ state, events, busy, setBusy, setError, reload, compact = false }) {
   const [sleeping, setSleeping] = useState(false);
   const [nightStart, setNightStart] = useState(0);
   const [completed, setCompleted] = useState(false);
@@ -690,9 +697,10 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
   return (
     <section className="rem-section" aria-label="Night">
       <div className="section-line">
-        <h2>Night: consolidate and evolve</h2>
+        <h2>{compact ? "Consolidate and improve" : "Night: consolidate and evolve"}</h2>
         <span>night {brief?.night ?? (interrupted ? `${interrupted.night}, interrupted` : "none yet")}</span>
       </div>
+      <CompactDisclosure compact={compact} title="Memory and skills">
       <p className="muted">
         Turn the day’s work into useful memory. Test proposed improvements before accepting them, and queue anything that needs your approval.
       </p>
@@ -714,10 +722,12 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
           </ul>
         </details>
       )}
+      </CompactDisclosure>
       <button className="button" disabled={busy} onClick={runSleep}>
-        {sleeping ? "Sleeping..." : "Sleep"}
+        {sleeping ? "Sleeping..." : compact ? "Run sleep cycle" : "Sleep"}
       </button>
       {sleeping && <div className="beautiful-ui rem-loading"><LoadingState label="Reviewing the day" variant="Orbit" /></div>}
+      <CompactDisclosure compact={compact} title="Night results" open={sleeping || completed}>
       {sleeping && (
         <ol className="rem-phases" aria-label="Observed night phases">
           {PHASES.map((p) => (
@@ -802,6 +812,7 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
         </p>
       )}
       {!sleeping && !brief && !interrupted && <p className="muted">No night has run yet.</p>}
+      </CompactDisclosure>
     </section>
   );
 }
@@ -923,7 +934,7 @@ const VIEWS = [
   { id: "morning", name: "Morning", detail: "Results and approvals", Icon: Sunrise },
 ];
 
-export default function Rem() {
+export default function Rem({ compact = false }) {
   const { state: workspace } = useWorkspace();
   const orbTheme = resolveTheme(workspace.settings.theme, matchMedia("(prefers-color-scheme: dark)").matches, workspace.settings.themeCustom).mode;
   const { events, hello, connected, resetVersion } = useRemEvents();
@@ -979,14 +990,14 @@ export default function Rem() {
     setView(VIEWS[next].id);
     tabs.current[next]?.focus();
   };
-  const panelProps = { state, events, busy, setBusy, setError, reload: load };
+  const panelProps = { state, events, busy, setBusy, setError, reload: load, compact };
   return (
-    <div className="standard-page rem-page">
-      <div className="page-title rem-title">
+    <div className={compact ? "rem-page rem-compact" : "standard-page rem-page"}>
+      {!compact && <div className="page-title rem-title">
         <div><span className="rem-eyebrow">REPLAY · EVOLVE · MERGE</span><h1>REM</h1>
           <p>A day of work. A night of learning.<br />A harness ready for what comes next.</p></div>
         <div className="rem-title-orb" aria-hidden="true"><ThinkingOrb theme={orbTheme} state={busy ? "weaving" : "breathing"} size={64} /></div>
-      </div>
+      </div>}
       <div className="rem-toolbar">
         <div className="rem-engine-status">
           {state && <><span className="status-label">Harness v{state.harness.version}</span><span>Day {state.day} · {state.week}</span></>}
@@ -999,16 +1010,26 @@ export default function Rem() {
         <>
           {state.engine?.database?.startsWith("atlas:") && <p className="rem-source-note">MongoDB Atlas · {state.engine.database.slice(6)} · search {state.engine.search}</p>}
           <p className="rem-source-note">{state.engine?.model === "scripted" ? "Scripted model · fixture tasks" : `Model: ${state.engine?.model || "Unavailable"} · fixture tasks`}. Results below come from this engine, including failed checks.</p>
-          <div className="rem-overview" aria-label="Engine overview">
+          {compact ? <dl className="rem-compact-summary" aria-label="Engine overview">
+            <div><dt>Engine memories</dt><dd>{state.memory.active}</dd></div>
+            <div><dt>Skills</dt><dd>{state.skills.length}</dd></div>
+            <div><dt>Needs review</dt><dd>{state.asks.length}</dd></div>
+          </dl> : <div className="rem-overview" aria-label="Engine overview">
             <div><span>Active memories</span><strong>{state.memory.active}</strong><small>{state.memory.unconsolidated} episodes awaiting review</small></div>
             <div><span>Saved skills</span><strong>{state.skills.length}</strong><small>Reusable patterns from prior work</small></div>
             <div><span>Needs your approval</span><strong>{state.asks.length}</strong><button onClick={() => { setView("morning"); tabs.current[2]?.focus(); }}>Review asks <ChevronRight size={13} aria-hidden="true" /></button></div>
-          </div>
-          <div className="rem-tabs" role="tablist" aria-label="REM cycle">
+          </div>}
+          {!compact && <div className="rem-tabs" role="tablist" aria-label="REM cycle">
             {VIEWS.map(({ id, name, detail, Icon }, index) => <button key={id} ref={(el) => { tabs.current[index] = el; }} id={`rem-tab-${id}`} role="tab" aria-selected={view === id} aria-controls={`rem-panel-${id}`} tabIndex={view === id ? 0 : -1} onKeyDown={(event) => focusTab(event, index)} onClick={() => setView(id)}><Icon size={17} aria-hidden="true" /><span>{name}<small>{detail}</small></span>{id === "morning" && state.asks.length > 0 && <b>{state.asks.length}</b>}</button>)}
-          </div>
+          </div>}
           <div key={`${resetVersion}-${localReset}`}>
-            {VIEWS.map(({ id }) => <div key={id} id={`rem-panel-${id}`} role="tabpanel" aria-labelledby={`rem-tab-${id}`} tabIndex={0} hidden={view !== id}>
+            {compact ? <>
+              <DayPanel {...panelProps} />
+              <NightPanel {...panelProps} />
+              <CompactDisclosure compact title={`Harness and morning review${state.asks.length ? ` · ${state.asks.length} asks` : ""}`} open={state.asks.length > 0}>
+                <MorningPanel {...panelProps} />
+              </CompactDisclosure>
+            </> : VIEWS.map(({ id }) => <div key={id} id={`rem-panel-${id}`} role="tabpanel" aria-labelledby={`rem-tab-${id}`} tabIndex={0} hidden={view !== id}>
               {id === "day" ? <DayPanel {...panelProps} /> : id === "night" ? <NightPanel {...panelProps} /> : <MorningPanel {...panelProps} />}
             </div>)}
             <ControlsBar {...panelProps} onReset={() => setConfirmReset(true)} />

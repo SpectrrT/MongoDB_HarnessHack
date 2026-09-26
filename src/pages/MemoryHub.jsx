@@ -1,18 +1,21 @@
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import {Link,useNavigate,useSearchParams} from 'react-router-dom';
 import {ArrowRight,Brain,Moon,Plus,Search,Trash2} from 'lucide-react';
 import {useWorkspace} from '../store';
 import {modelRequest} from '../model-api';
-import SlowMode from './SlowMode';
+import SleepTasks from '../components/SleepTasks';
 import Sleep from './Sleep';
 import Rem from './Rem';
 import ContextMemory from '../components/ContextMemory';
 import PersonalSuggestions from '../components/PersonalSuggestions';
 import '../memory.css';
+import '../slow-mode.css';
 
-function Disclosure({title,description,children}){
- const [opened,setOpened]=useState(false);
- return <details className="memory-disclosure" onToggle={event=>{if(event.currentTarget.open)setOpened(true);}}>
+function Disclosure({title,description,children,defaultOpen=false}){
+ const ref=useRef(null);
+ const [opened,setOpened]=useState(defaultOpen),[expanded,setExpanded]=useState(defaultOpen);
+ useEffect(()=>{if(defaultOpen){setOpened(true);setExpanded(true);const frame=requestAnimationFrame(()=>ref.current?.scrollIntoView({block:'start',behavior:'auto'}));return()=>cancelAnimationFrame(frame);}},[defaultOpen]);
+ return <details ref={ref} className="memory-disclosure" open={expanded} onToggle={event=>{setExpanded(event.currentTarget.open);if(event.currentTarget.open)setOpened(true);}}>
   <summary><span><strong>{title}</strong><small>{description}</small></span><Plus size={16} aria-hidden="true"/></summary>
   {opened&&<div className="memory-disclosure-body">{children}</div>}
  </details>;
@@ -28,13 +31,13 @@ export default function MemoryHub(){
   <nav className="memory-hub-nav" aria-label="Memory views">
    {[['notes','Notes','/app/memory'],['sleep','Sleep','/app/memory?tab=sleep'],['rem','Learning','/app/memory?tab=rem']].map(([key,label,url])=><Link key={key} to={url} aria-current={tab===key?'page':undefined}>{label}</Link>)}
   </nav>
-  <div hidden={tab!=='notes'}><Notes/></div>
-  <div hidden={tab!=='sleep'}><SleepingWork/></div>
+  <div hidden={tab!=='notes'}><Notes reviewOpen={tab==='notes'&&params.get('view')==='review'}/></div>
+  <div hidden={tab!=='sleep'}><SleepingWork view={tab==='sleep'?params.get('view'):null}/></div>
   {(learningVisited||tab==='rem')&&<div hidden={tab!=='rem'} className="memory-learning"><Rem compact/></div>}
  </div>;
 }
 
-function Notes(){
+function Notes({reviewOpen}){
  const {state,act}=useWorkspace();
  const [text,setText]=useState(''),[query,setQuery]=useState(''),[saving,setSaving]=useState(false);
  const notes=state.memory.filter(note=>(note.text+' '+note.source).toLowerCase().includes(query.toLowerCase()));
@@ -44,11 +47,11 @@ function Notes(){
   <div className="memory-hub-list-heading"><h2>Saved notes <span>{state.memory.length}</span></h2><label className="memory-hub-search"><Search size={15} aria-hidden="true"/><input aria-label="Search memories" placeholder="Find a note" value={query} onChange={event=>setQuery(event.target.value)}/></label></div>
   <div className="memory-hub-notes memory-list">{notes.map(note=><article key={note.id}><div className="memory-hub-note-meta"><span>{note.source}{(note.example||note.sample)?' · Example':''}</span><time dateTime={new Date(note.createdAt).toISOString()}>{new Date(note.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</time><button className="icon-button" aria-label="Delete memory" onClick={()=>act('delete-memory',{id:note.id}).catch(()=>{})}><Trash2 size={15}/></button></div><p>{note.text}</p></article>)}</div>
   {!notes.length&&<p className="memory-hub-empty">{query?'No matching notes. Try another search.':'Save a note to keep useful context for your next conversation.'}</p>}
-  <Disclosure title="Review saved context" description="Combine duplicate notes, inspect routines, and manage daily review."><Sleep/></Disclosure>
+  <Disclosure defaultOpen={reviewOpen} title="Review saved context" description="Combine duplicate notes, inspect routines, and manage daily review."><Sleep/></Disclosure>
  </section>;
 }
 
-function SleepingWork(){
+function SleepingWork({view}){
  const {state,act}=useWorkspace();
  const navigate=useNavigate();
  const [error,setError]=useState(''),[busy,setBusy]=useState('');
@@ -60,9 +63,9 @@ function SleepingWork(){
   {error&&<p className="error-text" role="alert">{error}</p>}
   <div className="memory-hub-sleeping">{conversations.map(conversation=><article key={conversation.id}><Moon size={18} strokeWidth={1.5} aria-hidden="true"/><Link to={'/app/chat/'+conversation.id}><strong>{conversation.title}</strong><span>{conversation.pending?'Working':conversation.sleepJobId?'Review available':'Sleep enabled'}</span></Link><button className="text-button" disabled={!!busy} onClick={()=>wake(conversation)}>{busy===conversation.id?'Waking…':'Wake'}</button><Link to={'/app/chat/'+conversation.id} aria-label={'Open '+conversation.title}><ArrowRight size={16}/></Link></article>)}</div>
   {!conversations.length&&<p className="memory-hub-empty">Use the moon beside a chat’s model controls to leave it here.</p>}
-  <Disclosure title="Overnight queue" description="Assign bounded tasks, inspect checks, and download verified outputs."><SlowMode initialTab="tasks" embedded/></Disclosure>
-  <Disclosure title="Context memory" description="Inspect retained exchanges, archived context, and decision costs."><ContextMemory/></Disclosure>
-  <Disclosure title="Suggested next actions" description="Resume a project using source-backed suggestions from selected sessions."><PersonalSuggestions/></Disclosure>
-  <Disclosure title="Review history and routines" description="Run a local context review and inspect its evidence."><Sleep/></Disclosure>
+  <Disclosure defaultOpen={view==='tasks'} title="Overnight queue" description="Assign bounded tasks, inspect checks, and download verified outputs."><SleepTasks/></Disclosure>
+  <Disclosure defaultOpen={view==='context'} title="Context memory" description="Inspect retained exchanges, archived context, and decision costs."><ContextMemory/></Disclosure>
+  <Disclosure defaultOpen={view==='suggestions'} title="Suggested next actions" description="Resume a project using source-backed suggestions from selected sessions."><PersonalSuggestions/></Disclosure>
+  <Disclosure defaultOpen={view==='review'} title="Review history and routines" description="Run a local context review and inspect its evidence."><Sleep/></Disclosure>
  </section>;
 }

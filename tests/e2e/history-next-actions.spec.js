@@ -25,8 +25,9 @@ test('History distinguishes samples and saving a routine from running a task', a
     return route.fulfill({ json: {} });
   });
   await page.goto('/app/history');
-  await expect(page.getByText('No samples from this computer yet.')).toBeVisible();
-  await expect(page.getByText('Sample week', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('.hx-status').getByRole('status')).toHaveText('Not recording');
+  await expect(page.getByText('Demo history', { exact: true }).first()).toBeVisible();
+  await page.locator('summary').filter({ hasText: /^Repeated work$/ }).click();
   await expect(page.getByText('Weekly pattern', { exact: true })).toBeVisible();
   await expect(page.getByText('Inferred from app activity across at least three weeks. No task is scheduled.')).toBeVisible();
   await page.getByRole('button', { name: /^Save routine:/ }).click();
@@ -48,7 +49,7 @@ test('History explains a missing hosted service and retries the connection', asy
   await expect(page.locator('main')).not.toContainText('HTTP 200');
   offline = false;
   await page.getByRole('button', { name: 'Check connection' }).click();
-  await expect(page.getByText('Computer history uses the local Offload service and a connected MongoDB workspace.')).toBeVisible();
+  await expect(page.getByText('The local history service needs a MongoDB connection. Once connected, you can start recording here.')).toBeVisible();
 });
 
 test('Next actions imports explicit meeting notes and shows a draft without claiming action completion', async ({ page }, info) => {
@@ -69,6 +70,7 @@ test('Next actions imports explicit meeting notes and shows a draft without clai
     return route.fulfill({ json: { projects: [], suggestions: suggestion ? [suggestion] : [], runs, policy: null } });
   });
   await page.goto('/app/sleep?view=suggestions');
+  await expect(page).toHaveURL(/\/app\/memory\?view=suggestions&tab=sleep$/);
   await page.getByRole('button', { name: 'Add meeting notes', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Meeting title').fill('Test meeting');
@@ -94,14 +96,16 @@ test('Next actions imports explicit meeting notes and shows a draft without clai
   await page.screenshot({ path: `test-results/meeting-draft-${info.project.name}.png` });
 });
 
-test('Floyd Memory links resolve into the unified Sleep views', async ({ page }) => {
+test('Legacy Sleep and REM links resolve into the Memory hub', async ({ page }) => {
   await prepare(page);
-  await page.goto('/app/memory?tab=sleep');
-  await expect(page).toHaveURL(/\/app\/sleep\?view=conversations$/);
-  await expect(page.getByRole('tab', { name: 'Conversations', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await page.goto('/app/memory?tab=rem');
-  await expect(page).toHaveURL(/\/app\/sleep\?view=rem$/);
-  await expect(page.getByRole('heading', { name: 'REM', exact: true })).toBeVisible();
+  await page.goto('/app/sleep?view=conversations');
+  await expect(page).toHaveURL(/\/app\/memory\?view=conversations&tab=sleep$/);
+  await expect(page.getByRole('navigation', { name: 'Memory views' }).getByRole('link', { name: 'Sleep', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('heading', { name: 'Sleeping conversations', exact: true })).toBeVisible();
+  await page.goto('/app/rem');
+  await expect(page).toHaveURL(/\/app\/memory\?tab=rem$/);
+  await expect(page.getByRole('navigation', { name: 'Memory views' }).getByRole('link', { name: 'Learning', exact: true })).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('.rem-compact')).toBeVisible();
 });
 
 test('An action needs explicit budget and deadline before it becomes a Sleep draft task', async ({ page }, info) => {
@@ -142,11 +146,11 @@ test('An action needs explicit budget and deadline before it becomes a Sleep dra
   await page.screenshot({ path: `test-results/action-handoff-${info.project.name}.png` });
   await dialog.getByRole('button', { name: 'Queue draft task' }).click();
   await expect(dialog.getByRole('alert')).toHaveText('The meeting source changed. Review the newest notes.');
-  await expect(page).toHaveURL(/view=suggestions/);
+  await expect(page).toHaveURL(/\/app\/memory\?view=suggestions&tab=sleep$/);
   expect(submissions[0]).toEqual({ deadline: +ready, budget: 8000, maxAttempts: 2 });
   reject = false;
   await dialog.getByRole('button', { name: 'Queue draft task' }).click();
-  await expect(page).toHaveURL(/view=tasks/);
+  await expect(page).toHaveURL(/\/app\/memory\?view=tasks&tab=sleep$/);
   await expect(page.getByText('Waiting for the local Sleep worker to be enabled.', { exact: false })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Draft the launch brief', exact: true })).toBeVisible();
   await expect(page.getByText('0 / 8,000 tokens')).toBeVisible();
@@ -164,9 +168,9 @@ test('A repeated action handoff shows its existing completed task without claimi
   await page.goto('/app/sleep?view=suggestions');
   await page.getByRole('button', { name: /^Draft this:/ }).click();
   await page.getByRole('button', { name: 'Queue draft task' }).click();
-  await expect(page).toHaveURL(/view=tasks/);
+  await expect(page).toHaveURL(/\/app\/memory\?view=tasks&tab=sleep$/);
   await expect(page.getByRole('heading', { name: 'Existing launch draft' })).toBeVisible();
   await expect(page.getByText('Checks passed', { exact: true })).toBeVisible();
-  await expect(page.getByRole('status')).not.toContainText('Waiting for');
-  await expect(page.getByRole('status')).not.toContainText('Queued for');
+  await expect(page.locator('.slow-page .suggestion-notice')).not.toContainText('Waiting for');
+  await expect(page.locator('.slow-page .suggestion-notice')).not.toContainText('Queued for');
 });

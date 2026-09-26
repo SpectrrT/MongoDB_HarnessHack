@@ -1,13 +1,12 @@
 import {test,expect} from '@playwright/test';
 import {createWorkspace} from '../../shared/workspace.js';
 
-test('Sleep names the section correctly and shows context metrics on desktop and mobile',async({page},info)=>{
+test('Memory names the section correctly and shows context metrics on desktop and mobile',async({page},info)=>{
  const state=createWorkspace();state.profile.onboarded=true;state.profile.name='Tester';
  await page.addInitScript(s=>localStorage.setItem('offload.workspace.v1',JSON.stringify(s)),state);
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto('/app/sleep');
- await page.getByRole('tab',{name:'Memory',exact:true}).click();
- await page.getByRole('tab',{name:'Context memory',exact:true}).click();
+ await page.goto('/app/sleep?view=memory&memory=context');
+ await expect(page).toHaveURL(/\/app\/memory\?.*tab=sleep/);
  await expect(page.getByRole('heading',{name:'Context memory',exact:true})).toBeVisible();
  await expect(page.getByText('No context selections recorded yet.')).toBeVisible();
  // A rendering fixture, explicitly separate from the live benchmark.

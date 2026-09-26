@@ -4,7 +4,7 @@
 .memory-hub-heading p,.memory-hub-intro {color:var(--off-muted);font-size:13px;line-height:1.7;margin-top:9px;}
 .memory-hub-heading>svg {color:var(--off-muted);flex:none;}
 .memory-hub-nav {display:flex;gap:26px;border-bottom:1px solid var(--off-line);margin-bottom:28px;}
-.memory-hub-nav a {padding:0 0 13px;font-size:13px;color:var(--off-muted);border-bottom:2px solid transparent;}
+.memory-hub-nav a {display:inline-flex;align-items:center;box-sizing:border-box;min-height:44px;padding:8px 0;font-size:13px;color:var(--off-muted);border-bottom:2px solid transparent;}
 .memory-hub-nav a[aria-current] {color:var(--off-ink);border-bottom-color:var(--off-ink);}
 .memory-hub [hidden] {display:none!important;}
 .memory-hub-add {display:flex;align-items:flex-end;gap:14px;padding:16px;border:1px solid var(--off-line);border-radius:12px;margin-bottom:30px;background:var(--off-surface);}

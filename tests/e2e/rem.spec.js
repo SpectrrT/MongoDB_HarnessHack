@@ -22,7 +22,14 @@ async function openRem(page, theme = "light") {
   state.profile.name = "Tester";
   await page.addInitScript((s) => localStorage.setItem("offload.workspace.v1", JSON.stringify(s)), state);
   await page.goto("/app/rem");
-  await expect(page.getByRole("heading", { name: "REM", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/app\/memory\?tab=rem$/);
+  await expect(page.getByRole("heading", { name: "Memory", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Memory views" }).getByRole("link", { name: "Learning", exact: true })).toHaveAttribute("aria-current", "page");
+}
+
+async function openSection(page, title) {
+  const summary = page.locator("summary").filter({ hasText: title }).first();
+  if (await summary.locator("..").getAttribute("open") === null) await summary.click();
 }
 
 test("REM: run a task live, sleep, and see the morning brief and diff", async ({ page }, info) => {
@@ -44,15 +51,14 @@ test("REM: run a task live, sleep, and see the morning brief and diff", async ({
   await expect(page.locator(".rem-run-log li").first()).toBeVisible();
   await expect(page.locator(".rem-run-row").first()).toBeVisible();
 
-  await page.getByRole("tab", { name: /^Night/ }).click();
   // Night: sleep once and see the real phases render (Replay, Merge, Distill, Evolve, asks, brief).
-  await page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Sleep", exact: true }).click();
+  await page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Run sleep cycle", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Replay", exact: true })).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("heading", { name: "Merge", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Distill", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Evolve", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Asks queued", exact: true })).toBeVisible();
-  await page.getByRole("tab", { name: /^Morning/ }).click();
+  await openSection(page, /^Harness and morning review/);
   await expect(page.getByRole("region", { name: "Whole gym", exact: true })).toBeVisible();
 
   // Morning: the brief, the genome diff, the lineage and the open asks are all live API data.
@@ -68,7 +74,6 @@ test("REM: run a task live, sleep, and see the morning brief and diff", async ({
   const approve = page.locator(".rem-ask").getByRole("button", { name: "Approve", exact: true }).first();
   if (await approve.isVisible().catch(() => false)) await approve.click();
 
-  await page.getByRole("tab", { name: /^Day/ }).click();
   await page.evaluate(() => document.querySelector(".app-content")?.scrollTo(0, 0));
   await page.screenshot({ path: `test-results/rem-top-${info.project.name}.png` });
   await page.evaluate(() => {
@@ -83,17 +88,16 @@ test("REM: run a task live, sleep, and see the morning brief and diff", async ({
 
 test("REM: keyboard navigation, structured policy, and simulation validation", async ({ page }) => {
   await openRem(page);
-  const day = page.getByRole("tab", { name: /^Day/ });
-  await day.focus();
-  await day.press("ArrowRight");
-  await expect(page.getByRole("tab", { name: /^Night/ })).toBeFocused();
-  await expect(page.getByRole("region", { name: "Night", exact: true })).toBeVisible();
-  await page.getByRole("tab", { name: /^Night/ }).press("End");
-  await expect(page.getByRole("tab", { name: /^Morning/ })).toBeFocused();
+  const morning = page.locator("summary").filter({ hasText: /^Harness and morning review/ }).first();
+  await morning.focus();
+  await expect(morning).toBeFocused();
+  if (await morning.locator("..").getAttribute("open") !== null) await morning.press("Enter");
+  await morning.press("Enter");
+  await expect(page.getByRole("heading", { name: "Morning: brief, diff, and asks" })).toBeVisible();
   await page.getByText("Current harness settings", { exact: true }).click();
   await expect(page.locator(".rem-policy-values").first()).toBeVisible();
   await expect(page.locator(".rem-page")).not.toContainText("[object Object]");
-  await page.getByText("Simulation tools", { exact: false }).first().click();
+  await openSection(page, /^Engine controls/);
   const input = page.getByRole("spinbutton", { name: "Days to simulate" });
   for (const value of ["", "0", "11", "1.5"]) {
     await input.fill(value);
@@ -115,7 +119,7 @@ test("REM: a failed first load has a working retry", async ({ page }) => {
   await expect(page.getByText("Loading the harness", {exact:true})).not.toBeVisible();
   await page.unroute("**/api/rem/state");
   await page.getByRole("button", { name: "Refresh", exact: true }).click();
-  await expect(page.getByRole("tab", {name:/^Day/})).toBeVisible();
+  await expect(page.getByRole("button", {name:"Run", exact:true})).toBeVisible();
   await expect(page.getByRole("alert")).not.toBeVisible();
 });
 
@@ -130,13 +134,15 @@ test("REM: owner asks require an answer and submit it with the decision", async 
     await route.fulfill({ json: { ask: { status: "approved" } } });
   });
   await openRem(page);
-  await page.getByRole("button", { name: /Review asks/ }).click();
+  await openSection(page, /^Harness and morning review/);
   const save = page.getByRole("button", { name: "Save answer" });
   await expect(save).toBeDisabled();
   await page.getByRole("textbox", { name: "Owner name" }).fill("   ");
   await expect(save).toBeDisabled();
   await page.getByRole("textbox", { name: "Owner name" }).fill("  Alex  ");
   await save.click();
+  await expect(page.locator(".rem-ask")).toHaveCount(0);
+  await openSection(page, /^Harness and morning review/);
   await expect(page.getByText("No open asks.", { exact: true })).toBeVisible();
   expect(decision).toEqual({ decision: "approve", answer: "Alex" });
 });
@@ -157,20 +163,22 @@ test("REM: simulation updates a prior night and reset clears stale results", asy
     return route.fulfill({ json: { ok: true, day: 1 } });
   });
   await openRem(page);
+  await openSection(page, /^Run details/);
   await page.locator(".rem-run-row").first().click();
   await expect(page.locator(".rem-live-run")).toBeVisible();
-  await page.getByRole("tab", { name: /^Night/ }).click();
-  await page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Sleep", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Sleep", exact: true })).toBeEnabled();
-  await page.getByText("Simulation tools", { exact: false }).first().click();
+  await page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Run sleep cycle", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Run sleep cycle", exact: true })).toBeEnabled();
+  await openSection(page, /^Engine controls/);
   await page.getByRole("button", { name: "Run simulated days" }).click();
   await expect(page.getByText("night 98", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Reset engine", exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Reset engine", exact: true }).click();
+  await expect(page.locator(".rem-run-row")).toHaveCount(0);
+  await openSection(page, /^Night results$/);
   await expect(page.getByText("No night has run yet.", { exact: true })).toBeVisible();
   await expect(page.locator(".rem-brief")).not.toBeVisible();
-  await page.getByRole("tab", { name: /^Day/ }).click();
   await expect(page.locator(".rem-live-run")).not.toBeVisible();
+  await openSection(page, /^Run details/);
   await expect(page.getByText("No runs yet. Pick a task and click Run.")).toBeVisible();
   expect(resets).toBe(1);
 });
@@ -182,13 +190,12 @@ for (const theme of ["light", "monochrome-dark"]) {
     await page.route("**/api/rem/state", route => route.fulfill({ json: state }));
     await openRem(page, theme);
     await expect(page.locator(".workspace")).toHaveAttribute("data-palette", theme);
-    await page.getByRole("tab", { name: /^Morning/ }).click();
+    await openSection(page, /^Harness and morning review/);
     await page.getByText("Current harness settings", { exact: true }).click();
     const results = await new AxeBuilder({ page }).include(".rem-page").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
     expect(results.violations.map(({id, nodes}) => ({id, targets:nodes.map(node=>node.target)}))).toEqual([]);
     expect(await page.locator(".app-content").evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBeTruthy();
-    await page.getByRole("tab", { name: /^Night/ }).click();
-    await page.getByRole("heading", { name: "Night: consolidate and evolve" }).scrollIntoViewIfNeeded();
+    await page.getByRole("heading", { name: "Consolidate and improve" }).scrollIntoViewIfNeeded();
     await page.screenshot({ path: `test-results/rem-night-${theme}-${info.project.name}.png` });
   });
 }

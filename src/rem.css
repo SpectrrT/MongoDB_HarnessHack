@@ -129,3 +129,10 @@
 
 .rem-page .rem-answer { display: flex; flex-direction: column; gap: 7px; font-size: 13px; margin: 14px 0; }
 .rem-page .rem-answer input { padding: 10px 12px; border: 1px solid var(--rem-line); border-radius: 7px; max-width: 360px; width: 100%; background: var(--rem-surface); color: var(--rem-ink); }
+
+.rem-page.rem-compact { max-width: none; padding: 0; }
+.rem-compact .rem-toolbar { padding-top: 0; border-top: 0; }
+.rem-compact .rem-source-note { margin-bottom: 8px; font-size: 11px; }
+.rem-compact .rem-day-controls { margin: 12px 0; padding: 12px; }
+.rem-compact .rem-demo-tools { margin-top: 18px; }
+.rem-compact .rem-demo-tools .rem-controls { padding: 0 14px 14px; }
