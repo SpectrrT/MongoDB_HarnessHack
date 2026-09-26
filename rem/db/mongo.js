@@ -40,7 +40,12 @@ export async function createMongoDb({ uri = process.env.MONGODB_URI, dbName = "r
     },
     // Atlas's TTL monitor deletes expired episodes about once a minute; nothing to do here.
     sweepExpired: async () => 0,
-    dropDatabase: () => db.dropDatabase(),
+    // A fresh instance without dropDatabase: sandbox users hold readWrite (dropDatabase is unauthorized),
+    // and keeping the collections keeps the Atlas Search indexes READY instead of rebuilding them.
+    async dropDatabase() {
+      for (const c of await db.listCollections({}, { nameOnly: true }).toArray())
+        if (!c.name.startsWith("system.")) await db.collection(c.name).deleteMany({});
+    },
     close: () => client.close(),
   };
 }

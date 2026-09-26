@@ -61,6 +61,8 @@ const runSummary = (cp) =>
     plan: cp.plan,
     final: cp.final,
     verdict: cp.verdict ?? null,
+    completion: cp.completion ?? null,
+    injected: cp.injected ?? null,
   };
 
 // Change events for the live feed: small, no vectors.
