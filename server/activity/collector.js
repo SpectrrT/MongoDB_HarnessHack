@@ -6,11 +6,86 @@
 import { MongoClient } from 'mongodb';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
-import { sample } from './capture.js';
+import { sample, captureStatus } from './capture.js';
 import { createActivity, deviceId, workspaceId, SAMPLE_MS } from './store.js';
 
 const FLUSH_MS = 15000;
 const time = (d = new Date()) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+// Managed by the local app. Construction never records; resume requires saved, explicit consent.
+export function createActivityCollector({activity,workspace=workspaceId(),device=deviceId(),sampleFn=sample,permissionStatus=captureStatus,platform=process.platform,intervalMs=SAMPLE_MS,flushMs=FLUSH_MS,now=Date.now}={}){
+  let settings=null,running=false,timer=null,inFlight=null,generation=0,buffer=[],lastSampleAt=null,lastSavedAt=null,lastFlush=0,error=null,unwatch=null,closed=false,shutdown=null;
+  const supported=platform==='darwin',canStart=supported&&!!activity;
+  const status=()=>({supported,canStart,enabled:!!settings?.collectorEnabled,running,state:!supported?'unsupported':running?(error?'error':lastSampleAt?'recording':'starting'):settings?.paused?'paused':'stopped',lastSampleAt,lastSavedAt,error,permissions:permissionStatus(),scope:{appNames:true,windowTitles:settings?.captureTitles??true,browserUrls:settings?.collectorEnabled?!!settings.captureUrls:false},device});
+  const halt=()=>{running=false;generation++;clearTimeout(timer);timer=null;buffer=[];};
+  const schedule=delay=>{clearTimeout(timer);timer=setTimeout(cycle,delay);timer.unref?.();};
+  const cycle=()=>{
+    if(!running||closed||inFlight)return;
+    const version=generation;
+    inFlight=(async()=>{
+      try{
+        settings=await activity.settings(workspace);
+        if(!running||version!==generation)return;
+        if(settings.paused||!settings.collectorEnabled){halt();return;}
+        const value=await sampleFn({titles:settings.captureTitles,urls:settings.captureUrls,excludedApps:settings.excludedApps});
+        if(!running||version!==generation)return;
+        if(value&&value.source!=='seed'){buffer.push(value);lastSampleAt=new Date(now()).toISOString();}
+        if(buffer.length&&(lastSavedAt===null||now()-lastFlush>=flushMs)){
+          const batch=buffer;buffer=[];
+          let ingested=false;
+          try{
+            const result=await activity.ingest(workspace,device,batch);
+            ingested=true;
+            if(!running||version!==generation)return;
+            if(result.paused){halt();return;}
+            if(result.inserted>0)lastSavedAt=new Date(now()).toISOString();
+            await activity.sessionize(workspace,device);
+            lastFlush=now();
+          }catch(cause){if(!ingested&&running&&version===generation)buffer=batch.concat(buffer).slice(-5000);throw cause;}
+        }
+        error=value?null:'The front app could not be read. Recording will retry.';
+      }catch{
+        if(running&&version===generation)error='Computer history could not be saved. Check the local service and MongoDB connection; recording will retry.';
+      }
+    })().finally(()=>{inFlight=null;if(running&&!closed)schedule(Math.max(10,intervalMs));});
+  };
+  const begin=()=>{if(!canStart||closed||running)return;running=true;generation++;error=null;lastSampleAt=null;lastFlush=0;if(!inFlight)schedule(0);};
+  const refresh=async()=>{
+    if(!activity||closed)return status();
+    settings=await activity.settings(workspace);
+    if(settings.collectorEnabled&&!settings.paused)begin();else halt();
+    return status();
+  };
+  const watch=()=>{if(!unwatch&&activity?.watchSettings){try{unwatch=activity.watchSettings(workspace,()=>{void refresh().catch(()=>{});});}catch{}}};
+  return {
+    status,
+    async resume(){watch();return refresh();},
+    async start(){
+      if(!canStart)throw Object.assign(Error(supported?'Computer history needs its database connection.':'Computer history recording is available on macOS.'),{status:503});
+      if(closed)throw Error('The recorder has stopped. Reopen Offload.');
+      const prior=await activity.settings(workspace);
+      settings=await activity.updateSettings(workspace,{collectorEnabled:true,paused:false,...(!prior.collectorEnabled?{captureUrls:false}:{})});
+      watch();begin();return status();
+    },
+    async pause(){halt();if(activity)settings=await activity.updateSettings(workspace,{paused:true});error=null;return status();},
+    refresh,
+    stop(){return shutdown||=(async()=>{
+      const captured=buffer,wasRecording=running;
+      closed=true;halt();const version=generation;
+      if(unwatch){await unwatch();unwatch=null;}
+      await inFlight; // Late capture results are discarded by the generation check above.
+      if(!activity||!wasRecording||generation!==version)return;
+      settings=await activity.settings(workspace);
+      if(settings.paused||!settings.collectorEnabled||generation!==version)return;
+      if(captured.length){
+        const result=await activity.ingest(workspace,device,captured);
+        if(result.paused||generation!==version)return;
+        if(result.inserted>0)lastSavedAt=new Date(now()).toISOString();
+      }
+      await activity.sessionize(workspace,device);
+    })();},
+  };
+}
 
 async function dryRun(intervalMs) {
   console.log('Dry run: printing samples, storing nothing. Ctrl-C to stop.');

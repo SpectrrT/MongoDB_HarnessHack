@@ -1,7 +1,5 @@
-// Friction in computer history, and a workflow that would remove it. One aggregation finds the hour of the
-// day with the most back-and-forth between apps across several days; the planner turns that finding into
-// steps Offload could run, asking before anything that sends or books. A model can refine the plan in chat;
-// without one, this plan is the answer.
+// Aggregate recorded app transitions, then propose a workflow for user review.
+// Window metadata does not prove task intent, meeting contents, or achievable time savings.
 
 const APPS = {
   'mail.google.com': { name: 'Gmail', logo: 'gmail' },
@@ -108,6 +106,8 @@ export async function findFriction(activity, workspace, { days = 28 } = {}) {
   return {
     hour: hot._id,
     lookbackDays:days,timeZone:activity.timeZone||'UTC',provenance,sourceCounts:counts,sourceIds:sessions.map(session=>String(session.id)),
+    windowDays:days, sampleSessionCount:counts.seed, liveSessionCount:counts.captured,
+    evidence:sessions.slice(-30).map(s=>({id:String(s.id),timestamp:new Date(s.start).toISOString(),source:s.source,title:s.title,label:s.label})),
     window: `${clock(hot._id, startMinute)}`,
     days: dayCount,
     minutesPerDay: Math.round(hot.seconds / dayCount / 60),
@@ -121,8 +121,13 @@ export async function findFriction(activity, workspace, { days = 28 } = {}) {
     })),
     topTitle: topTitle ? topTitle.replace(/\s+-\s+(Gmail|Google Calendar|Google Docs)$/, '') : null,
     topTitleVisitsPerDay: Math.round(topTitleVisits / dayCount),
-    meetingTimes,
-    places,
+    meetingTimes: [],
+    places: [],
+    titleMentions: { times: meetingTimes, places },
+    timeline: sessions
+      .filter((s) => s.sec >= 30)
+      .slice(-14)
+      .map((s) => ({ label: s.label, name: appInfo(s.label).name, minutes: Math.max(1, Math.round(s.sec / 60)) })),
     night,
     nights,
     sample: sessions.every((s) => s.source === 'seed'),
@@ -130,17 +135,16 @@ export async function findFriction(activity, workspace, { days = 28 } = {}) {
   };
 }
 
-// The finding as one plain sentence, then the workflow that would take the loop off the person's plate.
+// Describe observations separately from the proposed workflow.
 export function describe(f) {
   const names = f.apps.map((a) => a.name);
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
-  const when = f.hour >= 20 || f.hour < 5 ? 'nights' : 'days';
-  return `On ${f.days} ${when} in the last ${f.lookbackDays||28} days, around ${f.window}, you spent about ${f.minutesPerDay} minutes bouncing between ${list}, switching ${f.switchesPerDay} times each ${when === 'nights' ? 'night' : 'day'}.`;
+  const source = ['sample','seed'].includes(f.provenance) ? 'Sample history' : f.provenance === 'mixed' ? 'Mixed-source history' : f.provenance === 'unknown' ? 'History with unknown provenance' : 'Recorded history';
+  return `${source} shows activity across ${list} on ${f.days} dates in the last ${f.lookbackDays || f.windowDays || 28} days, around ${f.window}. Recorded sessions averaged ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches per date in that hour. Window names do not establish what the task was.`;
 }
 
 export function planWorkflow(f) {
   const has = (label) => f.apps.some((a) => a.label === label);
-  const who = f.places.length > 1 ? `${f.places.slice(0, -1).join(', ')} and ${f.places.at(-1)}` : f.places[0] || 'everyone';
   const observation = `Observed: about ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches per recorded day. Time savings have not been measured.`;
   if(has('cloud.mongodb.com')&&has('github.com')&&/query|index|explain/i.test(f.topTitle||''))return {
     kind:'engineering',title:'Prepare a database query review',
@@ -155,25 +159,23 @@ export function planWorkflow(f) {
     needs:['Selected query and meeting notes','Permission for a local draft'],observation,executionStatus:'proposal',
   };
   if (has('mail.google.com') && has('calendar.google.com')) {
-    const late = f.meetingTimes.find((t) => /^(12|1[01]):\d{2}\s?PM$|^(12|[1-5]):\d{2}\s?AM$/.test(t));
     return {
       kind: 'scheduling',
-      title: 'Schedule across time zones for you',
-      problem: `Repeated scheduling-related activity${f.places.length ? ` mentioning ${who}` : ''}${late ? `. Saved titles mention ${late}` : ''}. Confirm the meeting details before acting.`,
-      trigger: `A scheduling thread arrives in Gmail${f.topTitle ? `, like "${f.topTitle}"` : ''}`,
+      title: 'Explore a scheduling routine',
+      problem: 'Mail and calendar windows recur together. This could be scheduling work; confirm the task before setting up a routine.',
+      trigger: 'A scheduling request you select after connecting the required accounts',
       steps: [
-        { app: 'Gmail', logo: 'gmail', label: 'Read the thread', detail: 'Pull out who needs to meet, how long, and the times already proposed' },
-        { app: 'Google Calendar', logo: 'calendar', label: 'Find the overlap', detail: `Check free and busy time for ${who}, inside working hours` },
-        { app: 'Codex', logo: 'openai', label: 'Draft the reply', detail: 'Offer three slots in each person’s time zone, in your voice' },
-        { app: 'You', logo: null, label: 'Ask you once', detail: 'Show the draft and the slots before anything is sent', ask: true },
-        { app: 'Google Calendar', logo: 'calendar', label: 'Book and confirm', detail: late ? `Send the invite, and flag it when ${late} is the only overlap` : 'Send the invite and add the agenda from the thread' },
+        { app: 'Gmail', logo: 'gmail', label: 'Read the thread', detail: 'With authorized access, read a selected thread and confirm attendees, duration and proposed times' },
+        { app: 'Google Calendar', logo: 'calendar', label: 'Find the overlap', detail: 'Check available calendars and explicitly supplied working hours; ask for any missing access' },
+        { app: 'Codex', logo: 'openai', label: 'Draft the reply', detail: 'Draft possible slots using confirmed time zones and availability' },
+        { app: 'You', logo: null, label: 'Review with you', detail: 'Show the draft and the slots before anything is sent', ask: true },
+        { app: 'Google Calendar', logo: 'calendar', label: 'Confirm the next step', detail: 'Only send an invitation after you approve the exact attendees, time and contents', ask: true },
       ],
       proactive: [
-        late ? `If ${late} is a confirmed meeting time, consider the next morning’s overlap` : 'Batch scheduling replies into one pass a day',
-        'Keep a standing slot that works for every time zone',
-        'Draft scheduling replies for review while you sleep',
+        'Consider batching draft replies after you confirm this is recurring work',
+        'Review a recurring slot only after checking actual availability',
       ],
-      needs: ['Gmail: read and send', 'Google Calendar: read and write'],
+      needs: ['Gmail: authorized thread access', 'Google Calendar: authorized availability access', 'Separate approval before sending or booking'],
       observation,
       executionStatus:'proposal',
     };
@@ -181,16 +183,16 @@ export function planWorkflow(f) {
   if (has('Codex') && (has('Code') || has('Terminal') || has('github.com'))) {
     return {
       kind: 'coding',
-      title: 'Hand the edit-test loop to Codex',
-      problem: 'Switching between the editor, the terminal and Codex to fix the same failure.',
-      trigger: 'A test run fails',
+      title: 'Explore a repeatable edit-test routine',
+      problem: 'Editor, terminal and Codex windows recur. This may be an edit-test loop; the history does not record a failure or its cause.',
+      trigger: 'A test command and workspace you explicitly choose',
       steps: [
         { app: 'Terminal', logo: null, label: 'Read the failure', detail: 'Collect the failing test and its output' },
         { app: 'Codex', logo: 'openai', label: 'Propose a fix', detail: 'Draft a change with the reasoning' },
-        { app: 'You', logo: null, label: 'Ask you once', detail: 'Show the diff before applying it', ask: true },
+        { app: 'You', logo: null, label: 'Review with you', detail: 'Show the diff before applying it', ask: true },
         { app: 'Terminal', logo: null, label: 'Re-run and report', detail: 'Run the tests again and summarize' },
       ],
-      proactive: ['Run the tests before you look at them', 'Summarize what failed overnight'],
+      proactive: ['Propose a test schedule after confirming the repository and commands', 'Summarize recorded test results after a real run'],
       needs: ['Local tools: read files and run commands'],
       observation,
       executionStatus:'proposal',
@@ -199,14 +201,14 @@ export function planWorkflow(f) {
   const names = f.apps.map((a) => a.name);
   return {
     kind: 'batch',
-    title: `Batch your ${names.join(', ')} loop`,
-    problem: `The same back-and-forth between ${names.join(', ')} most days.`,
-    trigger: `Around ${f.window}`,
+    title: `Explore a routine across ${names.join(', ')}`,
+    problem: `These app windows recur in the same hour. Confirm whether they belong to one task before combining them.`,
+    trigger: 'A time or event you choose after confirming the task',
     steps: [
-      ...f.apps.map((a, i) => ({ app: a.name, logo: a.logo, label: `Collect what you need from ${a.name}`, detail: `${a.visitsPerDay} visits a day today`, step: i + 1 })),
-      { app: 'You', logo: null, label: 'Ask you once', detail: 'Show one summary instead of the round trips', ask: true },
+      ...f.apps.map((a, i) => ({ app: a.name, logo: a.logo, label: `Collect what you need from ${a.name}`, detail: `${a.visitsPerDay} recorded visits per observed date; ask which information is needed and confirm access`, step: i + 1 })),
+      { app: 'You', logo: null, label: 'Review with you', detail: 'Show one summary instead of the round trips', ask: true },
     ],
-    proactive: ['Prepare the summary before you start'],
+    proactive: ['Choose what a useful summary should contain, then test it on a real example'],
     needs: names.map((n) => `${n}: read`),
     observation,
     executionStatus:'proposal',

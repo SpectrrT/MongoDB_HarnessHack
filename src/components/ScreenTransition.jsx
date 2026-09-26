@@ -1,11 +1,13 @@
 import { AnimatePresence, motion, useReducedMotion, useIsPresent } from "motion/react";
-import { ThinkingOrb as LibraryOrb } from "thinking-orbs";
+import { ThinkingOrb as LibraryOrb, STATE_TO_MODE } from "thinking-orbs";
 
 const ease = [0.22, 1, 0.36, 1];
 
 export function ThinkingOrb(props) {
   const reduced = useReducedMotion();
-  return <LibraryOrb theme="light" {...props} paused={reduced || props.paused} />;
+  const state = Object.hasOwn(STATE_TO_MODE, props.state) ? props.state : "working";
+  const size = [20, 32, 64].includes(props.size) ? props.size : props.size < 32 ? 20 : 64;
+  return <LibraryOrb theme="light" {...props} state={state} size={size} paused={reduced || props.paused} />;
 }
 
 // Keep navigation and the composer responsive; only the changing screen fades.

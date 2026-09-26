@@ -8,10 +8,21 @@ import {createContextCompactor} from '../server/context/compaction.js';
 import {createChatContext} from '../server/context/chat.js';
 import {createOpenRouter} from '../server/openrouter.js';
 
-const scorer = {name:'scripted-retention-fixture',async score({units}) {
+const scorer = {name:'typesafe:jev-test-fixture',async score({units}) {
   return {scores:units.map(u=>({id:u.id,probability:0.01})),usage:{inputTokens:20,outputTokens:2,cost:0}};
 }};
 const tool = (id,name,args) => ({id,type:'function',function:{name,arguments:JSON.stringify(args)}});
+
+test('selection progress is silent under budget and cached scoring does not create a new call',async()=>{
+ const db=createMemoryDb(),events=[];let calls=0;
+ const compactor=createContextCompactor({db,budgetChars:100,recentCount:0,scorer:{name:'typesafe:jev-test-fixture',async score({units}){calls++;return {scores:units.map(u=>({id:u.id,probability:0})),usage:{inputTokens:1,outputTokens:1,cost:0}};}}});
+ const progress=e=>events.push(e);
+ await compactor.select({runId:'noop',goal:'Read',units:[{id:'short',text:'small'}],onProgress:progress});
+ assert.equal(events.length,0);assert.equal(calls,0);
+ const input={runId:'cache',goal:'Read',units:[{id:'a',text:'background '.repeat(20)},{id:'b',text:'old reference '.repeat(20)}],onProgress:progress};
+ await compactor.select(input);assert.equal(calls,1);assert.equal(events[0].phase,'scoring');
+ const cached=await compactor.select(input);assert.equal(calls,1);assert.equal(events.length,1);assert.equal(cached.metrics.decisionCalls,0);assert.equal(cached.metrics.cacheHits,2);
+});
 
 test('native chat compacts real file reads, preserves protocol and recovers exact archived evidence',async()=>{
   const root=await fs.mkdtemp(path.join(os.tmpdir(),'offload-context-'));
@@ -44,9 +55,14 @@ test('native chat compacts real file reads, preserves protocol and recovers exac
     };
     const router=createOpenRouter({dataDir:root,fetcher,compactor}),auth=router.start('owner','http://localhost:5194');
     await router.complete(auth.state,auth.state,'test');
-    const result=await router.run({owner:'owner',runId:'turn',model:'test/model',messages:[{role:'user',text:'Read the files, then recover the original archive key.'}],notes:[],cwd:root});
+    const events=[];
+    const result=await router.run({onEvent:event=>events.push(event),owner:'owner',runId:'turn',model:'test/model',messages:[{role:'user',text:'Read the files, then recover the original archive key.'}],notes:[],cwd:root});
     assert.equal(result.text,'ARCHIVE_KEY_7D91');assert.ok(sawOmission&&sawRecovery);
     assert.ok(result.usage.compaction.calls>0);
+    const compactions=events.filter(e=>e.type==='contextCompaction');
+    assert.ok(compactions.some(e=>e.status==='running'&&e.label==='Using Jev for compaction'));
+    assert.ok(compactions.some(e=>e.status==='completed'&&e.decisionCalls>0));
+    assert.equal(compactions.some(e=>e.status==='under_budget'),false);
     assert.equal(result.usage.input_tokens,calls*100+result.usage.compaction.input_tokens);
     assert.equal(result.usage.output_tokens,calls*10+result.usage.compaction.output_tokens);
     assert.ok((await db.collection('context_archive').countDocuments())>0);
@@ -77,11 +93,13 @@ test('selector failure stops before another paid chat request and preserves know
       if(url.endsWith('/models')) return Response.json({data:[{id:'test/model',architecture:{output_modalities:['text']},supported_parameters:['tools']}]});
       chatCalls++;throw Error('Chat must not start.');
     };
-    const compactor={async select(){throw Object.assign(Error('Context needs review.'),{metrics:{inputTokens:17,outputTokens:3,reportedCost:0,decisionCalls:1,usageKnown:true,costKnown:true}});}};
+    const events=[];
+    const compactor={async select({onProgress}){onProgress?.({phase:'scoring',source:'typesafe:jev-test-fixture',call:1});throw Object.assign(Error('Context needs review.'),{metrics:{source:'typesafe:jev-test-fixture',inputTokens:17,outputTokens:3,reportedCost:0,decisionCalls:1,usageKnown:true,costKnown:true}});}};
     const router=createOpenRouter({dataDir:root,fetcher,compactor}),auth=router.start('owner','http://localhost:5194');
     await router.complete(auth.state,auth.state,'test');
-    await assert.rejects(router.run({owner:'owner',model:'test/model',messages:[{role:'user',text:'Work'}],notes:[],cwd:root}),e=>e.usage.input_tokens===17&&e.usage.output_tokens===3);
+    await assert.rejects(router.run({onEvent:event=>events.push(event),owner:'owner',model:'test/model',messages:[{role:'user',text:'Work'}],notes:[],cwd:root}),e=>e.usage.input_tokens===17&&e.usage.output_tokens===3);
     assert.equal(chatCalls,0);
+    assert.deepEqual(events.filter(e=>e.type==='contextCompaction').map(e=>e.status),['running','failed']);
   } finally {await fs.rm(root,{recursive:true,force:true});}
 });
 

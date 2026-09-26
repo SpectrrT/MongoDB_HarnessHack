@@ -23,7 +23,9 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
   const jobFolder=(owner,id)=>path.join(dataDir,'agent-jobs',owner,id);
   const jobWrites=new Map();
   const save=async job=>{const key=job.owner+':'+job.id,snapshot=JSON.stringify(publicJob(job));const writing=(jobWrites.get(key)||Promise.resolve()).catch(()=>{}).then(async()=>{const folder=jobFolder(job.owner,job.id);await fs.mkdir(folder,{recursive:true,mode:0o700});const temp=path.join(folder,'job-'+crypto.randomUUID()+'.tmp');await fs.writeFile(temp,snapshot,{mode:0o600});await fs.rename(temp,path.join(folder,'job.json'));});jobWrites.set(key,writing);try{await writing;}finally{if(jobWrites.get(key)===writing)jobWrites.delete(key);}};
-  const getJob=async(owner,id)=>{const current=jobs.get(owner+':'+id);if(current){if(current.status!=='running'&&current.finished)await current.finished;return current;}if(!/^[a-f0-9-]{36}$/.test(id))return null;const background=await idleExecution?.getJob(owner,id);if(background)return background;try{const saved=JSON.parse(await fs.readFile(path.join(jobFolder(owner,id),'job.json'),'utf8'));return {...saved,owner,...(saved.status==='running'?{status:'failed',approvals:[],error:'The local service restarted. Continue the conversation to resume its saved agent session.'}:{})};}catch{return null;}};
+  // Missing native jobs may belong to Sleep. Existing local jobs never wait for Atlas.
+  const getNativeJob=async(owner,id)=>{const current=jobs.get(owner+':'+id);if(current){if(current.status!=='running'&&current.finished)await current.finished;return current;}if(!/^[a-f0-9-]{36}$/.test(id))return null;try{const saved=JSON.parse(await fs.readFile(path.join(jobFolder(owner,id),'job.json'),'utf8'));return {...saved,owner,...(saved.status==='running'?{status:'failed',approvals:[],error:'The local service restarted. Continue the conversation to resume its saved agent session.'}:{})};}catch(error){return error.code==='ENOENT'?undefined:null;}};
+  const getJob=async(owner,id)=>{const native=await getNativeJob(owner,id);return native!==undefined?native:await idleExecution?.getJob(owner,id)||null;};
   app.use('/api/model',(req,res,next)=>{
     const host=req.get('host') || '', origin=req.get('origin');
     if(!enabled || !localHost(host) || (origin && (!localOrigin(origin)||new URL(origin).host!==host)) || req.get('X-Offload-Client')!=='local')return res.status(403).json({error:'The model connection is available only in the local Offload app.'});
@@ -146,9 +148,12 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     job.approvals.delete(approval.id);job.decisions.push({id:approval.id,method:approval.method,action:answer.data.action,at:Date.now()});approval.resolve(answer.data);res.json({ok:true});
   });
   app.get('/api/model/jobs/:id/artifacts/:artifactId',async(req,res)=>{
-    const background=await idleExecution?.getArtifact(req.workspaceKey,req.params.id,req.params.artifactId);
-    if(background){res.set('Content-Disposition',`attachment; filename="${background.name}"`);return res.type('text/plain').send(background.content);}
-    const job=await getJob(req.workspaceKey,req.params.id),artifact=job?.result?.agent?.artifacts?.find(a=>a.id===req.params.artifactId);
+    const job=await getNativeJob(req.workspaceKey,req.params.id);
+    if(job===undefined){
+      const background=await idleExecution?.getArtifact(req.workspaceKey,req.params.id,req.params.artifactId);
+      if(background){res.set('Content-Disposition',`attachment; filename="${background.name}"`);return res.type('text/plain').send(background.content);}
+    }
+    const artifact=job?.result?.agent?.artifacts?.find(a=>a.id===req.params.artifactId);
     if(!artifact)return res.status(404).json({error:'File not found.'});
     res.set('Content-Disposition',`attachment; filename="${path.basename(artifact.name).replace(/[^a-zA-Z0-9._-]/g,'_')}"`);res.type('application/octet-stream');
     res.sendFile(path.resolve(jobFolder(req.workspaceKey,job.id),'files',artifact.id),{dotfiles:'allow'});

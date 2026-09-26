@@ -48,6 +48,9 @@
   margin-top: 4px;
 }
 .hx-status-row { display: flex; align-items: center; gap: 8px; }
+.hx-capture-scope {max-width:260px;font-size:10px;line-height:1.6;}
+.hx-pill.is-error {border-color:var(--line-strong);}
+.hx-pill:is(.is-starting,.is-stopped,.is-unsupported) {color:var(--ink-soft);}
 .hx-device { font-size: 12px; color: var(--ink-soft); text-align: right; max-width: 280px; }
 .hx-pill {
   display: inline-flex;
@@ -567,9 +570,26 @@
 .hx-app-icon {display:inline-flex;align-items:center;justify-content:center;flex:none;vertical-align:middle;}
 .hx-app-label,.hx-apps .hx-app-name {display:inline-flex;align-items:center;gap:7px;}
 .hx-app-icon img {object-fit:contain;flex:none;}
-.hx-next-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:0 0 22px; }
-.hx-next-actions p { margin:0; color:var(--ink-soft); font-size:13px; line-height:1.65; }
-.hx-next-actions .button { flex-shrink:0; }
+
+/* Keep the everyday view focused on the timeline and recording control. */
+.history-page .page-title { align-items:center; margin-bottom:24px; }
+.history-page .hx-section { margin-top:28px; }
+.history-page .hx-head h2 { font-family:var(--font-sans); font-size:18px; font-weight:500; line-height:1.4; }
+.history-page .hx-pill:is(.is-checking,.is-starting,.is-recording)::before { display:none; }
+.history-page .hx-loading { display:flex; align-items:center; gap:9px; margin:14px 0; color:var(--ink-soft); font-size:12px; }
+.history-page .hx-disclosure { border-top:1px solid var(--line); margin-top:20px; padding-top:14px; }
+.history-page .hx-disclosure > summary { width:fit-content; cursor:pointer; font-size:12px; color:var(--ink-soft); line-height:1.7; }
+.history-page .hx-disclosure > summary:hover { color:var(--ink); }
+.history-page .hx-disclosure > summary > span { margin-left:8px; font-size:11px; }
+.history-page .hx-disclosure > .hx-section { margin-top:18px; }
+.history-page .hx-day-details { margin-top:16px; padding-top:10px; }
+.history-page .hx-empty { padding:18px 20px; }
+.history-page .hx-empty h3 { font-family:var(--font-sans); font-size:14px; font-weight:500; }
+@media (max-width:600px) {
+  .history-page .page-title { align-items:flex-start; }
+  .history-page .hx-status { align-items:flex-start; }
+  .history-page .hx-status-row { flex-wrap:wrap; }
+}
 .hx-setup .button-row { margin-top:18px; }
 .hx-setup-details { margin-top:18px; color:var(--ink-soft); font-size:13px; }
 .hx-setup-details summary { cursor:pointer; }

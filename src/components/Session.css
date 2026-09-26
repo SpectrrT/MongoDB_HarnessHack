@@ -1,0 +1,14 @@
+.offload-session .session-name {display:block;margin-top:22px;font-size:12px;}
+.offload-session .session-name span {color:var(--off-muted,#777);font-weight:400;}
+.offload-session .session-name input {display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:11px 12px;border:1px solid var(--off-line,#ddd);border-radius:6px;background:var(--off-surface,#fff);color:var(--off-ink,#222);font:inherit;}
+.offload-session .session-modes {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));}
+.offload-session .session-modes button {min-width:0;min-height:76px;}
+.offload-session .session-live .session-notes-icon {display:grid;place-items:center;flex:0 0 52px;height:52px;border:1px solid var(--off-line,#ddd);border-radius:12px;color:var(--off-ink,#222);}
+.offload-session .session-live h3 {overflow-wrap:anywhere;}
+.offload-session .session-notes p {white-space:pre-wrap;overflow-wrap:anywhere;}
+@media(max-width:480px){
+ .offload-session .session-modes {grid-template-columns:repeat(3,minmax(0,1fr));}
+ .offload-session .session-live {gap:12px;}
+ .offload-session .session-live .button {margin-left:0;}
+ .offload-session .session-name input,.offload-session textarea {font-size:16px;}
+}

@@ -21,6 +21,8 @@ import { connectStore, RunConflict } from './harness/store.js';
 import { inputSchema } from './harness/workflow.js';
 import { sleepExecutionRoutes } from './sleep/execution-routes.js';
 import { activityRoutes } from './activity/routes.js';
+import { activitySuggestionRoutes } from './activity/suggestions.js';
+import { createActivityCollector } from './activity/collector.js';
 import { suggestionRoutes } from './suggestions/routes.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const types = [
@@ -149,6 +151,7 @@ export function createApp({
   idleExecution = null,
   atlas = null,
   activity = null,
+  activityCollector = null,
   chatCompactor = null,
   suggestions = null,
 } = {}) {
@@ -253,7 +256,8 @@ export function createApp({
     } catch (error) { next(error); }
   });
   sleepExecutionRoutes(app, { store: sleepTasks, root: sleepTaskRoot, enabled: sleepTaskWorkerEnabled });
-  activityRoutes(app, { activity });
+  activityRoutes(app, { activity, collector: activityCollector });
+  activitySuggestionRoutes(app, { activity, dataDir, getState: req => access(req, s => s) });
   suggestionRoutes(app, { suggestions, sleepTasks, sleepTaskWorkerEnabled });
   async function access(req, fn) {
     const key = req.workspaceKey;
@@ -379,8 +383,25 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   const suggestions = connection ? await (await import('./suggestions/service.js')).createPersonalSuggestions({
     db: connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon') }) : null;
-  createApp({ harnessStore: connection?.store, atlas, activity, sleepTasks, sleepTaskRoot, sleepTaskWorkerEnabled, idleExecution, chatCompactor, suggestions }).listen(port, "127.0.0.1", () =>
+  const activityCollector = createActivityCollector({ activity });
+  await activityCollector.resume();
+  const server = createApp({ harnessStore: connection?.store, atlas, activity, activityCollector, sleepTasks, sleepTaskRoot, sleepTaskWorkerEnabled, idleExecution, chatCompactor, suggestions }).listen(port, "127.0.0.1", () =>
 
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
+  let closing = false;
+  const close = async () => {
+    if (closing) return;
+    closing = true;
+    const timeout = setTimeout(() => process.exit(0), 10000);
+    timeout.unref();
+    try { await activityCollector.stop(); } finally {
+      server.close();
+      server.closeAllConnections();
+      await connection?.client.close();
+      process.exit(0);
+    }
+  };
+  process.once('SIGINT', close);
+  process.once('SIGTERM', close);
 }

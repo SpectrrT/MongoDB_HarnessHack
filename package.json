@@ -8,6 +8,9 @@
   "scripts": {
     "dev": "node scripts/run-local.mjs dev",
     "dev:web": "node scripts/run-local.mjs web",
+    "demo:build": "node scripts/serve-demo.mjs build",
+    "demo": "node scripts/run-local.mjs demo",
+    "demo:web": "node scripts/run-local.mjs demo-web",
     "build": "vite build",
     "start": "node scripts/run-local.mjs start",
     "preview": "vite preview --host 127.0.0.1",

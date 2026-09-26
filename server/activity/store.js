@@ -41,6 +41,7 @@ export const sampleSchema = z.object({
 export const samplesSchema = z.array(sampleSchema).max(20000);
 export const settingsSchema = z.object({
   paused: z.boolean(),
+  collectorEnabled: z.boolean(),
   excludedApps: z.array(z.string().trim().min(1).max(120)).max(50),
   captureTitles: z.boolean(),
   captureUrls: z.boolean(),
@@ -266,6 +267,7 @@ export class ActivityStore {
     const doc = (await this.settingsCollection.findOne({ _id: workspace })) || {};
     return {
       paused: doc.paused ?? false,
+      collectorEnabled: doc.collectorEnabled ?? false,
       excludedApps: doc.excludedApps ?? DEFAULT_EXCLUDED,
       captureTitles: doc.captureTitles ?? true,
       captureUrls: doc.captureUrls ?? true,

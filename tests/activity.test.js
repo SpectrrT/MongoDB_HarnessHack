@@ -307,13 +307,14 @@ test('computer history on MongoDB', async (t) => {
       assert.equal(finding.days, 5);
       assert.deepEqual(finding.apps.map((a) => a.name).sort(), ['Codex', 'Gmail', 'Google Calendar']);
       assert.match(finding.topTitle, /Scheduling: Atlas Vector Search sync/);
-      assert.ok(finding.meetingTimes.includes('12:00 AM'));
+      assert.ok(finding.titleMentions.times.includes('12:00 AM'));
+      assert.deepEqual(finding.meetingTimes, [], 'window titles do not establish a scheduled meeting');
       assert.equal(finding.sample, true);
-      assert.match(describe(finding), /5 nights/);
+      assert.match(describe(finding), /5 dates/);
       const plan = planWorkflow(finding);
       assert.equal(plan.kind, 'scheduling');
       assert.ok(plan.steps.some((step) => step.ask), 'the plan asks once before sending');
-      assert.match(plan.problem, /12:00 AM/);
+      assert.match(plan.problem, /confirm the task/);
       const api = createApp({ serveStatic: false, activity: s });
       const body = (await request(api).post('/api/activity/workflow').set('X-Offload-Client','local').send({}).expect(200)).body;
       assert.equal(body.workflow.title, plan.title);

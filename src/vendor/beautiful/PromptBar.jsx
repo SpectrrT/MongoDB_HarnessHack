@@ -104,6 +104,7 @@ function PromptBar({
   tall = false,
   modelDisabled,
   placeholder,
+  initialText = "",
   onSend,
   models,
   modelValue,
@@ -115,6 +116,9 @@ function PromptBar({
 }) {
   const pill = variant === "Pill";
   const [draft, setDraft] = useState("");
+  useEffect(() => {
+    setDraft(initialText);
+  }, [initialText]);
   const [dismissed, setDismissed] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);

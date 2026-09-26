@@ -92,7 +92,7 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
   const archive = db.collection('context_archive'), decisions = db.collection('context_decisions');
   return {
     name: scorer.name,
-    async select({runId, goal, units, revision = "", signal, conversationHistory = null}) {
+    async select({runId, goal, units, revision = "", signal, conversationHistory = null, onProgress}) {
       if (typeof runId !== 'string' || !runId || typeof goal !== 'string' || !goal || typeof revision !== 'string' || !Array.isArray(units) || units.some(u => !u || typeof u.id !== 'string' || !u.id || u.id.length > 200 || typeof u.text !== 'string' || (u.dedupeKey != null && typeof u.dedupeKey !== 'string')) || new Set(units.map(u => u.id)).size !== units.length) throw Error('Invalid context records.');
       signal?.throwIfAborted();
       const beforeChars = units.reduce((n, u) => n + u.text.length, 0);
@@ -147,6 +147,8 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
         }
         signal?.throwIfAborted();
         metrics.decisionCalls++;
+        // Observation must never change retention decisions or make a successful call fail.
+        try { onProgress?.({ phase: 'scoring', source: scorer.name, call: metrics.decisionCalls, units: batch.length }); } catch {}
         try {
           const result = await scorer.score({goal, revision, currentEvidence, units: batch.map(s => s.unit), signal});
           const usage = result.usage || {};

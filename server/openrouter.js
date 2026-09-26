@@ -46,7 +46,18 @@ export function createOpenRouter({dataDir,fetcher=fetch,compactor=null}) {
   for(let step=0;step<40;step++){
    if(signal?.aborted)throw Error('Stopped.');
    let prompt=history;
-   if(context){try{const selected=await context.select(signal);prompt=selected.messages;accountCompaction(usage,selected.metrics);onEvent({id:'context-'+step,type:'contextCompaction',label:'Context memory',status:selected.metrics.status,detail:JSON.stringify(selected.metrics)});}catch(error){if(error.metrics)accountCompaction(usage,error.metrics);error.usage=structuredClone(usage);throw error;}}
+   if(context){
+    let scoring=null;
+    const progress=event=>{scoring=event;onEvent({id:'context-'+step,type:'contextCompaction',label:/jev/i.test(event.source)?'Using Jev for compaction':'Score context for compaction',status:'running',source:event.source,decisionCalls:event.call,detail:JSON.stringify(event)});};
+    const completed=(metrics,failed=false)=>{
+     if(!metrics)return;
+     const called=!!scoring||metrics.decisionCalls>0,cached=!called&&metrics.cacheHits>0;
+     if(!called&&!cached&&!metrics.archived)return;
+     onEvent({id:'context-'+step,type:'contextCompaction',label:called?(/jev/i.test(metrics.source)?'Using Jev for compaction':'Score context for compaction'):cached?'Apply cached compaction decisions':'Compact conversation',status:failed||metrics.errors?.length?'failed':'completed',source:metrics.source,decisionCalls:metrics.decisionCalls,cacheHits:metrics.cacheHits,detail:JSON.stringify(metrics)});
+    };
+    try{const selected=await context.select(signal,progress);prompt=selected.messages;accountCompaction(usage,selected.metrics);completed(selected.metrics);}
+    catch(error){if(error.metrics)accountCompaction(usage,error.metrics);completed(error.metrics||scoring&&{source:scoring.source,decisionCalls:scoring.call,errors:['Compaction stopped']},true);error.usage=structuredClone(usage);throw error;}
+   }
    modelRequestPending=true;
    const r=await fetcher(API+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+key,'X-OpenRouter-Title':'Offload'},body:JSON.stringify({model,messages:prompt,max_tokens:8192,provider:{require_parameters:true},...(entry.tools?{tools:context?[...localTools,...contextTools]:localTools}:{}),...(entry.imageOutput?{modalities:['image','text']}:{}),...(entry.efforts.length?{reasoning:{effort,exclude:true}}:{})}),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(180000)]):AbortSignal.timeout(180000)});
    if(!r.ok)throw Error(r.status===402?'OpenRouter has no credit available for this request.':r.status===429?'OpenRouter is busy. Try again shortly.':'OpenRouter could not complete the request. Try another model.');

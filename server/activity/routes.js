@@ -8,13 +8,13 @@ import { describe, findFriction, planWorkflow } from './insights.js';
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const MAX_STREAMS = 8;
 
-export function activityRoutes(app, { activity }) {
+export function activityRoutes(app, { activity, collector = null }) {
   app.use('/api/activity', remAccess({ label: 'Computer history' }));
   const workspace = workspaceId();
   let streams = 0;
   const route = (handler) => async (req, res, next) => {
     if (!activity)
-      return res.status(503).json({ error: 'Computer history needs MongoDB. Set MONGODB_URI and run npm run harness:server.' });
+      return res.status(503).json({ error: 'Computer history needs its database connection. Reopen Offload after connecting MongoDB.' });
     try {
       await handler(req, res);
     } catch (error) {
@@ -23,15 +23,25 @@ export function activityRoutes(app, { activity }) {
     }
   };
   const day = (req) => daySchema.parse(req.query.day || activity.today());
+  const currentStatus=async()=>({...await activity.status(workspace),...(collector?{collector:collector.status()}:{})});
 
   app.get('/api/activity/status', async (req, res, next) => {
-    if (!activity) return res.json({ configured: false });
+    if (!activity) return res.json({ configured: false,...(collector?{collector:collector.status()}:{}) });
     try {
-      res.json(await activity.status(workspace));
+      res.json(await currentStatus());
     } catch (error) {
       next(error);
     }
   });
+  app.post('/api/activity/collector',route(async(req,res)=>{
+    const host=req.get('host')||'',origin=req.get('origin');
+    let localOrigin=true;try{if(origin)localOrigin=new URL(origin).host===host;}catch{localOrigin=false;}
+    if(!/^(?:(?:127\.0\.0\.1|localhost)(?::\d+)?|offload\.ai)$/.test(host)||!localOrigin||req.get('X-Offload-Client')!=='local')return res.status(403).json({error:'Recording can only be controlled from the local Offload app.'});
+    if(!collector)return res.status(503).json({error:'The recorder is not connected to this local service. Reopen Offload.'});
+    const {action}=z.object({action:z.enum(['start','pause'])}).strict().parse(req.body);
+    await collector[action]();
+    res.json(await currentStatus());
+  }));
   app.get('/api/activity/timeline', route(async (req, res) => res.json(await activity.timeline(workspace, { day: day(req) }))));
   app.get('/api/activity/stats', route(async (req, res) => res.json(await activity.stats(workspace, { day: day(req) }))));
   app.get(
@@ -78,7 +88,12 @@ export function activityRoutes(app, { activity }) {
     }),
   );
   app.get('/api/activity/settings', route(async (req, res) => res.json(await activity.settings(workspace))));
-  app.post('/api/activity/settings', route(async (req, res) => res.json(await activity.updateSettings(workspace, req.body))));
+  app.post('/api/activity/settings', route(async (req, res) => {
+    if(Object.hasOwn(req.body||{},'collectorEnabled'))return res.status(400).json({error:'Use Start recording to enable the recorder.'});
+    const settings=await activity.updateSettings(workspace,req.body);
+    if(collector)await collector.refresh();
+    res.json(settings);
+  }));
   app.post(
     '/api/activity/forget',
     route(async (req, res) => {

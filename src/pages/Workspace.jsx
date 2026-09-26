@@ -4,8 +4,7 @@ import {modelRequest} from '../model-api';
 import {PERSONAL_SUGGESTIONS} from '../../shared/personal-suggestions';
 import Session from "../components/Session";
 import Harness from "./Harness";
-import Sleep from "./Sleep";
-import Rem from "./Rem";
+import MemoryHub from "./MemoryHub";
 import HistoryPage from "./History";
 import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from "react";
 import { Link, Navigate, NavLink, useNavigate, useLocation } from "react-router-dom";
@@ -61,7 +60,6 @@ import TaskRows from "../vendor/beautiful/TaskRows";
 import ContextCards from "../vendor/beautiful/ContextCards";
 import LoadingState from "../vendor/beautiful/LoadingState";
 import { Connections, ConnectDialog } from "./Connections";
-import SlowMode from "./SlowMode";
 import { ConnectionLogo } from "../components/ConnectionLogo";
 import LiveChat from "./LiveChat";
 import SidebarNav from "../vendor/beautiful/SidebarNav";
@@ -76,10 +74,23 @@ const Gallery = lazy(() => import("./Gallery"));
 const nav = [
   ["overview", "Overview", Home],
   ["tasks", "Tasks", ListTodo],
-  ["sleep", "Sleep", Moon],
+  ["memory", "Memory", Brain],
   ["history", "Computer history", HistoryIcon],
   ["connections", "Connections", Plug],
 ];
+function memoryDestination(search, forcedTab) {
+  const params = new URLSearchParams(search);
+  const view = params.get('view');
+  let tab = forcedTab || (view === 'rem' ? 'rem' : 'sleep');
+  if (!forcedTab && view === 'memory') {
+    const memoryView = params.get('memory') || 'notes';
+    tab = memoryView === 'context' ? 'sleep' : 'notes';
+    params.set('view', memoryView);
+  }
+  params.set('tab', tab);
+  return '/app/memory?' + params.toString();
+}
+
 const date = (x) =>
   new Date(x).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 export default function Workspace() {
@@ -92,7 +103,7 @@ export default function Workspace() {
   useEffect(()=>{const narrow=matchMedia('(max-width: 900px)');const resize=()=>{if(narrow.matches){setSidebar(false);setSuggestions(false);}};narrow.addEventListener('change',resize);return()=>narrow.removeEventListener('change',resize);},[]);
   const [systemDark,setSystemDark] = useState(matchMedia("(prefers-color-scheme: dark)").matches);
   useEffect(()=>{const media=matchMedia("(prefers-color-scheme: dark)");const update=()=>setSystemDark(media.matches);media.addEventListener("change",update);return()=>media.removeEventListener("change",update);},[]);
-  const palette=resolveTheme(state.settings.theme,systemDark,state.settings.themeCustom);
+  const palette=resolveTheme(state?.settings?.theme,systemDark,state?.settings?.themeCustom);
   useLayoutEffect(()=>{
     const root=document.documentElement;
     const previous=root.style.getPropertyValue('--workspace-canvas');
@@ -158,7 +169,7 @@ export default function Workspace() {
           />
           <div className="beautiful-sidebar beautiful-ui">
             <SidebarNav fill workspaceName="offload" workspaceLogo={null}
-              navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18} data-sleep-destination={key==='sleep'?'true':undefined}/>}))}
+              navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18} data-sleep-destination={key==='memory'?'true':undefined}/>}))}
               activeNav={page} activeTitle={state.conversations.find(c=>c.id===route[1])?.title || null}
               onNewChat={newChat} onCollapse={()=>setSidebar(false)}
               onWorkspaceClick={()=>navigate("/")}
@@ -168,9 +179,10 @@ export default function Workspace() {
               onOpenArchive={()=>navigate('/app/archive')}
               onConversationAction={async(id,action)=>{try{const c=state.conversations.find(c=>c.id===id);
                 if(action==='sleep'){
-                  const messages=c.messages.slice(-16).map(m=>({role:m.role,text:m.text.slice(0,20000)}));
-                  const context=messages.length?{model:c.pending?.model||c.messages.findLast(m=>m.role==='assistant')?.model||state.settings.modelSelection||'gpt-5.5',provider:state.settings.modelProvider||'codex',effort:state.settings.reasoningEffort||'low',messages,notes:[]}:undefined;
-                  await modelRequest('sleep/'+id,{enabled:true,...(context?{context}:{})});await act('conversation-sleep',{id,enabled:true});navigate('/app/sleep');
+                  const messages=c.messages.filter(m=>!m.sleep).map(m=>({role:m.role,text:m.text}));
+                  const context=messages.length?{model:c.pending?.model||c.messages.findLast(m=>m.role==='assistant')?.model||state.settings.modelSelection||'gpt-5.5',provider:state.settings.modelProvider||'codex',effort:state.settings.reasoningEffort||'low',folder:state.settings.agentFolder||'',messages,notes:[]}:undefined;
+                  const consent={scope:'isolated-local-drafts',budget:10000,durationMs:20*60*1000,offlinePrototypeChecks:true};
+                  await modelRequest('sleep/'+id,{enabled:true,consent,...(context?{context}:{})});await act('conversation-sleep',{id,enabled:true});navigate('/app/memory?tab=sleep');
                 }else{
                   if(action==='delete'&&c.pending)await modelRequest('jobs/'+c.pending.id+'/stop',{});
                   if(c.sleepEnabled){await modelRequest('sleep/'+id,{enabled:false});await act('conversation-sleep',{id,enabled:false});}
@@ -238,12 +250,12 @@ export default function Workspace() {
           {page === "overview" && <Overview />}
           {page === "chat" && <LiveChat id={route[1]} onRevealSidebar={()=>setSidebar(true)} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
-          {page === "memory" && <Navigate to={"/app/sleep?view=" + ({sleep: "conversations", rem: "rem"}[new URLSearchParams(location.search).get("tab")] || "memory")} replace />}
+          {page === "memory" && <MemoryHub />}
           {page === "archive" && <ConversationArchive/>}
           {page === "history" && <HistoryPage />}
-          {page === "sleep" && <SlowMode memory={<Memory />} review={<Sleep />} rem={<Rem />} />}
+          {page === "sleep" && <Navigate to={memoryDestination(location.search) + location.hash} state={location.state} replace />}
           {page === "harness" && <Harness />}
-          {page === "rem" && <Navigate to="/app/sleep?view=rem" replace />}
+          {page === "rem" && <Navigate to={memoryDestination(location.search, "rem") + location.hash} state={location.state} replace />}
           {page === "connections" && <Connections onConnect={setConnect} />}
           {page === "settings" && <SettingsPage />}
           {page === "library" && (
