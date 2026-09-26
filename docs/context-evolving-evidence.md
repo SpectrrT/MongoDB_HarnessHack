@@ -25,6 +25,7 @@ The second revision removes duplicate candidate records from the shared evidence
 | Evolving tasks, exact repeat encoding v4 `fcc1f65` | 11/12 | 11/12 | 43,627 | 46,610 | 6.84% more |
 | Evolving tasks, shared blocks and rubric v5 `7de228c` | 11/12 | 11/12 | 46,703 | 41,429 | 11.29% fewer |
 | Repeated snapshots, shared blocks and rubric v5 `7de228c` | 20/20 | 20/20 | 26,640 | 10,594 | 60.23% fewer |
+| Repeated snapshots, shared encoding schema v9 `3ae08e0` | 20/20 | 20/20 | 26,640 | 9,052 | 66.02% fewer |
 
 The evolving suite has three tasks with four chronological stages each: changing routing dependencies, an old release commitment with a corrected owner and reopened security issue, and a goal change followed by archive recovery. Future stages are never supplied early. Expected answers remain in the evaluator and are not sent to either model. Both paths use `openai/gpt-4o-mini` through OpenRouter, the same archive tools, and an independent exact JSON check. Provider call order alternates by stage.
 
@@ -54,6 +55,10 @@ The refreshed repeated run uses 7,129 Jev tokens plus 3,465 main-model tokens. E
 
 The original unmeasured test expectation of more than 50% character reduction on a shared-block sample was incorrect. The measured reduction is 47.73% (6,995 to 3,656 characters). The test now checks the actual contract: shared encoding beats independently encoded records, never expands the full batch representation, and reconstructs every record exactly. The focused context, runtime, native adapter and encoding suite passes 29/29 tests, including 200 generated lossless examples; the added receipt-accounting tests pass 3/3.
 
+V6 attempted shorter questions and direct array values. All four repeated-snapshot selections exceeded the context budget because the scores retained too many records. The 6,060 measured decision tokens remain in the rejected-run evidence, with no answer results or savings claim. Two bounded follow-up probes also failed: explicit array references used 1,613 tokens and an imperative record question used 1,631. These results show that smaller wire representations alone do not establish a useful scoring policy. The retention threshold was never changed to force these formats to pass.
+
+V9 restores the exact v5 question and retention rubric, preserves explicit per-record identities, and declares the repeated-text encoding schema once in shared state. A bounded release probe passed at 1,643 tokens. The full repeated refresh then passed 20/20 per path with 6,617 Jev tokens and 2,435 main-model tokens, totaling 9,052 versus 26,640 baseline tokens. All initial, restarted and repeated selections are counted. Combined compacted provider cost was $0.000714378 versus $0.0023805 for that run. All four original archive recovery checks passed and later selections made zero additional decision calls. The focused suite passes 32/32. These synthetic cases were used during development and are not held-out evaluation.
+
 ## Reproduction and evidence
 
 Supply credentials through an existing private environment. Do not copy credentials into evidence files.
@@ -78,6 +83,11 @@ Raw evidence:
 - [V5 evolving run with original answer policy](evidence/jev-context-evolving-shared-v5.json)
 - [V5 evolving source hashes, including the encoder](evidence/jev-context-evolving-shared-v5-provenance.json)
 - [V5 repeated-snapshot refresh with all scoring usage](evidence/jev-context-repeated-shared-v5.json)
+- [Rejected v6 repeated-snapshot run with paid usage](evidence/jev-context-repeated-indexed-v6.json)
+- [Rejected v7 bounded prompt probe](evidence/jev-context-v7-prompt-probe.json)
+- [Rejected v8 bounded prompt probe](evidence/jev-context-v8-prompt-probe.json)
+- [Successful v9 bounded prompt probe](evidence/jev-context-v9-prompt-probe.json)
+- [V9 repeated-snapshot refresh](evidence/jev-context-repeated-schema-v9.json)
 
 ## Integration limits
 
