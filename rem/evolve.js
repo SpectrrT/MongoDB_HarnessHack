@@ -4,7 +4,7 @@ import { GYM, TRAIN_IDS, compareFitness, proposerView, regressions, runGym } fro
 import { PATTERNS, SEVERITY_RANK } from "./catalog.js";
 import { applyEdit, commitHarness, currentHarness, editSignature } from "./harness.js";
 import { predictionError, trackRecord } from "./proposer.js";
-import { searchCollection } from "./search.js";
+import { searchCollection, settleSearch } from "./search.js";
 import { DAY_MS, round } from "./util.js";
 
 const PATTERN_ORDER = Object.keys(PATTERNS);
@@ -80,6 +80,8 @@ export async function mineWeaknesses({ db, embedder, clock }, view, night) {
   if (docs.length) {
     const vectors = await embedder.embed(docs.map((d) => d.summary));
     await db.collection("episodes").insertMany(docs.map((d, i) => ({ ...d, embedding: vectors[i] })));
+    // On Atlas, autoEmbed indexes the new trajectories a few seconds later; evidence search needs them.
+    await settleSearch(db, ["episodes"], { timeoutMs: 30000 });
   }
   const byTag = new Map();
   for (const v of view)

@@ -97,7 +97,10 @@ export async function createRem({
       clock.set(Math.max(clock.now(), dayStart(ctx.day) + 9 * 3600000));
       const brief = await runNight(ctx, { day: ctx.day, proposer: ctx.proposer });
       // On Atlas, autoEmbed indexes sync a few seconds after the night's writes; the morning recalls them.
-      if (db.kind === "mongo" && db.atlasSearch) brief.searchSettle = await settleSearch(db, ["memories", "skills"]);
+      if (db.kind === "mongo" && db.atlasSearch) {
+        brief.searchSettle = await settleSearch(db, ["memories", "skills", "edits"]);
+        await db.collection("briefs").updateOne({ night: brief.night }, { $set: { searchSettle: brief.searchSettle } });
+      }
       ctx.day++;
       clock.set(Math.max(clock.now(), dayStart(ctx.day)));
       return brief;

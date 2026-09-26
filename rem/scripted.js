@@ -311,7 +311,7 @@ function releaseReadiness(c) {
   const open = latestByTitle([...byType(items(ops.docs), "BLOCKER"), ...remembered]);
   const ask = askOwners(c, open);
   if (ask) return ask;
-  return c.final(c.out([`Release readiness — ${week}: ${open.length ? "no-go" : "go"}`, ...open.map((x) => c.line(x))].join("\n")));
+  return c.final(c.out([`Release readiness for ${week}: ${open.length ? "no-go" : "go"}`, ...open.map((x) => c.line(x))].join("\n")));
 }
 
 function followUps(c) {
