@@ -472,3 +472,5 @@ two new shipping variants improve from 2/3 to 3/3 exact answers. Both paths take
 5,666 to 7,870. A shorter candidate also passes 3/3 but uses 8,493 tokens, so it was not selected. This is an accuracy
 repair with measured overhead, pending the full evolving-suite rerun. [All probe outcomes](docs/evidence/evidence-policy-probe.json)
 and [shorter candidate](docs/evidence/evidence-policy-probe-concise.json). No expected answer is supplied to the model.
+
+Benchmark receipts now persist after each answer and decision pass. Three accounting checks cover restart/rescore charges, interrupted paid calls and unavailable prices. Missing usage makes savings unknown; failed answers make the benchmark exit unsuccessfully. These are accounting checks, not additional live performance results.

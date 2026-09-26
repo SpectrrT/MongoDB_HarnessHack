@@ -1,10 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {randomUUID} from 'node:crypto';
+import {randomUUID,createHash} from 'node:crypto';
 import {createMemoryDb, ensureIndexes} from '../rem/db/index.js';
 import {createContextCompactor} from '../server/context/compaction.js';
 import {createJevScorer} from '../server/context/jev.js';
+import {summarizeSnapshots} from './lib/context-accounting.mjs';
 const args=process.argv.slice(2), live=args.includes('--live'), atlas=args.includes('--atlas');
 const value=flag=>args.includes(flag)?args[args.indexOf(flag)+1]:null;
 const output=value('--output');
@@ -29,10 +30,12 @@ if(args.includes('--stress')) cases.splice(0,cases.length,
   {id:'negative-permission',required:['f2'],goal:'Return JSON with canSend for the draft. Use the permission record.',facts:[{id:'f1',text:'The email draft is ready for proofreading.'},{id:'f2',text:'Permission record: sending email is not authorized.'}],expected:{canSend:false}},
   {id:'exact-identifier',goal:'Return JSON with artifact and sha for the approved rollback bundle.',facts:[{id:'f1',text:'Approved rollback artifact: bundle-a41.zip.'},{id:'f2',text:'Approved rollback bundle sha: 7b31a90c4d20.'}],expected:{artifact:'bundle-a41.zip',sha:'7b31a90c4d20'}}
 );
-const report={createdAt:new Date().toISOString(),mode:live?'live Jev':'deterministic fixtures',database:atlas?'Atlas sleep_context_eval':'in-memory',scope:'Synthetic retention and paired exact-answer evaluation. No billion-token or overnight claim.',scorer:scorer.name,cases:[]};
+const report={createdAt:new Date().toISOString(),mode:live?'live Jev':'deterministic fixtures',database:atlas?'Atlas sleep_context_eval':'in-memory',scope:'Synthetic retention and paired exact-answer evaluation. No billion-token or overnight claim.',scorer:scorer.name,scorerPolicy:scorer.policyVersion||null,cases:[]};
 const model=value('--answer-model');
 const repeats=Number(value('--repeats')||1);
 if(!Number.isInteger(repeats)||repeats<1||repeats>10)throw Error('Repeats must be between 1 and 10.');
+report.implementation=Object.fromEntries(await Promise.all(['../server/context/compaction.js','../server/context/jev.js','../server/context/repeat-evidence.js','./benchmark-context.mjs'].map(async file=>[file,createHash('sha256').update(await fs.readFile(new URL(file,import.meta.url))).digest('hex')])));
+async function save(){if(output){await fs.mkdir(path.dirname(output),{recursive:true});await fs.writeFile(output,JSON.stringify(report,null,2)+'\n');}}
 async function answer(goal,units){
  const start=performance.now();
  const response=await fetch('https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:AbortSignal.timeout(60000),headers:{Authorization:`Bearer ${process.env.OPENROUTER_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model,max_tokens:200,temperature:0,messages:[{role:'system',content:'Answer using only the supplied records. Output only the requested JSON object, without markdown.'},{role:'user',content:JSON.stringify({goal,records:units.map(u=>u.text)})}]})});
@@ -54,35 +57,36 @@ try{
    const recovered=await restarted.read({runId,id:'noise-0'});
    const full=units.map(u=>u.id),selectedIds=selected.units.map(u=>u.id),tail=units.slice(-3).map(u=>u.id);
    const required=scenario.required||scenario.facts.map(f=>f.id);
-   const row={id:scenario.id,runId,goal:scenario.goal,requiredIds:required,retainedIds:selectedIds,fullRecall:required.every(id=>full.includes(id)),tailRecall:required.every(id=>tail.includes(id)),jevRecall:required.every(id=>selectedIds.includes(id)),metrics:selected.metrics,latencyMs:elapsed,restartDecisionCalls:again.metrics.decisionCalls,archiveRecovery:recovered.text===noise[0].text,decisions:selected.decisions};
+   const row={id:scenario.id,runId,goal:scenario.goal,requiredIds:required,retainedIds:selectedIds,fullRecall:required.every(id=>full.includes(id)),tailRecall:required.every(id=>tail.includes(id)),jevRecall:required.every(id=>selectedIds.includes(id)),metrics:selected.metrics,latencyMs:elapsed,restartDecisionCalls:again.metrics.decisionCalls,restartMetrics:again.metrics,archiveRecovery:recovered.text===noise[0].text,decisions:selected.decisions};
+   report.cases.push(row);await save();
    if(model){
     try{
      if(!process.env.OPENROUTER_API_KEY)throw Error('Answer model key unavailable');
-     row.baseline=await answer(scenario.goal,units);row.compacted=await answer(scenario.goal,selected.units);
+     row.baseline=await answer(scenario.goal,units);await save();row.compacted=await answer(scenario.goal,selected.units);await save();
      row.baseline.pass=Boolean(exact(row.baseline.answer,scenario.expected));row.compacted.pass=Boolean(exact(row.compacted.answer,scenario.expected));
      const measured=selected.metrics.usageKnown&&[row.baseline,row.compacted].every(r=>Number.isFinite(r.inputTokens)&&Number.isFinite(r.outputTokens));
      row.baselineTotal=measured?row.baseline.inputTokens+row.baseline.outputTokens:null;
      row.compactedTotal=measured?row.compacted.inputTokens+row.compacted.outputTokens+selected.metrics.inputTokens+selected.metrics.outputTokens:null;
      if(repeats>1){
-      row.repeated={callsPerPath:repeats,baseline:[row.baseline],compacted:[row.compacted],decisionCallsAfterFirst:0};
+      row.repeated={callsPerPath:repeats,baseline:[row.baseline],compacted:[row.compacted],decisionCallsAfterFirst:0,decisionMetrics:[]};
       for(let i=1;i<repeats;i++){
        const reuse=await restarted.select({runId,goal:scenario.goal,units});
-       row.repeated.decisionCallsAfterFirst+=reuse.metrics.decisionCalls;
-       const base=await answer(scenario.goal,units),small=await answer(scenario.goal,reuse.units);
-       base.pass=Boolean(exact(base.answer,scenario.expected));small.pass=Boolean(exact(small.answer,scenario.expected));
-       row.repeated.baseline.push(base);row.repeated.compacted.push(small);
+       row.repeated.decisionCallsAfterFirst+=reuse.metrics.decisionCalls;row.repeated.decisionMetrics.push(reuse.metrics);await save();
+       const base=await answer(scenario.goal,units);base.pass=Boolean(exact(base.answer,scenario.expected));row.repeated.baseline.push(base);await save();
+       const small=await answer(scenario.goal,reuse.units);small.pass=Boolean(exact(small.answer,scenario.expected));row.repeated.compacted.push(small);await save();
       }
-      row.repeated.baselineTotal=row.repeated.baseline.reduce((n,r)=>n+r.inputTokens+r.outputTokens,0);
-      row.repeated.compactedTotal=row.repeated.compacted.reduce((n,r)=>n+r.inputTokens+r.outputTokens,selected.metrics.inputTokens+selected.metrics.outputTokens);
+      const totals=summarizeSnapshots([row],{answerModel:model,repeats,expectedCases:1});
+      row.repeated.baselineTotal=totals.baselineTotal;row.repeated.compactedTotal=totals.compactedTotal;
       row.repeated.allPassed=[...row.repeated.baseline,...row.repeated.compacted].every(r=>r.pass);
      }
      row.repeatedFiveCalls=measured?{baseline:5*row.baselineTotal,compacted:5*(row.compacted.inputTokens+row.compacted.outputTokens)+selected.metrics.inputTokens+selected.metrics.outputTokens,label:'Projection from one paired call and verified zero-call decision reuse, not five live answers'}:null;
     }catch(error){row.answerError=error.message;}
    }
-   report.cases.push(row);
+   await save();
    console.log(JSON.stringify({case:row.id,retained:row.jevRecall,chars:`${row.metrics.beforeChars} -> ${row.metrics.afterChars}`,decisionTokens:row.metrics.inputTokens+row.metrics.outputTokens,latencyMs:elapsed,baselineTokens:row.baselineTotal,compactedTokens:row.compactedTotal,repeated:row.repeated?{baseline:row.repeated.baselineTotal,compacted:row.repeated.compactedTotal,allPassed:row.repeated.allPassed}:null,answerError:row.answerError}));
-  }catch(error){report.cases.push({id:scenario.id,error:error.message,metrics:error.metrics});console.log(JSON.stringify({case:scenario.id,error:error.message}));}
+  }catch(error){const failed=report.cases.find(row=>row.id===scenario.id);if(failed){failed.error=error.message;if(error.metrics)failed.failureMetrics=error.metrics;}else report.cases.push({id:scenario.id,error:error.message,metrics:error.metrics});await save();console.log(JSON.stringify({case:scenario.id,error:error.message}));}
  }
- if(output){await fs.mkdir(path.dirname(output),{recursive:true});await fs.writeFile(output,JSON.stringify(report,null,2)+'\n');}
- if(report.cases.some(c=>c.error||!c.jevRecall||!c.archiveRecovery))process.exitCode=1;
+ report.summary=summarizeSnapshots(report.cases,{answerModel:model,repeats,expectedCases:cases.length});await save();
+ console.log(JSON.stringify(report.summary));
+ if(report.cases.some(c=>c.error||c.answerError||!c.jevRecall||!c.archiveRecovery)||(model&&(!report.summary.complete||report.summary.baselinePassed!==cases.length*repeats||report.summary.compactedPassed!==cases.length*repeats||report.summary.baselineTotal===null||report.summary.compactedTotal===null)))process.exitCode=1;
 }finally{await db.close?.();}

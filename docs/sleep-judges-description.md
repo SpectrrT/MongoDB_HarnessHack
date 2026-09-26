@@ -41,3 +41,5 @@ calibrated completion probabilities, or universal savings. Waiting more slowly i
 A separate source-interpretation probe improves 2/3 to 3/3 exact answers on the original routing failure and two new
 shipping variants. Tokens increase 5,666 to 7,870, which is retained as an adverse result while the full combined
 optimization is measured. [Probe evidence](evidence/evidence-policy-probe.json).
+
+Benchmark receipts now persist after each answer and decision pass. Three accounting checks cover restart/rescore charges, interrupted paid calls and unavailable prices. Missing usage makes savings unknown; failed answers make the benchmark exit unsuccessfully. These are accounting checks, not additional live performance results.
