@@ -22,9 +22,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
-      - run: npm run build
       - run: npx playwright install --with-deps chromium
+      - run: npm test
+        env:
+          SLEEP_PROTOTYPE_BROWSER: chromium
+      - run: npm run build
       - run: npm run test:e2e
         env:
           PW_CHANNEL: chromium
