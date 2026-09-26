@@ -50,7 +50,7 @@ test("landing, onboarding, suggestions and memory persist", async ({
   ).toBeTruthy();
   expect(errors).toEqual([]);
 });
-test("connection setup and overnight tasks persist", async ({ page }) => {
+test("connection setup and unconfigured Sleep preserve existing briefs", async ({ page }) => {
   await onboard(page);
   await page.goto('/app/connections');
   await page.getByRole('textbox',{name:'Search connections'}).fill('Slack');
@@ -58,15 +58,24 @@ test("connection setup and overnight tasks persist", async ({ page }) => {
   await page.getByRole('button',{name:'Add to workspace',exact:true}).click();
   await expect(page.getByText('Added · setup needed')).toBeVisible();
   await page.goto('/app/sleep');
+  await expect(page.getByText('MongoDB task storage is not configured.',{exact:false})).toBeVisible();
   await page.getByRole('button',{name:'Add a task',exact:true}).click();
   await page.getByLabel('Task',{exact:true}).fill('Prepare a project update');
   await page.getByLabel('What should be ready?').fill('Draft the update with unresolved issues.');
-  await page.getByRole('button',{name:'Save to queue',exact:true}).click();
-  await expect(page.getByText('Runner needed')).toBeVisible();
+  await page.getByLabel('Required exact phrases, one per line').fill('Unresolved issues');
+  await expect(page.getByRole('button',{name:'Assign task',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'Close dialog'}).click();
+  await page.evaluate(()=>{
+    const key='offload.workspace.v1',state=JSON.parse(localStorage.getItem(key));
+    state.overnight=[{id:'legacy-brief',title:'Saved before worker integration',brief:'Preserve this unfinished work.',budget:10000,deadline:Date.now()+86400000,status:'queued'}];
+    localStorage.setItem(key,JSON.stringify(state));
+  });
   await page.reload();
-  await expect(page.getByRole('heading',{name:'Prepare a project update'})).toBeVisible();
-  await page.getByRole('button',{name:'Pause task',exact:true}).click();
-  await expect(page.getByText('Paused',{exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Previously saved briefs'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Saved before worker integration'})).toBeVisible();
+  await page.getByRole('button',{name:'Add output checks to assign'}).click();
+  await expect(page.getByLabel('Task',{exact:true})).toHaveValue('Saved before worker integration');
+  await expect(page.getByRole('button',{name:'Assign task',exact:true})).toBeDisabled();
 });
 test("capture modes and chat requires account setup", async ({ page }, info) => {
   await onboard(page);
