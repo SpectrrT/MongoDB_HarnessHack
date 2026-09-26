@@ -39,7 +39,7 @@ for (const outcome of ['completed', 'paused']) test(`Chat Sleep stays in place a
   await page.getByRole('link', { name: 'View in Sleep' }).click();
   await expect(page.getByRole('link', { name: 'Prepared query review Working in the background' })).toBeVisible();
   sleep = { ...sleep, state: outcome === 'completed' ? 'done' : 'paused', ...(outcome === 'paused' ? { error: 'Review is needed before continuing.' } : {}) };
-  const resultLink = page.locator('.sleeping-chat a');
+  const resultLink = page.locator('.memory-hub-sleeping article > a').filter({ has: page.locator('strong') });
   await expect(resultLink).toContainText(outcome === 'completed' ? 'Review available' : 'Paused. Review progress', { timeout: 10000 });
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('offload.workspace.v1')).conversations[0].messages.filter(message => message.sleep).length)).toBe(1);
   await page.reload();
@@ -52,7 +52,7 @@ for (const outcome of ['completed', 'paused']) test(`Chat Sleep stays in place a
   await expect(page).toHaveURL('/app/chat/' + conversationId);
   await page.goto('/app/sleep?view=conversations');
   await expect(resultLink).toContainText('Review available');
-  await expect(page.locator('.sleeping-chat').getByRole('button', { name: 'Wake', exact: true })).toHaveCount(0);
+  await expect(page.locator('.memory-hub-sleeping article').getByRole('button', { name: 'Wake', exact: true })).toHaveCount(0);
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('offload.workspace.v1')).conversations[0]);
   expect(saved.sleepEnabled).toBe(false); expect(saved.messages.filter(message => message.sleep)).toHaveLength(1);
   expect(saved.messages.at(-1).usage.total_tokens).toBe(720);
@@ -114,7 +114,7 @@ test('Turning Sleep off retains an unconsumed result through failed fetch and re
   await page.reload();
   await expect(page.getByText('Recovered review after waking.', { exact: true })).toBeVisible({ timeout: 10000 });
   await page.goto('/app/sleep?view=conversations');
-  await expect(page.locator('.sleeping-chat a')).toContainText('Review available');
+  await expect(page.locator('.memory-hub-sleeping article > a').filter({ has: page.locator('strong') })).toContainText('Review available');
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('offload.workspace.v1')).conversations[0]);
   expect(saved.sleepEnabled).toBe(false); expect(saved.messages.filter(message => message.sleep)).toHaveLength(1);
 });
@@ -136,7 +136,7 @@ test('Skipped Sleep pass does not invent a review or fetch a nonexistent job', a
   await page.getByRole('button', { name: 'Run Sleep now', exact: true }).click();
   await expect(page.locator('.sleep-chat-hint')).toContainText('Sleep found no unfinished local draft');
   await page.getByRole('link', { name: 'View in Sleep' }).click();
-  await expect(page.locator('.sleeping-chat a')).toContainText('No unfinished draft found');
+  await expect(page.locator('.memory-hub-sleeping article > a').filter({ has: page.locator('strong') })).toContainText('No unfinished draft found');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('offload.workspace.v1')).conversations[0].sleepJobId)).toBe(jobId);
   expect(jobReads).toBe(0);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('offload.workspace.v1')).conversations[0].messages.filter(message => message.sleep).length)).toBe(0);
