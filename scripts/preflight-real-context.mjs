@@ -10,12 +10,13 @@ const args = process.argv.slice(2), value = flag => args.includes(flag) ? args[a
 const packetPath = value('--packet'), output = value('--output'), model = value('--model') || 'openai/gpt-4.1-mini';
 if (!packetPath || !output) throw Error('Required: --packet and --output.');
 const budgetChars = Number(value('--context-budget') || 16000), tokenBudget = 100000;
-const bytes = await fs.readFile(packetPath), packet = normalizeReplayPacket(JSON.parse(bytes)), units = replayUnits(packet);
+const conversationHistory = args.includes('--typed-conversation') ? {schemaVersion: 1, instructionsComplete: true} : null;
+const bytes = await fs.readFile(packetPath), packet = normalizeReplayPacket(JSON.parse(bytes)), units = replayUnits(packet, {typedConversation: Boolean(conversationHistory)});
 const brief = JSON.stringify({goal: packet.goal, input: packet.input || {}}), maxOutputTokens = packet.limits?.maxOutputTokens || 1800;
 let decisions = [];
 const selector = createContextCompactor({db: createMemoryDb(), budgetChars, maxDecisionCalls: 0,
   scorer: {name: 'Offline protection audit only', async score() {throw Error('Model calls are forbidden during preflight');}}});
-try {decisions = (await selector.select({runId: 'private-preflight', goal: packet.goal, units})).decisions;}
+try {decisions = (await selector.select({runId: 'private-preflight', goal: packet.goal, units, conversationHistory})).decisions;}
 catch (error) {if (!(error instanceof ContextBudgetError)) throw error; decisions = error.metrics.decisions;}
 const byId = new Map(units.map(unit => [unit.id, unit]));
 const protectedRecords = decisions.filter(decision => !['uncertain', 'jev', 'identical_read'].includes(decision.reason)), protection = {};
@@ -37,7 +38,7 @@ const report = {
   authoredTextCodePoints: packet.history.reduce((n, record) => n + [...record.text].length, 0),
   characterMeasurement: 'Chars and selector budgets use JavaScript UTF-16 code units. Code points are reported separately.',
   serializedUnitChars: units.reduce((n, unit) => n + unit.text.length, 0), maximumUnitChars: Math.max(...units.map(unit => unit.text.length)),
-  budgetChars, protectedRecords: protectedRecords.length, protectedChars: protectedRecords.reduce((n, decision) => n + byId.get(decision.id).text.length, 0), protection,
+  budgetChars, conversationHistory, protectedRecords: protectedRecords.length, protectedChars: protectedRecords.reduce((n, decision) => n + byId.get(decision.id).text.length, 0), protection,
   currentBriefChars: brief.length, fullPromptUtf8Bytes: Buffer.byteLength(prompt),
   conservativeReservation: Buffer.byteLength(prompt) + 512 + maxOutputTokens, tokenBudget, maxOutputTokens,
   scoringCalls: 0, scoringTokens: 0, modelCalls: 0,

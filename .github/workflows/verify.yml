@@ -26,7 +26,7 @@ jobs:
       # Ubuntu 24.04 blocks the unprivileged user namespaces Chromium's sandbox needs; the prototype
       # verifier launches with the sandbox on, so allow them rather than turning the sandbox off.
       - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-      - run: npm test
+      - run: node --test --test-concurrency=2 tests/*.test.js
         env:
           SLEEP_PROTOTYPE_BROWSER: chromium
       - run: npm run build

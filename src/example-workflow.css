@@ -1,0 +1,24 @@
+.example-workflow { min-height:100svh; background:var(--off-surface); color:var(--off-ink); font-family:var(--font-sans); }
+.example-workflow nav { max-width:1120px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; padding:26px 28px; border-bottom:1px solid var(--off-line); }
+.example-workflow nav a { display:inline-flex; align-items:center; gap:8px; min-height:44px; color:inherit; }
+.example-workflow main { max-width:790px; padding:56px 28px 72px; margin:auto; }
+.example-workflow .wordmark { color:var(--off-ink); }
+.example-workflow h1 { font-family:"Instrument Serif",Georgia,serif; font-size:clamp(40px,6vw,62px); font-weight:400; line-height:1.08; margin:14px 0; letter-spacing:-.02em; }
+.example-workflow header>p { color:var(--off-muted); font-size:14px; line-height:1.7; }
+.example-workflow .example-label { font-size:11px; letter-spacing:.08em; }
+.example-output { margin:36px 0; padding-top:22px; border-top:1px solid var(--off-line); font-size:14px; line-height:1.8; overflow-wrap:anywhere; }
+.example-output h2 { font-size:22px; font-weight:500; margin:28px 0 12px; }
+.example-output h3 { font-size:16px; font-weight:500; margin:24px 0 8px; }
+.example-output :is(p,ul,ol) { margin:12px 0; }
+.example-output :is(ul,ol) { padding-left:24px; }
+.example-output li { margin:7px 0; }
+.example-output pre { white-space:pre-wrap; overflow-wrap:anywhere; background:var(--off-inset); padding:16px; border-radius:8px; }
+.example-output a,.example-actions>a:not(.button) { color:inherit; text-decoration:underline; text-underline-offset:4px; }
+.example-actions { display:flex; flex-wrap:wrap; align-items:center; gap:18px; border-top:1px solid var(--off-line); padding-top:24px; }
+.example-workflow .button { background:var(--off-ink); color:var(--off-surface); border-color:var(--off-ink); }
+.example-workflow .button.secondary { background:var(--off-surface); color:var(--off-ink); border-color:var(--off-line); }
+.example-footnote { margin-top:16px; font-size:12px; line-height:1.7; color:var(--off-muted); }
+.hero-example-link { display:inline-flex; align-items:center; min-height:44px; margin-left:20px; font-size:13px; text-decoration:underline; text-underline-offset:4px; }
+@media(max-width:600px) { .example-workflow main { padding-top:32px; } .example-actions .button { width:100%; justify-content:center; } }
+.example-output ol { list-style:decimal; }
+.example-output ul { list-style:disc; }

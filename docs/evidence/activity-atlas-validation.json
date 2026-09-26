@@ -1,0 +1,79 @@
+{
+  "purpose": "Synthetic Computer History integration check. No personal activity was captured.",
+  "startedAt": "2026-09-26T19:40:24.566Z",
+  "namespace": "offload_activity_verify_1790451624567",
+  "source": "seed",
+  "checks": [
+    {
+      "name": "ingestion",
+      "passed": true,
+      "inserted": 324
+    },
+    {
+      "name": "sessionization",
+      "passed": true,
+      "sessions": 9
+    },
+    {
+      "name": "day retrieval and totals",
+      "passed": true,
+      "sessions": 3,
+      "seconds": 540
+    },
+    {
+      "name": "search",
+      "passed": true,
+      "mode": "atlas-hybrid",
+      "results": 3,
+      "allSynthetic": true
+    },
+    {
+      "name": "routine mining",
+      "passed": true,
+      "routines": 1,
+      "days": 3,
+      "occurrences": 3
+    },
+    {
+      "name": "forget removes source and derived evidence",
+      "passed": true,
+      "deletedEvents": 324,
+      "deletedSessions": 9,
+      "deletedRoutines": 1
+    }
+  ],
+  "cleanup": true,
+  "indexes": [
+    {
+      "name": "activity_text",
+      "status": "READY",
+      "queryable": true
+    },
+    {
+      "name": "activity_vector_local256",
+      "status": "READY",
+      "queryable": true
+    }
+  ],
+  "passed": true,
+  "cleanupError": "MongoServerError",
+  "finishedAt": "2026-09-26T19:40:54.033Z",
+  "collectionCleanup": [
+    {
+      "collection": "activity_events",
+      "dropped": true
+    },
+    {
+      "collection": "activity_sessions",
+      "dropped": true
+    },
+    {
+      "collection": "activity_routines",
+      "dropped": true
+    },
+    {
+      "collection": "activity_settings",
+      "dropped": true
+    }
+  ]
+}

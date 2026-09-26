@@ -25,7 +25,7 @@ test('Idle Sleep consent persists, background work leaves chat usable, and resum
   const toggle=page.getByRole('button',{name:'Sleep for this conversation',exact:true});
   await expect(page.getByText(/Allows isolated offline prototype checks/)).toBeVisible();
   await toggle.click();
-  await expect(page).toHaveURL(/\/app\/memory\?tab=sleep$/);
+  await expect(page).toHaveURL(/\/app\/sleep\?view=conversations$/);
   await expect(page.getByRole('link', {name:'Build a counter Sleep enabled'})).toBeVisible();
   await page.goto('/app/chat/'+conversationId);
   await expect(toggle).toHaveAttribute('aria-pressed','true');

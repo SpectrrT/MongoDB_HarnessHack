@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play, Search, X, Code2, Terminal, Globe, Monitor, Lock, Coffee } from "lucide-react";
 import { ConnectionLogo } from "../components/ConnectionLogo";
+import { Link } from "react-router-dom";
 import { Modal } from "../components/Modal";
 import "../history.css";
 
@@ -21,11 +22,12 @@ async function api(url, body) {
       url,
       body === undefined
         ? undefined
-        : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+        : { method: "POST", headers: { "Content-Type": "application/json", "X-Offload-Client": "local" }, body: JSON.stringify(body) },
     );
   } catch {
     throw Error("Offload's local API isn't answering.");
   }
+  if (!response.headers.get("content-type")?.includes("application/json")) throw Error("Computer history needs the local Offload service. Open the local app to view activity from this computer.");
   const value = await response.json().catch(() => null);
   if (!response.ok || !value) throw Error(value?.error || `The activity API answered HTTP ${response.status}.`);
   return value;
@@ -120,7 +122,7 @@ function describeRoutine(r) {
     ? `around ${hourLabel(new Date(2000, 0, 1, ((Math.round(r.typicalHour) % 24) + 24) % 24))}`
     : "";
   const text = [
-    [weekdayPattern(r.weekdays), hour].filter(Boolean).join(" "),
+    [weekdayPattern(r.weekdays), hour, r.timeZone].filter(Boolean).join(" "),
     r.minutes ? `about ${duration(r.minutes * 60)}` : "",
     r.count > r.dayCount ? `seen ${r.count} times on ${r.dayCount} days` : `seen on ${plural(r.dayCount, "day")}`,
   ]
@@ -498,9 +500,10 @@ export default function History() {
         </p>
       )}
       {!status && <p className="muted">Checking Computer history…</p>}
-      {status && !configured && <Setup error={status.error} />}
+      {status && !configured && <Setup error={status.error} onRetry={() => loadStatus()} />}
       {configured && (
         <>
+          <div className="hx-next-actions"><p>Review meeting notes and repeated work before starting a task.</p><Link className="button small secondary" to="/app/sleep?view=suggestions">Open next actions <ArrowRight size={14} aria-hidden="true" /></Link></div>
           <SearchPanel status={status} onShow={showInDay} refreshKey={searchKey} />
           <Routines
             routines={routines}
@@ -539,18 +542,18 @@ export default function History() {
   );
 }
 
-function Setup({ error }) {
+function Setup({ error, onRetry }) {
   return (
     <section className="hx-setup" aria-labelledby="hx-setup-title">
-      <h2 id="hx-setup-title">Connect MongoDB to start</h2>
+      <h2 id="hx-setup-title">Connect this computer</h2>
       <p>
-        {error ? `${error} ` : ""}Set <code>MONGODB_URI</code> and start <code>npm run harness:server</code> and{" "}
-        <code>npm run activity:collector</code>.
+        {error || "Computer history uses the local Offload service and a connected MongoDB workspace."}
       </p>
       <p>
-        Every 5 seconds the collector notes the front app, its window title and the page open in your browser. It
-        never takes screenshots or reads keystrokes.
+        Nothing is recorded from this page. Start the collector on your computer when you are ready.
       </p>
+      <div className="button-row"><button className="button small secondary" onClick={onRetry}>Check connection</button></div>
+      <details className="hx-setup-details"><summary>Local setup</summary><p>Set <code>MONGODB_URI</code>, start <code>npm run harness:server</code>, then <code>npm run activity:collector</code>. The collector records app and window names, not screenshots or keystrokes.</p></details>
     </section>
   );
 }
@@ -696,7 +699,7 @@ function Routines({ routines, error, note, busyId, onDecide, headingRef }) {
       </div>
       <p className="hx-intro">
         Apps and sites you use in the same order on different days, found by an aggregation over your sessions in
-        Atlas. Hand one off and Offload saves it as a routine for next time. It asks before it acts.
+        Atlas. Save a routine to review later. Saving does not start a task.
       </p>
       {error && (
         <p className="hx-error" role="alert">
@@ -713,8 +716,7 @@ function Routines({ routines, error, note, busyId, onDecide, headingRef }) {
         <div className="hx-empty">
           <h3>Nothing repeats yet.</h3>
           <p>
-            When the same apps and sites show up in the same order on several days, Offload asks here whether to
-            hand them off. To try it now, load demo history with <code>npm run activity:seed -- --engineering</code>.
+            When the same apps and sites show up in the same order on several days, you can review and save the pattern here.
           </p>
         </div>
       )}
@@ -747,13 +749,15 @@ function Routine({ routine: r, busy, onDecide }) {
       </ol>
       <p className="hx-when">
         <span>{describeRoutine(r)}</span>
+        {r.cadence === "weekly" && <Tag>Weekly pattern</Tag>}
         {r.source === "seed" && <Tag />}
         {r.source === "mixed" && <Tag>Includes demo history</Tag>}
       </p>
+      {r.cadence === "weekly" && <p className="hx-ask">Inferred from app activity across at least three weeks. No task is scheduled.</p>}
       {approved ? (
         <div className="hx-handoff" role="status">
           <Check size={16} aria-hidden="true" />
-          <span>Saved as a routine to hand off. Offload will ask before it acts.</span>
+          <span>Routine saved. No task has run. <Link to="/app/sleep?view=suggestions">Review next actions</Link></span>
           <button
             className="text-button"
             disabled={busy}
@@ -765,15 +769,15 @@ function Routine({ routine: r, busy, onDecide }) {
         </div>
       ) : (
         <>
-          <p className="hx-ask">Want Offload to handle this next time?</p>
+          <p className="hx-ask">Save this pattern for later?</p>
           <div className="button-row">
             <button
               className="button small"
               disabled={busy}
-              aria-label={`Hand it off: ${spoken}`}
+              aria-label={`Save routine: ${spoken}`}
               onClick={() => onDecide(r, "approve")}
             >
-              Hand it off
+              Save routine
             </button>
             <button
               className="button small secondary"
@@ -795,7 +799,7 @@ function Day({ sectionRef, day, today, data, error, onDay, live, liveNote, lande
   const sessions = data?.sessions || EMPTY;
   const view = useMemo(() => (sessions.length ? layout(sessions) : null), [sessions]);
   const allSample = sessions.length > 0 && sessions.every((s) => s.source === "seed");
-  const hasDemo = sessions.some(s => s.source === "seed");
+  const hasSample = sessions.some((s) => s.source === "seed" || s.source === "mixed");
   const isToday = day === today;
   const recent = isToday || day === shiftDay(today, -1);
   return (
@@ -803,10 +807,10 @@ function Day({ sectionRef, day, today, data, error, onDay, live, liveNote, lande
       <div className="hx-head hx-day-head">
         <div>
           <h2 id="hx-day-title">{dayTitle(day, today)}</h2>
-          {(recent || (hasDemo && !stale) || (isToday && live === "open")) && (
+          {(recent || (hasSample && !stale) || (isToday && live === "open")) && (
             <p className="hx-sub">
               {recent && <span>{longDate(day)}</span>}
-              {hasDemo && !stale && <Tag>{allSample ? "Demo history" : "Includes demo history"}</Tag>}
+              {hasSample && !stale && <Tag>{allSample ? "Sample week" : "Includes sample data"}</Tag>}
               {isToday && live === "open" && (
                 <span className="hx-live" title="Updates arrive through an Atlas change stream">
                   Live

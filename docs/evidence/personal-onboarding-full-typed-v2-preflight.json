@@ -1,0 +1,57 @@
+{
+  "createdAt": "2026-09-26T19:04:45.574Z",
+  "mode": "Protection and reservation preflight. No decision or answer model calls.",
+  "packetSha256": "41a76e84f461a4041a7311a7a5a2bd1a66643588306763946b159e3489aa143c",
+  "model": "openai/gpt-4.1-mini",
+  "modelMetadataSource": "https://openrouter.ai/api/v1/models",
+  "contextLength": 1047576,
+  "modelMaxOutput": 32768,
+  "records": 145,
+  "roles": {
+    "user": 39,
+    "assistant": 106
+  },
+  "authoredTextChars": 56637,
+  "authoredTextCodePoints": 56627,
+  "characterMeasurement": "Chars and selector budgets use JavaScript UTF-16 code units. Code points are reported separately.",
+  "serializedUnitChars": 67208,
+  "maximumUnitChars": 2739,
+  "budgetChars": 16000,
+  "conversationHistory": {
+    "schemaVersion": 1,
+    "instructionsComplete": true
+  },
+  "protectedRecords": 41,
+  "protectedChars": 12583,
+  "protection": {
+    "historical_user_instruction": {
+      "records": 39,
+      "chars": 8109
+    },
+    "constraint_or_open_loop": {
+      "records": 1,
+      "chars": 1804
+    },
+    "recent": {
+      "records": 1,
+      "chars": 2670
+    }
+  },
+  "currentBriefChars": 3151,
+  "fullPromptUtf8Bytes": 78527,
+  "conservativeReservation": 80839,
+  "tokenBudget": 100000,
+  "maxOutputTokens": 1800,
+  "scoringCalls": 0,
+  "scoringTokens": 0,
+  "modelCalls": 0,
+  "note": "The byte-based reservation is a conservative admission bound, not measured model tokens. Fitting the protected floor does not guarantee scored context fits.",
+  "implementation": {
+    "server/context/compaction.js": "d0fc6f8319ba9737ae31eacf67c15aef22e339a39c9c3579d44009fe22d30e28",
+    "server/sleep/execution.js": "33a9c35c0c659f9f20af77fc0ffdaaeb855fc677c9fdc1fe8dcda1b3c42bb4b2",
+    "scripts/lib/replay-packet.mjs": "57acbb14e2a3c5d6a2996b0ef3da450481bd9b1404d8a7cb6d4a537906dd0f5b",
+    "scripts/preflight-real-context.mjs": "61f14a244d2a10f2d116516f8903b85d7fd63dc2734f28ce7873b576de72f5bf"
+  },
+  "admitted": true,
+  "boundaries": []
+}

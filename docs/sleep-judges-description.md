@@ -1,45 +1,28 @@
-# Judge-facing description: Sleep
+# Offload: project and measured evidence
 
-Problem Statement Two is Long Horizon Engineering: coherent memory over long sessions, continued progress toward goals,
-and learning from hard metric signals. Sleep combines bounded working memory, source recovery, verified execution and
-persisted improvement. Jev is actually integrated; it estimates retention probability for each record. The harness
-protects constraints, keeps complete tool exchanges, archives source records and owns the stopping rules.
+Offload combines recoverable context selection, MongoDB checkpoints, source-backed next actions and bounded local drafting. Sleep groups conversations, next actions, overnight tasks, REM and memory in one place.
 
-Current live repeated-context evidence: four synthetic snapshots, five answers per path, GPT-4o-mini on both paths.
-Both score 20/20. Full context uses 26,640 tokens; selected context including Jev uses 9,052, or 66.02% fewer (v9 policy).
-On a separate three-task, twelve-stage evolving suite, full context scores 11/12 and Offload 12/12, with 39,196 versus
-32,264 total tokens including Jev, 17.69% fewer (v9 policy; Jev decision cost is not billed separately, so tokens are
-compared). Earlier policies on that suite cost more, from 59.05% to 3.80% more; those adverse runs are retained. [Raw evidence and conditions](context-evolving-evidence.md).
+## Measured comparisons
 
-The checkpoint no longer contains the whole transcript. In a 300-step deterministic session with interruption and source
-recovery, the maximum working checkpoint is 18,852 bytes versus a reconstructed 1,245,224-byte full-history checkpoint.
-The 1,242,822-byte canonical source remains intact. This is byte evidence, not live token savings. Real local MongoDB
-testing exposed and fixed three stale-worker races. An actual SIGKILL after a fixture send and before ledger commit
-recovers in a different process with exactly one send and one provider receipt. This proves that fixture-provider
-restart case, not generic exactly-once behavior for real Gmail or Drive. [Storage evidence](sleep-transcript-storage.md).
+| Model | Paired runs | SDK tokens | Offload all-in tokens | Exact checks, SDK / Offload |
+| --- | ---: | ---: | ---: | --- |
+| GPT-6 Astra | 3 | 80,092 | 77,523 | 36/36 / 36/36 |
+| Claude Opus 5.5 | 3 | 198,171 | 172,491 | 36/36 / 34/36 |
 
-Sleep executes assigned local drafts with persisted budgets, deadlines, approvals and independent file checks. Three
-live GPT-4.1-mini tasks improved from 2/3 checked artifacts with 1,721 tokens and seven calls to 3/3 with 815 tokens and
-three calls. Provider cost for the second run was $0.000608. One approval pause resumed without regenerating its proposal.
-These short synthetic checks verify declared phrases, size and JSON syntax, not broad semantic correctness. An
-eight-attempt scripted task with no progress now pauses after three calls; explicit resume completes on call four.
-[Before/after execution evidence](sleep-task-execution.md).
+The homepage shows only two interactive graphs: tokens per verified answer and context characters kept per step. All selector and retrieval tokens count. Trials use the same model, task, tools and limits within each pair. The repeated trials use three synthetic development tasks, not independent unseen workloads or a general intelligence ranking.
 
-Opt-in native OpenRouter selection is tested with real local file tools and a scripted provider: one exact archived-key
-task passes on both paths, with 116,021 versus 49,891 cumulative prompt characters. It requires one extra model request
-and 15 scripted decision calls. Those are integration measurements, not live token savings. Images remain intact,
-malformed tool IDs cannot execute, and known usage survives cancellation. [Native evidence](native-context.md).
+Astra passes all 36 checks on both paths. Opus's two Offload misses are invalid JSON outputs containing extra prose despite the JSON-mode request. These losses, earlier selectors, the three prompted-JSON Opus trials and infrastructure failures remain available in the [complete methods report](../public/evidence/benchmark-report.html). No universal quality or cost advantage is claimed.
 
-Source-backed next actions can turn a repeated context-recovery habit into a supported task, four durable checkpoints,
-a checked artifact and a tested policy update. Explicitly selected history supplies provenance; import alone does not
-start execution. Five Atlas reads beside 10,000 unrelated rows improved from a 1,474 ms median to 436 ms while examining
-three source documents. [Personal workflow and limits](personal-suggestions.md).
+## Working demonstration
 
-The implementation is local and tested. It does not demonstrate billion-token sessions, weeks of autonomous operation,
-calibrated completion probabilities, or universal savings. Waiting more slowly is not itself a token optimization.
+Prepared MongoDB engineer activity is labeled example data. Three weekly query reviews reveal a repeated workflow; today's example meeting and notes populate Computer History. The local interface imports selected notes, derives a follow-up checklist, and hands a selected action to Sleep with a token budget, deadline and approval for the exact proposed files.
 
-A separate source-interpretation probe improves 2/3 to 3/3 exact answers on the original routing failure and two new
-shipping variants. Tokens increase 5,666 to 7,870, which is retained as an adverse result while the full combined
-optimization is measured. [Probe evidence](evidence/evidence-policy-probe.json).
+One recorded GPT-4o draft used 1,420 tokens and cost $0.0069775. It passed eight declared content checks and two file-delivery checks. Approval saved the same files with zero additional model calls. Source metrics of 180 ms p95 and 0.6% timeouts are supplied example values. Proposed 200 ms and 1% rollback thresholds are model suggestions requiring review. No database index changes, messages or external actions occurred. [Receipt and limits](mongodb-live-workflow-audit.md).
 
-Benchmark receipts now persist after each answer and decision pass. Three accounting checks cover restart/rescore charges, interrupted paid calls and unavailable prices. Missing usage makes savings unknown; failed answers make the benchmark exit unsuccessfully. These are accounting checks, not additional live performance results.
+## Boundaries
+
+The 300-step checkpoint test measured a 98.49% reduction in working-checkpoint bytes while preserving canonical source bytes. It did not measure live token savings. The idle counter prototype passed ten offline browser checks after one live model call, with an injected idle clock rather than an overnight-duration study.
+
+Personal-session experiments retain all failures: 43 paid calls, 258,093 tokens and $0.0435863 reported cost. Short histories below the selector threshold made zero Jev calls, so differences there cannot be attributed to compaction. The full-history onboarding selection exhausted its budget before producing an Offload answer. These results do not establish broad reasoning improvements.
+
+The hosted website is a static presentation. Agent execution and the isolated MongoDB demo run through the local service. No background computer capture has been enabled. There is no claim of billion-token sessions, weeks of autonomy or generic exactly-once external actions.

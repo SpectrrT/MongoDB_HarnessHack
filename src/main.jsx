@@ -7,6 +7,7 @@ import "./styles.css";
 import "./polish.css";
 import { ScreenTransition, OrbLoading } from "./components/ScreenTransition";
 const Workspace = lazy(() => import("./pages/Workspace"));
+const ExampleWorkflow = lazy(() => import("./pages/ExampleWorkflow"));
 class AppBoundary extends React.Component {
   state = { error: false };
   static getDerivedStateFromError() {
@@ -34,6 +35,7 @@ function AppScreens() {
       <Suspense fallback={<OrbLoading />}>
         <Routes location={location}>
           <Route path="/" element={<Landing />} />
+          <Route path="/example" element={<ExampleWorkflow />} />
           <Route path="/app/*" element={<Workspace />} />
           <Route
             path="*"

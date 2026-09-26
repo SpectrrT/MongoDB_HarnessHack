@@ -248,7 +248,7 @@ export function createApp({
   });
   sleepExecutionRoutes(app, { store: sleepTasks, root: sleepTaskRoot, enabled: sleepTaskWorkerEnabled });
   activityRoutes(app, { activity });
-  suggestionRoutes(app, { suggestions });
+  suggestionRoutes(app, { suggestions, sleepTasks, sleepTaskWorkerEnabled });
   async function access(req, fn) {
     const key = req.workspaceKey;
     const previous = queues.get(key) || Promise.resolve();
