@@ -51,6 +51,8 @@ test('late foreground completion cannot replace a newer intent and saved replies
   idle.close();restored=createIdleReviews(options);await restored.runNow('owner','conversation');
   assert.deepEqual(calls[0].messages.map(m=>m.text),['Finish this draft.','Only draft a plan.','Fresh findings']);
   assert.equal((await restored.get('owner','conversation')).skipped,true);
+  await restored.set('owner','conversation',false);assert.equal((await restored.get('owner','conversation')).skipped,true);
+  await restored.set('owner','conversation',true,DEFAULT_IDLE_LIMITS);assert.equal((await restored.get('owner','conversation')).skipped,false);
   await restored.observe('owner',{...payload,requestId:'new-draft'});assert.equal((await restored.get('owner','conversation')).skipped,false);
  }finally{idle.close();restored?.close();await fs.rm(dataDir,{recursive:true,force:true});}
 });

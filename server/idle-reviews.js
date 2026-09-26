@@ -49,7 +49,7 @@ export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now
       let row = rows.get(key(owner,id));
       if (!row) { row = { owner,id,enabled:false,state:'off',generation:0 }; rows.set(key(owner,id),row); }
       if (row.jobId && ['running','starting'].includes(row.state)) await cancel(owner,row.jobId);
-      row.generation++; row.skipped = false; row.enabled = enabled; row.nextAt = now() + IDLE_MS; row.state = enabled ? 'waiting' : 'off'; row.error = null;
+      row.generation++; if (enabled) row.skipped = false; row.enabled = enabled; row.nextAt = now() + IDLE_MS; row.state = enabled ? 'waiting' : 'off'; row.error = null;
       if (enabled) row.consent = { ...consent, grantedAt: now() };
       await save(row); return view(row);
     },
