@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "label": "Live Sleep draft from prepared example context",
+  "sourceType": "synthetic-example",
+  "sourceHashes": {
+    "issue": "a94fb20d994ce55a5100c7689ef7f0ef7bbb9d23f9f3f04040a4e4a22142ebb8",
+    "pipeline": "ef5be26dc281fa3b4685d123bb3eaafa95c0a71e0ba90d4ab7595e4679c3dca7"
+  },
+  "generatedAt": "2026-09-26T20:11:27.084Z",
+  "model": "openai/gpt-4.1-mini",
+  "provider": "openrouter",
+  "modelCalls": 1,
+  "usage": {
+    "inputTokens": 1106,
+    "outputTokens": 1847,
+    "totalTokens": 2953,
+    "reportedCostUsd": 0.0033976,
+    "unknownReservations": 0
+  },
+  "trigger": "Explicit opted-in Run Sleep now HTTP endpoint",
+  "status": "Local draft saved; structural file checks passed",
+  "artifacts": [
+    {
+      "name": "solution.md",
+      "url": "/evidence/idle-query-live-solution.md",
+      "bytes": 3762,
+      "sha256": "e558fbbca599e8f43fd5b700d8d4d1088fd1d567253cc90f01634d7ee99ea194"
+    },
+    {
+      "name": "evidence.md",
+      "url": "/evidence/idle-query-live-evidence.md",
+      "bytes": 2737,
+      "sha256": "07f69cbe55f8d982715d3bf866281e97f268462de91e251554a55918136eee27"
+    }
+  ],
+  "limits": [
+    "The supplied issue and query workload are prepared synthetic examples.",
+    "The model proposed an index and rollout/rollback checklist. It did not execute database queries or create/drop indexes.",
+    "Performance and semantic correctness remain unverified. Structural file checks are not query benchmarks.",
+    "Commands in the saved document are proposed future steps, not executed actions."
+  ]
+}

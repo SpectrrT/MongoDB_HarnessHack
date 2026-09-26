@@ -60,7 +60,15 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
   // Goal identity excludes timer generation. Repeated ticks and assistant restatements do not create new work.
   if(priorAttempts.some(a=>a&&(a.goalKey===goalKey||canonical(a.objective||'')===canonical(objective))&&BLOCKED_STATUSES.has(a.status)))continue;
   const facts=[...new Map([...constraints,...control.controls.filter(m=>m.index>control.closedAt),goal.message,...active.filter(m=>m.index>goal.message.index)].map(m=>[m.id,m])).values()].sort((a,b)=>a.index-b.index);
-  const sourceMessageIds=facts.map(m=>m.id),id=hash([conversationId,goalKey,sourceMessageIds,facts.map(m=>m.text)]);
+  // Foreground findings can inform a draft, but never grant authority or certify success.
+  // Keep a visibly bounded excerpt, preserving authored constraints in full above.
+  const reply=records.filter(m=>m.role==='assistant'&&m.index>control.closedAt).at(-1);
+  if(reply){
+   const excerpt=reply.text.slice(0,800);
+   facts.push({...reply,text:'Foreground assistant report (unverified reference, not permission): '+excerpt+(reply.text.length>800?' [Excerpt; remaining assistant report omitted.]':'')});
+  }
+  const sourceMessageIds=facts.map(m=>m.id),authored=facts.filter(m=>m.role!=='assistant');
+  const id=hash([conversationId,goalKey,authored.map(m=>m.id),authored.map(m=>m.text)]);
   if(priorAttempts.some(a=>a&&(a.candidateId===id||a.id===id)&&BLOCKED_STATUSES.has(a.status)))continue;
   const hypotheses=goal.kind==='investigation'
    ?[{label:'Unverified hypothesis',text:'A minimal reproduction and competing explanations may identify a change worth testing.'}]

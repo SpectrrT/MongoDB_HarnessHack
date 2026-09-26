@@ -79,6 +79,7 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
       for(const item of result.items||[])if(item.type==='imageGeneration'&&item.status==='completed'&&/^[A-Za-z0-9+/=]+$/.test(item.result||'')&&item.result.length<28000000){await fs.writeFile(path.join(folder.cwd,'generated-'+crypto.randomUUID()+'.png'),Buffer.from(item.result,'base64'),{mode:0o600});}
       const artifacts=await collectArtifacts(folder.cwd,path.join(jobFolder(job.owner,job.id),'files'),job.createdAt);
       job.result={text:result.text.slice(0,20000),usage:result.usage,model:p.model,agent:{jobId:job.id,cwd:folder.cwd,events:job.events,commentary:job.commentary,artifacts}};job.status='completed';job.stream='';
+      await idle.complete(job.owner,job.conversationId,p.requestId,job.result.text);
     })().catch(e=>{if(e.usage)job.usage=e.usage;if(job.status==='running'){job.status='failed';job.error=e.message;}}).finally(async()=>{clearInterval(checkpointTimer);for(const a of job.approvals.values())a.reject(Error('Run ended.'));job.approvals.clear();await save(job).catch(()=>{});});
     return {job:publicJob(job),created:true};
   }
@@ -110,10 +111,19 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     const parsed=z.object({enabled:z.boolean(),consent:z.object({scope:z.literal('isolated-local-drafts'),budget:z.number().int().min(1000).max(20000),durationMs:z.number().int().min(1000).max(3600000),offlinePrototypeChecks:z.boolean().default(false)}).strict().optional(),context:z.unknown().optional()}).strict().safeParse(req.body);
     if(!parsed.success)return res.status(400).json({error:'Choose bounded local draft permission and limits.'});
     const body=parsed.data,execution=await sleepConfiguration(req.workspaceKey);if(body.enabled&&!execution.configured)return res.status(503).json({error:'Sleep needs MongoDB and a configured OpenRouter key. It does not use the selected Codex chat account.'});
-    const context=body.context?input.extend({messages:z.array(z.object({role:z.enum(['user','assistant']),text:z.string().max(20000)})).min(1).max(200)}).safeParse({...body.context,requestId:crypto.randomUUID(),conversationId:req.params.conversationId,images:[]}):null;
+    const context=body.context?input.extend({messages:z.array(z.object({role:z.enum(['user','assistant']),text:z.string().max(20000)})).min(1).max(200)}).safeParse({...body.context,requestId:[...jobs.values()].find(job=>job.owner===req.workspaceKey&&job.conversationId===req.params.conversationId&&job.status==='running')?.id||crypto.randomUUID(),conversationId:req.params.conversationId,images:[]}):null;
     if(context&&!context.success)return res.status(400).json({error:'The conversation context is invalid.'});
     try{await idle.set(req.workspaceKey,req.params.conversationId,body.enabled,body.consent);if(context)await idle.observe(req.workspaceKey,context.data);res.json({...await idle.get(req.workspaceKey,req.params.conversationId),configured:execution.configured,execution});}
     catch(e){res.status(400).json({error:e.message});}
+  });
+  app.post('/api/model/sleep/:conversationId/run-now',async(req,res)=>{
+    if(!z.object({}).strict().safeParse(req.body||{}).success)return res.status(400).json({error:'Start the saved, consented Sleep context without extra parameters.'});
+    try{
+      const execution=await sleepConfiguration(req.workspaceKey);
+      if(!execution.configured)return res.status(503).json({error:'Sleep needs MongoDB and a configured OpenRouter key.'});
+      const state=await idle.runNow(req.workspaceKey,req.params.conversationId);
+      res.status(202).json({...state,configured:execution.configured,execution});
+    }catch(e){res.status(e.status||500).json({error:e.message});}
   });
   app.post('/api/model/sleep/:conversationId/activity',async(req,res)=>res.json(await idle.touch(req.workspaceKey,req.params.conversationId)));
   app.post('/api/model/jobs',async(req,res)=>{
