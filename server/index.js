@@ -1,4 +1,4 @@
-import "./env.js";
+import {loadLocalEnv} from "./env.js";
 import {createAtlasStore} from "./atlas.js";
 import { THEME_IDS } from "../shared/themes.js";
 import { mountModel } from "./model.js";
@@ -111,8 +111,9 @@ const payloads = {
   "session-start": z.object({
     id: id.optional(),
     name: z.string().max(120).optional(),
-    mode: z.enum(["notes", "audio", "screen"]).optional(),
+    mode: z.enum(["notes", "audio", "screen", "both"]).optional(),
     consented: z.boolean().optional(),
+    captureOwner: z.string().max(100).optional(),
   }),
   "session-note": z.object({ id, text }),
   "session-end": z.object({ id }),
@@ -312,6 +313,7 @@ export function createApp({
   return app;
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  loadLocalEnv();
   const port = Number(process.env.PORT || 5194);
   const connection = process.env.MONGODB_URI ? await connectStore() : null;
   const sleep = connection && process.env.VOYAGE_API_KEY

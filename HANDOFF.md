@@ -1,3 +1,13 @@
+# Session update — new repository history
+
+Repository: `SpectrrT/MongoDB_HarnessHack`. Branch: `floyd/session-capture`, based on its `main` at `1a94250`. The previous agent/UI changes were reapplied as a new commit, without merging the old repository ancestry. `rem/`, `server/harness/`, and `server/sleep/` are preserved.
+
+Screen, Microphone, and Both now record until Stop, browser Stop sharing, or closing the app tab. Closing only the panel keeps recording active. Chunks persist in IndexedDB for download. An image-capable model can receive the current screen with a message; microphone transcription remains separate work.
+
+The server loads `.env` only at executable startup, so imported API tests never pick up the venue Atlas credentials.
+
+---
+
 # Current checkpoint — September 26
 
 This section supersedes the historical notes below.

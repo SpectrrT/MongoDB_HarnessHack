@@ -69,3 +69,5 @@ html[data-offload-workspace] :is(body,#root,.app-screen) {min-height:100dvh;back
 .workspace[data-palette] .icon-button:is(:hover,.selected) {background:var(--off-inset);color:var(--off-ink);}
 .workspace[data-palette] .suggestion-source {color:var(--off-muted);}
 @media(prefers-reduced-motion:reduce){.workspace .suggestion{transition:none;}}
+
+.beautiful-sidebar [data-workspace-trigger] {padding-left:14px;}

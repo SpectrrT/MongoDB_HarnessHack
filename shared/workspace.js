@@ -425,6 +425,7 @@ export function transition(current, action, now = Date.now()) {
         startedAt: now,
         notes: [],
         consented: !!p.consented,
+        captureOwner: p.captureOwner,
       });
       record(s, "Started a work session", now);
       break;

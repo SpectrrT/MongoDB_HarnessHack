@@ -1,6 +1,6 @@
 # Offload product handoff — September 26
 
-Target repository: `SpectrrT/MongoDB_HarnessEngineering`. Branch: `MyName`. Base: `295734c` on `main`. This branch preserves that UI update and adds screen transitions. It does not implement or configure the live backend.
+Current repository: `SpectrrT/MongoDB_HarnessHack`. Branch: `floyd/session-capture`, based on new-repo main `1a94250`. Teammate REM, harness, and Sleep code is preserved. See HANDOFF.md for current status; the historical integration plan below predates these changes.
 
 ## Completed in this branch
 
