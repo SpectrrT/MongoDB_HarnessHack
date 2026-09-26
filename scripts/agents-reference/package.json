@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@openai/agents": "0.18.0",
+    "openai": "7.23.0",
+    "zod": "4.2.1"
+  },
+  "name": "offload-agents-reference-benchmark",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test protocol.test.mjs",
+    "dry": "node run.mjs --output protocol-dry.json"
+  }
+}
