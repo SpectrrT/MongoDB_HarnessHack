@@ -7,7 +7,8 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import crypto from "node:crypto";
 import {sessionFolder} from "./agent-session.js";
-import {collectArtifacts} from "./agent-artifacts.js";
+import {collectArtifacts,resolveGeneratedArtifact} from "./agent-artifacts.js";
+import {createAssistantTextState} from './assistant-text.js';
 import { z } from 'zod';
 import { codexStatus, runCodex, clearCodexCache } from './codex.js';
 import { modelPrompt } from '../shared/retrieval.js';
@@ -51,13 +52,13 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     if(busy(owner,conversationId))throw Object.assign(Error('This conversation already has a running task.'),{status:409});
     if(full())throw Object.assign(Error('Eight conversations are running. Wait for one to finish or stop it.'),{status:409});
     if(jobs.size>=100){for(const [k,j] of jobs){if(j.status!=='running'){jobs.delete(k);break;}}}
-    const job={id:p.requestId,owner:owner,conversationId,status:'running',background:!!p.background,createdAt:Date.now(),controller:new AbortController(),events:[],decisions:[],approvals:new Map(),stream:''};jobs.set(key,job);
+    const job={id:p.requestId,owner:owner,conversationId,status:'running',background:!!p.background,createdAt:Date.now(),controller:new AbortController(),events:[],decisions:[],approvals:new Map(),stream:'',commentary:[]};jobs.set(key,job);
+    const assistantText=createAssistantTextState();
     await save(job);
     const onEvent=event=>{
       if(job.status!=='running')return;
       if(event.type==='approvalResolved'){for(const a of job.approvals.values())if(a.rpcId===event.rpcId){job.approvals.delete(a.id);a.reject(Error('Request resolved'));}return;}
-      if(event.type==='delta'){job.stream=(job.stream+event.text).slice(-40000);return;}
-      if(event.type==='message'){job.stream=event.text.slice(-40000);return;}
+      if(assistantText.accept(event)){Object.assign(job,assistantText.snapshot());return;}
       const old=job.events.find(e=>e.id===event.id);
       if(event.type==='output'){if(old)old.output=((old.output||'')+event.text).slice(-16000);return;}
       if(old)Object.assign(old,event);else job.events.push(event);if(job.events.length>80)job.events.shift();
@@ -77,7 +78,7 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
       if(job.status!=='running')return;
       for(const item of result.items||[])if(item.type==='imageGeneration'&&item.status==='completed'&&/^[A-Za-z0-9+/=]+$/.test(item.result||'')&&item.result.length<28000000){await fs.writeFile(path.join(folder.cwd,'generated-'+crypto.randomUUID()+'.png'),Buffer.from(item.result,'base64'),{mode:0o600});}
       const artifacts=await collectArtifacts(folder.cwd,path.join(jobFolder(job.owner,job.id),'files'),job.createdAt);
-      job.result={text:result.text.slice(0,20000),usage:result.usage,model:p.model,agent:{jobId:job.id,cwd:folder.cwd,events:job.events,artifacts}};job.status='completed';job.stream='';
+      job.result={text:result.text.slice(0,20000),usage:result.usage,model:p.model,agent:{jobId:job.id,cwd:folder.cwd,events:job.events,commentary:job.commentary,artifacts}};job.status='completed';job.stream='';
     })().catch(e=>{if(e.usage)job.usage=e.usage;if(job.status==='running'){job.status='failed';job.error=e.message;}}).finally(async()=>{clearInterval(checkpointTimer);for(const a of job.approvals.values())a.reject(Error('Run ended.'));job.approvals.clear();await save(job).catch(()=>{});});
     return {job:publicJob(job),created:true};
   }
@@ -141,6 +142,16 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     res.set('Content-Disposition',`attachment; filename="${path.basename(artifact.name).replace(/[^a-zA-Z0-9._-]/g,'_')}"`);res.type('application/octet-stream');
     res.sendFile(path.resolve(jobFolder(req.workspaceKey,job.id),'files',artifact.id),{dotfiles:'allow'});
   });
+  app.get('/api/model/jobs/:id/download',async(req,res)=>{
+    const job=await getJob(req.workspaceKey,req.params.id),relativePath=req.query.path;
+    if(job?.status!=='completed'||!job.cwd||typeof relativePath!=='string'||relativePath.length>1000)return res.status(404).json({error:'File not found.'});
+    let artifact;try{artifact=await resolveGeneratedArtifact(job.cwd,relativePath,job.createdAt);}catch{}
+    if(!artifact)return res.status(404).json({error:'File not found.'});
+    res.set({'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+    res.attachment(path.basename(artifact.name));
+    res.type(artifact.name.toLowerCase().endsWith('.pdf')?'application/pdf':'application/octet-stream');
+    res.send(artifact.data);
+  });
   return {idle};
 }
-function publicJob(job){const {id,status,createdAt,result,error,events,stream,cwd,decisions,usage}=job;return {id,status,createdAt,result,error,events,stream,cwd,decisions,usage,approvals:job.approvals instanceof Map?[...job.approvals.values()].map(({id,method,params})=>({id,method,params})):[]};}
+function publicJob(job){const {id,status,createdAt,result,error,events,stream,cwd,decisions,usage}=job;return {id,status,createdAt,result,error,events,stream,commentary:job.commentary||[],cwd,decisions,usage,approvals:job.approvals instanceof Map?[...job.approvals.values()].map(({id,method,params})=>({id,method,params})):[]};}

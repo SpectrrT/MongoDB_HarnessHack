@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play, Search, X } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play, Search, X, Code2, Terminal, Globe, Monitor, Lock, Coffee } from "lucide-react";
+import { ConnectionLogo } from "../components/ConnectionLogo";
 import { Modal } from "../components/Modal";
 import "../history.css";
 
@@ -89,8 +90,17 @@ const KNOWN = {
   "figma.com": "Figma",
   "zoom.us": "Zoom",
   Code: "VS Code",
+  "cloud.mongodb.com": "MongoDB Atlas",
+  "mongodb.com": "MongoDB Docs",
+  "www.mongodb.com": "MongoDB Docs",
 };
 const nameOf = (label) => KNOWN[label] || label || "Unknown";
+function AppIcon({ name, size = 18 }) {
+  const label = nameOf(name);
+  const service = ({ GitHub: 'github', 'MongoDB Atlas': 'mongodb', 'MongoDB Docs': 'mongodb', Gmail: 'gmail', 'Google Docs': 'drive', 'Google Drive': 'drive', 'Google Calendar': 'calendar', Slack: 'slack', Notion: 'notion', Figma: 'figma', Linear: 'linear' })[label];
+  const Icon = label === 'VS Code' ? Code2 : /Terminal|iTerm/.test(label) ? Terminal : label === 'Private' ? Lock : label === 'Away' ? Coffee : /Chrome|Safari|Firefox|\.com$/.test(label) ? Globe : Monitor;
+  return <span className="hx-app-icon" aria-hidden="true">{service ? <ConnectionLogo id={service} size={size} /> : <Icon size={size} strokeWidth={1.6} />}</span>;
+}
 const sessionName = (s) => (s.idle ? "Away" : s.private ? "Private" : nameOf(s.label || s.app));
 const sessionDetail = (s) => (s.idle || s.private ? "" : s.title || "");
 const chainText = (steps, joiner = " → ") => (steps || []).map(nameOf).join(joiner);
@@ -186,7 +196,7 @@ function scrollToTop(el) {
   scrollTo({ top: el.getBoundingClientRect().top + scrollY - 16, behavior });
 }
 
-const Tag = ({ children = "Sample week" }) => <span className="hx-tag">{children}</span>;
+const Tag = ({ children = "Demo history" }) => <span className="hx-tag">{children}</span>;
 const STATE_LABEL = {
   checking: "Checking…",
   off: "Not connected",
@@ -593,7 +603,7 @@ function SearchPanel({ status, onShow, refreshKey }) {
         <input
           type="search"
           aria-label="Search your computer history"
-          placeholder="When did I last work on the weekly brief?"
+          placeholder="When did I investigate the slow aggregation?"
           value={query}
           maxLength={200}
           onChange={(e) => {
@@ -645,7 +655,7 @@ function SearchPanel({ status, onShow, refreshKey }) {
                     <span className="hx-result-main">
                       <strong>{title || name}</strong>
                       <span className="hx-meta">
-                        {title && <span>{name}</span>}
+                        {title && <span className="hx-app-label"><AppIcon name={name} size={16} />{name}</span>}
                         <span>
                           {repeat ? "Last " : ""}
                           {shortDate(r.start)}, {span(r.start, r.end)}
@@ -704,7 +714,7 @@ function Routines({ routines, error, note, busyId, onDecide, headingRef }) {
           <h3>Nothing repeats yet.</h3>
           <p>
             When the same apps and sites show up in the same order on several days, Offload asks here whether to
-            hand them off. To try it now, load a sample week with <code>npm run activity:seed</code>.
+            hand them off. To try it now, load demo history with <code>npm run activity:seed -- --engineering</code>.
           </p>
         </div>
       )}
@@ -729,7 +739,7 @@ function Routine({ routine: r, busy, onDecide }) {
           <li key={i}>
             {i > 0 && <ArrowRight size={16} aria-hidden="true" className="hx-chain-arrow" />}
             <span className="hx-step">
-              <strong title={step}>{nameOf(step)}</strong>
+              <strong className="hx-app-label" title={step}><AppIcon name={step} />{nameOf(step)}</strong>
               {r.titles?.[i] && <small title={r.titles[i]}>{r.titles[i]}</small>}
             </span>
           </li>
@@ -738,7 +748,7 @@ function Routine({ routine: r, busy, onDecide }) {
       <p className="hx-when">
         <span>{describeRoutine(r)}</span>
         {r.source === "seed" && <Tag />}
-        {r.source === "mixed" && <Tag>Includes sample week</Tag>}
+        {r.source === "mixed" && <Tag>Includes demo history</Tag>}
       </p>
       {approved ? (
         <div className="hx-handoff" role="status">
@@ -785,6 +795,7 @@ function Day({ sectionRef, day, today, data, error, onDay, live, liveNote, lande
   const sessions = data?.sessions || EMPTY;
   const view = useMemo(() => (sessions.length ? layout(sessions) : null), [sessions]);
   const allSample = sessions.length > 0 && sessions.every((s) => s.source === "seed");
+  const hasDemo = sessions.some(s => s.source === "seed");
   const isToday = day === today;
   const recent = isToday || day === shiftDay(today, -1);
   return (
@@ -792,10 +803,10 @@ function Day({ sectionRef, day, today, data, error, onDay, live, liveNote, lande
       <div className="hx-head hx-day-head">
         <div>
           <h2 id="hx-day-title">{dayTitle(day, today)}</h2>
-          {(recent || (allSample && !stale) || (isToday && live === "open")) && (
+          {(recent || (hasDemo && !stale) || (isToday && live === "open")) && (
             <p className="hx-sub">
               {recent && <span>{longDate(day)}</span>}
-              {allSample && !stale && <Tag />}
+              {hasDemo && !stale && <Tag>{allSample ? "Demo history" : "Includes demo history"}</Tag>}
               {isToday && live === "open" && (
                 <span className="hx-live" title="Updates arrive through an Atlas change stream">
                   Live
@@ -950,7 +961,7 @@ function Timeline({ view, isToday, now, focus }) {
         detail,
         span(active.s.start, active.s.end),
         duration(active.s.durationSec),
-        active.s.source === "seed" ? "sample week" : "",
+        active.s.source === "seed" ? "demo history" : "",
       ]
         .filter(Boolean)
         .join(", ")
@@ -990,7 +1001,7 @@ function Timeline({ view, isToday, now, focus }) {
         )}
         {active && (
           <div className="hx-tip" ref={tip} aria-hidden="true">
-            <strong>{sessionName(active.s)}</strong>
+            <strong className="hx-app-label"><AppIcon name={sessionName(active.s)} />{sessionName(active.s)}</strong>
             {detail && <span>{detail}</span>}
             <span>
               {span(active.s.start, active.s.end)} · {duration(active.s.durationSec)}
@@ -1078,7 +1089,7 @@ function Apps({ byApp, sessions }) {
         {rows.slice(0, 6).map((r) => (
           <li key={r.name}>
             <span className="hx-app-name" title={r.name}>
-              {r.name}
+              <AppIcon name={r.name} />{r.name}
             </span>
             <span className="hx-bar" aria-hidden="true">
               <i style={{ width: `${Math.max(0, (r.seconds / max) * 100)}%` }} />
@@ -1104,7 +1115,7 @@ function SessionList({ items, hideSampleTags }) {
               <span className={`hx-swatch hx-${cat}`} aria-hidden="true" />
               <span className="hx-list-time">{span(s.start, s.end)}</span>
               <span className="hx-list-name">
-                <strong>{sessionName(s)}</strong>
+                <strong className="hx-app-label"><AppIcon name={sessionName(s)} />{sessionName(s)}</strong>
                 {detail && <span>{detail}</span>}
                 {s.source === "seed" && !hideSampleTags && <Tag />}
               </span>

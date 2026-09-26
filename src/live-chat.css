@@ -94,6 +94,7 @@
 .agent-artifact img {max-width:100%;max-height:420px;object-fit:contain;border-radius:6px;}
 .agent-artifact a {font-size:12px;text-decoration:underline;overflow-wrap:anywhere;}
 .agent-artifact small {font-size:10px;color:var(--off-muted);}
+.agent-artifact .artifact-retry {width:fit-content;text-align:left;font-size:11px;color:var(--off-ink);text-decoration:underline;text-underline-offset:3px;}
 .attachment-list img,.message-files img {width:48px;height:48px;object-fit:cover;border-radius:5px;}
 
 .tool-live-dot{display:inline-block;flex-shrink:0;width:5px;height:5px;margin-right:6px;border-radius:50%;background:currentColor;animation:tool-breathe 1.2s ease-in-out infinite;}
@@ -149,3 +150,7 @@
 .live-chat .connect-model-notice .text-button { display:inline-flex; align-items:center; gap:4px; }
 .live-chat .connect-model-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .live-chat .connect-model-actions .button { display:inline-flex; align-items:center; gap:6px; }
+
+.suggested-task-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-top:auto;padding-top:2px;font-size:10px;color:var(--off-muted);}.suggested-task-tools>span{display:inline-flex;align-items:center;gap:5px;}.suggested-task-tools .suggested-demo-label{margin-left:auto;font-size:9px;color:var(--off-muted);border:1px solid var(--off-line);padding:2px 6px;border-radius:5px;}
+.engineering-brief{margin:0 0 24px;padding:16px;border:1px solid var(--off-line);border-radius:12px;}.engineering-brief>summary{display:flex;align-items:center;gap:9px;cursor:pointer;list-style:none;font-size:12px;color:var(--off-muted);}.engineering-brief>summary::-webkit-details-marker{display:none;}.engineering-brief>summary>span{flex:1;}.engineering-brief>summary>small{font-size:10px;}.engineering-brief>summary>svg:last-child{transition:transform .15s;}.engineering-brief[open]>summary>svg:last-child{transform:rotate(180deg);}.engineering-brief-content{padding-top:14px;}.engineering-brief-content>p{font-size:12px;line-height:1.7;color:var(--off-muted);margin-bottom:14px;}.engineering-brief .engineering-context-cards{max-width:none;}.engineering-brief .engineering-context-cards>div:first-child{display:none;}
+.live-chat .agent-commentary{margin:12px 0 20px;color:var(--off-muted);}.live-chat .agent-commentary>summary{cursor:pointer;font-size:11px;margin-bottom:8px;}.live-chat .agent-commentary .response-markdown{font-size:12px;line-height:1.55;color:var(--off-muted);margin-bottom:10px;}.live-chat .agent-commentary .response-markdown :is(h1,h2,h3){font-size:12px;color:inherit;}.live-chat .agent-stream{margin:10px 0;}

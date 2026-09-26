@@ -2,10 +2,12 @@
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+import {prepareQueryDemo} from './prepare-query-demo.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const mode=process.argv[2]||'dev';
 if(!['dev','web','start'].includes(mode))throw Error('Choose dev, web, or start.');
+await prepareQueryDemo().catch(error=>console.warn('Query demo setup unavailable: '+error.message));
 const children=[];
 let stopping=false,exitCode=0;
 function stop(code=0){
