@@ -8,7 +8,7 @@ import { searchCollection } from "./search.js";
 import { annotate, genomeSummary, traceable } from "./trace.js";
 import { randomUUID } from "node:crypto";
 import { ContextBudgetError } from "../server/context/compaction.js";
-import { completionRecord } from "./completion-record.js";
+import { completionRecord, knownTokenSubtotal } from "./completion-record.js";
 import { createTranscriptStore, RunOwnershipError } from "./transcript.js";
 import { EVIDENCE_POLICY } from "../server/context/evidence-policy.js";
 import { sha256 } from "./util.js";
@@ -17,6 +17,7 @@ import { readEpisodePage, listEpisodeArchive } from "./episode-archive.js";
 export const TOOL_LATENCY_MS = 250;
 // A failed completion check gets a bounded repair attempt, then stops explicitly incomplete.
 export const COMPLETION_RETRIES = 1;
+const COST_SOURCE = "Model token estimates from rem/models.js plus reported compaction and completion charges";
 // A worker drives a run under a lease (real time). Another worker may take a running run over only
 // after the lease lapses; a paused run can be resumed by any worker. Found on the shared Atlas
 // database: two server processes each saw the reconnect event and both drove the same run.
@@ -183,10 +184,36 @@ export function createAgent({
     return {
       "usage.inputTokens": usage.inputTokens,
       "usage.outputTokens": usage.outputTokens,
+      "usage.totalTokens": knownTokenSubtotal(usage),
       "usage.cost": cost,
       "usage.calls": 1,
       [`usage.byTier.${tier}`]: cost,
       latencyMs: latency,
+    };
+  }
+
+  // Store each gate receipt in the same owned checkpoint write as its answer. Repair and
+  // terminal paths both use this update, so a rejected first attempt is neither lost nor replayed.
+  function completionAccounting(cp, spent, gate) {
+    const inc = {...spent};
+    const add = (key, value) => { inc[key] = (inc[key] || 0) + (value ?? 0); };
+    for (const key of ['inputTokens', 'outputTokens', 'unattributedTokens', 'cost']) {
+      add(`usage.${key}`, gate[key]);
+      add(`usage.completion.${key}`, gate[key]);
+    }
+    add('usage.totalTokens', knownTokenSubtotal(gate));
+    add('usage.completion.tokens', knownTokenSubtotal(gate));
+    add('usage.completion.calls', 1);
+    add('usage.completion.unknownUsageCalls', gate.usageKnown ? 0 : 1);
+    add('usage.completion.unknownCostCalls', gate.costKnown ? 0 : 1);
+    const prior = cp.usage?.completion;
+    return {
+      $inc: inc,
+      $set: {
+        'usage.completion.usageKnown': prior?.usageKnown !== false && gate.usageKnown,
+        'usage.completion.costKnown': prior?.costKnown !== false && gate.costKnown,
+      },
+      $push: {'usage.completion.receipts': gate},
     };
   }
 
@@ -278,6 +305,7 @@ export function createAgent({
       await ownedUpdate(cp, {
         $set: {compaction: metrics, leaseUntil: lease()},
         $inc: {"usage.inputTokens": metrics.inputTokens, "usage.outputTokens": metrics.outputTokens,
+          "usage.totalTokens": knownTokenSubtotal(metrics),
           "usage.cost": metrics.reportedCost, "usage.compactionCalls": metrics.decisionCalls,
           "usage.compactionInputTokens": metrics.inputTokens, "usage.compactionOutputTokens": metrics.outputTokens},
       });
@@ -491,8 +519,10 @@ export function createAgent({
   }
 
   async function finish(cp, status, final, spent, gate = null) {
+    const accounting = gate ? completionAccounting(cp, spent, gate) : {$inc: spent};
     await ownedUpdate(cp,
-      { $set: { status, final, finishedAt: now(), updatedAt: now(), ...(gate ? { completion: gate } : {}) }, $inc: { turns: 1, ...spent } },
+      { ...accounting, $set: { ...accounting.$set, status, final, finishedAt: now(), updatedAt: now(), ...(gate ? { completion: gate } : {}) },
+        $inc: { turns: 1, ...accounting.$inc } },
     );
     const done = await checkpoints.findOne({ runId: cp.runId });
     await log(done, [{ kind: "final", summary: `${cp.title || cp.kind}: ${String(final).split("\n")[0]}`, importance: 0.3 }]);
@@ -533,6 +563,14 @@ export function createAgent({
     await transcripts.ready();
     let cp = await transcripts.migrate(await checkpoints.findOne({ runId }));
     await renewOwnership(cp);
+    if (!Number.isFinite(cp.usage?.totalTokens)) {
+      // Older checkpoints already include model and compaction splits. Carry them into the
+      // known subtotal before adding new receipts, without guessing missing historical usage.
+      await ownedUpdate(cp, {$set: {'usage.totalTokens': knownTokenSubtotal(cp.usage),
+        'usage.unattributedTokens': cp.usage?.unattributedTokens ?? 0,
+        'usage.costSource': COST_SOURCE, 'usage.allInCost': null}});
+      cp = await checkpoints.findOne({runId});
+    }
     const h = await harness();
     // Parent run: this day run (task id, harness version, genome summary), tagged for filtering.
     annotate({
@@ -555,13 +593,20 @@ export function createAgent({
         // Exhausting the repair allowance ends incomplete, never successfully.
         const final = reply.final ?? "";
         const found = evidence ? await evidence(cp, final) : null;
-        const verdict = await completion.check({ cp, final, genome: h.genome, evidence: found });
+        let verdict;
+        try { verdict = await completion.check({ cp, final, genome: h.genome, evidence: found }); }
+        catch (error) {
+          verdict = {...error?.receipt, p: null, available: false, source: 'completion unavailable',
+            reasons: ['Configured completion evaluator is unavailable. Completion is unverified.']};
+        }
         const threshold = completionThresholdOf(h.genome);
         const attempts = (cp.completion?.attempts || 0) + 1;
         const gate = completionRecord({ verdict, evidence: found, threshold, attempts, at: now() });
         onEvent({ type: "completion", runId, ...gate });
         if (!gate.passed && attempts <= COMPLETION_RETRIES && cp.turns + 1 < h.genome.contextPolicy.stepBudget) {
-          await ownedUpdate(cp, { $set: { completion: gate, updatedAt: now() }, $inc: { turns: 1, ...spent } });
+          const accounting = completionAccounting(cp, spent, gate);
+          await ownedUpdate(cp, { ...accounting, $set: { ...accounting.$set, completion: gate, updatedAt: now() },
+            $inc: { turns: 1, ...accounting.$inc } });
           cp = await checkpoints.findOne({ runId });
           continue;
         }
@@ -684,7 +729,8 @@ export function createAgent({
         versions: [h.version],
         driver: workerId,
         leaseUntil: lease(),
-        usage: { inputTokens: 0, outputTokens: 0, cost: 0, calls: 0, byTier: {} },
+        usage: { inputTokens: 0, outputTokens: 0, unattributedTokens: 0, totalTokens: 0,
+          cost: 0, costSource: COST_SOURCE, allInCost: null, calls: 0, byTier: {} },
         latencyMs: 0,
         interventions: 0,
         ownerAsks: 0,
