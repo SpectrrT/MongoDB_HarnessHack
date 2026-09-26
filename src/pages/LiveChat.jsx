@@ -4,7 +4,7 @@ import SuggestedTasks from '../components/SuggestedTasks';
 import {currentScreenImage} from '../session-capture';
 import { useState,useEffect,useRef } from 'react';
 import { useNavigate,useLocation } from 'react-router-dom';
-import { Plus,Square,FileText,X,BookmarkPlus,Check,Moon } from 'lucide-react';
+import { Square,FileText,X,BookmarkPlus,Check,Moon } from 'lucide-react';
 import PromptBar from '../vendor/beautiful/PromptBar';
 import StreamingText from '../vendor/beautiful/StreamingText';
 import LoadingState from '../vendor/beautiful/LoadingState';
@@ -14,6 +14,7 @@ import { retrieveNotes } from '../../shared/retrieval';
 import { modelRequest } from '../model-api';
 import ModelConnection,{useModelStatus} from '../components/ModelConnection';
 import OpenRouterConnection,{useOpenRouterStatus} from '../components/OpenRouterConnection';
+import ConnectModelNotice from '../components/ConnectModelNotice';
 import '../live-chat.css';
 import {AgentActivity,AgentApproval,AgentArtifacts} from '../components/AgentActivity';
 import ReasoningControl,{effortLabel} from '../components/ReasoningControl';
@@ -119,9 +120,9 @@ export default function LiveChat({id,onRevealSidebar}) {
     </div>}
     {jobConnections[pending?.id]&&<p className="chat-reconnecting" role="status">{jobConnections[pending.id]}</p>}
     {(error||c?.error)&&<div className="chat-error" role="alert"><p>{error||c.error}</p>{c?.error&&!pending&&<button className="button secondary small" disabled={!ready||sending} onClick={()=>send('Continue the previous task from the saved session. Check what already completed before repeating any action.','Continue task')}>Continue task</button>}</div>}
-    {!ready&&(status||statusError)&&<p className="chat-connection-link">{statusError?'Reconnecting to your agent…':<button className="text-button" onClick={()=>navigate('/app/connections')}>Connect your model <Plus size={13}/></button>}</p>}
+    {!ready&&(status||statusError)&&(statusError?<p className="chat-connection-link">Reconnecting to your agent…</p>:<ConnectModelNotice provider={provider} codex={codex.status} openrouter={openrouter.status} onConnect={()=>navigate('/app/connections')} onSwitch={id=>{const choice=choices.find(m=>m.provider===id);if(choice)act('settings',modelSettings(choice)).catch(()=>{});}}/>)}
     <input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp,.txt,.md,.csv,.json,.log,.js,.jsx,.ts,.tsx,.py,.html,.css" multiple hidden onChange={attach}/>
-    <div className="chat-composer beautiful-ui" onInput={touch} onFocusCapture={touch}>{files.length>0&&<div className="attachment-list">{files.map((f,i)=><span key={i}>{f.preview?<img src={f.preview} alt={f.name}/>:<FileText size={14}/>}<span>{f.name}</span><button aria-label={'Remove '+f.name} disabled={sending||!!pending} onClick={()=>setFiles(current=>current.filter((_,n)=>n!==i))}><X size={13}/></button></span>)}</div>}<PromptBar hasAttachments={files.length>0} onAttach={()=>fileInput.current.click()} controls={<><ReasoningControl value={effort} supported={selectedModel?.efforts||[]} disabled={!ready||sending||!!pending} onChange={reasoningEffort=>act('settings',{reasoningEffort}).catch(()=>{})}/><button type="button" className="chat-sleep-toggle" aria-label="Sleep for this conversation" aria-pressed={!!c?.sleepEnabled} title="Review this conversation once after 30 minutes idle" disabled={!ready||sending||movingToSleep} onClick={toggleSleep}><Moon size={17}/><span>Sleep</span></button></>} local={false} tall placeholder="Ask Offload…" disabled={!ready||sending||!!pending} modelDisabled={sending||!!pending||!choices.length} models={choices.length?choices:[{key:provider+':'+chosen,name:chosen}]} modelValue={provider+':'+chosen} onModelChange={key=>{const choice=choices.find(m=>m.key===key);if(choice)act('settings',modelSettings(choice)).catch(()=>{});}} onSend={send}/></div>
+    <div className="chat-composer beautiful-ui" onInput={touch} onFocusCapture={touch}>{files.length>0&&<div className="attachment-list">{files.map((f,i)=><span key={i}>{f.preview?<img src={f.preview} alt={f.name}/>:<FileText size={14}/>}<span>{f.name}</span><button aria-label={'Remove '+f.name} disabled={sending||!!pending} onClick={()=>setFiles(current=>current.filter((_,n)=>n!==i))}><X size={13}/></button></span>)}</div>}<PromptBar hasAttachments={files.length>0} onAttach={()=>fileInput.current.click()} controls={<><ReasoningControl value={effort} supported={selectedModel?.efforts||[]} disabled={!ready||sending||!!pending} onChange={reasoningEffort=>act('settings',{reasoningEffort}).catch(()=>{})}/><button type="button" className="chat-sleep-toggle" aria-label="Sleep for this conversation" aria-pressed={!!c?.sleepEnabled} title="Review this conversation once after 30 minutes idle" disabled={!ready||sending||movingToSleep} onClick={toggleSleep}><Moon size={17}/><span>Sleep</span></button></>} local={false} tall placeholder={ready?"Ask Offload…":"Connect a model to start chatting"} disabled={!ready||sending||!!pending} modelDisabled={sending||!!pending||!choices.length} models={choices.length?choices:[{key:provider+':'+chosen,name:chosen}]} modelValue={provider+':'+chosen} onModelChange={key=>{const choice=choices.find(m=>m.key===key);if(choice)act('settings',modelSettings(choice)).catch(()=>{});}} onSend={send}/></div>
     {c?.sleepEnabled&&<p className="sleep-chat-hint">Sleep will review this conversation once after 30 minutes without activity.</p>}
     {!c?.messages.length && <SuggestedTasks disabled={!ready||sending} onSelect={send}/>}
   </div>;
