@@ -1,0 +1,21 @@
+/* Response formatting stays inside Beautiful UI's text surface. */
+.response-markdown{min-width:0;max-width:100%;font-size:14px;line-height:1.75;color:var(--off-ink,var(--ink,#202020));overflow-wrap:anywhere;white-space:normal;}
+.response-markdown>:first-child{margin-top:0;}.response-markdown>:last-child{margin-bottom:0;}
+.response-markdown p{margin:0 0 16px;font:inherit;white-space:normal;}
+.response-markdown :is(h1,h2,h3,h4,h5,h6){font-family:inherit;font-weight:600;line-height:1.4;letter-spacing:-.02em;margin:26px 0 10px;}
+.response-markdown h1{font-size:23px;}.response-markdown h2{font-size:19px;}.response-markdown h3{font-size:16px;}.response-markdown :is(h4,h5,h6){font-size:14px;}
+.response-markdown :is(ul,ol){margin:10px 0 20px;padding-left:24px;list-style-position:outside;}.response-markdown ul{list-style-type:disc;}.response-markdown ol{list-style-type:decimal;}.response-markdown li{padding-left:3px;margin:7px 0;}.response-markdown li>p{margin:4px 0;}.response-markdown li :is(ul,ol){margin:7px 0;}
+.response-markdown strong{font-weight:600;}.response-markdown em{font-style:italic;}
+.response-markdown a{color:var(--off-accent,#315fa8);text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent);text-underline-offset:3px;transition:text-decoration-color 120ms;}.response-markdown a:hover{text-decoration-color:currentColor;}.response-markdown a:focus-visible{outline:2px solid currentColor;outline-offset:3px;border-radius:2px;}
+.response-markdown blockquote{margin:18px 0;padding:2px 0 2px 16px;border-left:2px solid var(--off-line,#ddd);color:var(--off-muted,#747474);}.response-markdown blockquote p:last-child{margin-bottom:0;}
+.response-markdown code{font-family:'SFMono-Regular',Consolas,monospace;font-size:.88em;background:var(--off-inset,#f3f3f3);padding:2px 5px;border-radius:4px;}.response-markdown pre{max-width:100%;overflow:auto;white-space:pre;overscroll-behavior-x:contain;margin:18px 0;padding:16px 18px;border:1px solid var(--off-line,#e5e5e5);border-radius:10px;background:var(--off-inset,#f6f6f6);line-height:1.65;}.response-markdown pre code{padding:0;border:0;background:none;border-radius:0;overflow-wrap:normal;}
+.response-table-scroll{max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;margin:22px 0 24px;border:1px solid var(--off-line,#e1e1e1);border-radius:10px;scrollbar-width:thin;}.response-table-scroll:focus-visible{outline:2px solid var(--off-muted,#777);outline-offset:-2px;}
+.response-markdown table{width:100%;min-width:620px;border-collapse:collapse;table-layout:auto;font-size:12px;line-height:1.65;}
+.response-markdown :is(th,td){padding:14px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--off-line,#e7e7e7);white-space:normal;overflow-wrap:break-word;}
+.response-markdown th{font-weight:600;background:var(--off-inset,#f7f7f7);font-size:11px;color:var(--off-muted,#666);}.response-markdown tbody tr:last-child td{border-bottom:0;}.response-markdown td:first-child{font-weight:500;}.response-markdown td a{display:inline-block;margin-bottom:3px;}.response-markdown hr{border:0;border-top:1px solid var(--off-line,#e4e4e4);margin:24px 0;}
+.response-markdown .contains-task-list{padding-left:0;list-style:none;}.response-markdown .task-list-item{display:list-item;}.response-markdown .task-list-item input{width:auto;min-height:0;margin-right:8px;accent-color:var(--off-accent,#315fa8);}.response-markdown .footnotes{font-size:12px;color:var(--off-muted,#666);border-top:1px solid var(--off-line,#e5e5e5);margin-top:24px;padding-top:14px;}
+.workspace .live-chat .messages,.workspace .live-chat .message.assistant,.workspace .live-chat .message.assistant>.beautiful-ui{min-width:0;max-width:100%;}
+.agent-stream .response-markdown{font-size:13px;}.agent-stream:has(.response-markdown){white-space:normal;}
+@media(max-width:600px){.response-markdown{font-size:13px;}.response-markdown :is(th,td){padding:12px;}.response-markdown h1{font-size:21px;}.response-markdown h2{font-size:18px;}}
+
+.workspace .response-table-scroll:focus-visible{outline:2px solid var(--off-muted,#777)!important;outline-offset:-2px!important;}

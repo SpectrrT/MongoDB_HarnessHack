@@ -129,3 +129,14 @@
 .approval-decision p{font-size:13px;margin:0;color:var(--off-muted);}
 .approval-decision-actions{display:flex;gap:8px;}
 .approval-request-details{font-size:11px;color:var(--off-muted);margin:8px 0;}
+
+/* No model connected: say why the chat is off and how to turn it on. */
+.live-chat .connect-model-notice { display:flex; gap:12px; align-items:flex-start; margin:0 0 14px; padding:14px 16px; border:1px solid var(--off-line); border-radius:14px; background:var(--off-surface); color:var(--off-ink); }
+.live-chat .connect-model-notice > svg { flex:none; margin-top:3px; color:var(--off-muted); }
+.live-chat .connect-model-notice h2 { margin:0 0 4px; font-size:15px; font-weight:600; letter-spacing:-.2px; }
+.live-chat .connect-model-notice p { margin:0 0 10px; max-width:none; font-size:13px; line-height:1.55; color:var(--off-muted); }
+.live-chat .connect-model-notice .install-command { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; }
+.live-chat .connect-model-notice code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; padding:2px 7px; border-radius:6px; background:var(--off-inset); color:var(--off-ink); user-select:all; }
+.live-chat .connect-model-notice .text-button { display:inline-flex; align-items:center; gap:4px; }
+.live-chat .connect-model-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.live-chat .connect-model-actions .button { display:inline-flex; align-items:center; gap:6px; }

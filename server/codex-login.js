@@ -1,11 +1,13 @@
 import crypto from 'node:crypto';
 import {codexClient} from './codex-rpc.js';
-export function createChatGPTLogin({createClient=codexClient,onConnected=()=>{}}={}){
+import {codexInstalled,CODEX_MISSING} from './codex-installation.js';
+export function createChatGPTLogin({createClient=codexClient,onConnected=()=>{},installed=createClient===codexClient?codexInstalled:()=>true}={}){
  let active;const sessions=new Map();
  const view=session=>({id:session.id,status:session.status,...(session.status==='pending'?{url:session.url}:{}),...(session.error?{error:session.error}:{})});
  const finish=(session,status,error)=>{session.status=status;session.error=error;clearTimeout(session.timer);session.client.close();if(active===session)active=null;setTimeout(()=>sessions.delete(session.id),60000).unref();};
  return {
   async start(owner){
+   if(!installed())throw Error(CODEX_MISSING);
    if(active){if(active.owner!==owner||!active.url)throw Error('A ChatGPT sign-in is already open on this Mac.');return view(active);}
    const session={id:crypto.randomUUID(),owner,status:'pending',client:createClient()};active=session;sessions.set(session.id,session);
    session.timer=setTimeout(()=>finish(session,'expired','Sign-in expired. Try again.'),10*60*1000);session.timer.unref();

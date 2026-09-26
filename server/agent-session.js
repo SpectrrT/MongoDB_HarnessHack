@@ -7,7 +7,6 @@ import crypto from 'node:crypto';
 const children=new Set();
 process.once('exit',()=>{for(const pid of children){try{process.kill(-pid,'SIGKILL');}catch{}}});
 for(const signal of ['SIGTERM','SIGINT'])process.once(signal,()=>{process.exit(0);});
-const binary=findCodex();
 export function approvalResponse(method,params,answer){
  const allow=answer.action==='approve';
  if(method==='item/commandExecution/requestApproval'||method==='item/fileChange/requestApproval')return {decision:allow?'accept':'decline'};
@@ -17,7 +16,7 @@ export function approvalResponse(method,params,answer){
  throw Error('Unsupported approval request.');
 }
 const requestMethods=new Set(['item/commandExecution/requestApproval','item/fileChange/requestApproval','item/permissions/requestApproval','item/tool/requestUserInput','tool/requestUserInput','mcpServer/elicitation/request']);
-export async function runAgent({model,effort='low',prompt,images=[],cwd,threadId,onThread,onEvent,onRequest,signal,binaryPath=binary}){
+export async function runAgent({model,effort='low',prompt,images=[],cwd,threadId,onThread,onEvent,onRequest,signal,binaryPath=findCodex()}){
  const env=Object.fromEntries(['HOME','PATH','USER','TMPDIR','CODEX_HOME'].filter(k=>process.env[k]).map(k=>[k,process.env[k]]));
  const child=spawn(binaryPath,['app-server','--stdio'],{cwd,env,detached:true,stdio:['pipe','pipe','pipe']});
  children.add(child.pid);child.once('close',()=>children.delete(child.pid));

@@ -2,6 +2,8 @@
 "use client";
 import { jsx, jsxs } from "react/jsx-runtime";
 import { useEffect, useState } from "react";
+import MarkdownContent from "../../components/MarkdownContent";
+import "../../response-markdown.css";
 const WORD_MS = 55;
 const HOLD_MS = 3400;
 const TOKENS = [
@@ -70,7 +72,7 @@ function StreamingText({
   const l = { ...DEFAULT_LABELS, ...labels };
   const [count, setCount] = useState(live ? content.length : 0);
   const [sourcesOpen, setSourcesOpen] = useState(false);
-  const done = count >= content.length;
+  const done = live || count >= content.length;
   useEffect(() => {
     if (live) return;
     if (done && !loop) {
@@ -84,7 +86,7 @@ function StreamingText({
     return () => clearTimeout(t);
   }, [count, done, loop]);
   return /* @__PURE__ */ jsxs("div", { className: fill ? "w-full" : "min-h-[15.5rem] w-full max-w-95", children: [
-    /* @__PURE__ */ jsxs("p", { className: "whitespace-pre-wrap text-[13px] leading-relaxed text-ink", children: [
+    live ? /* @__PURE__ */ jsx(MarkdownContent, { text: content.filter((token) => !token.cite).map((token) => token.text).join(" ") }) : /* @__PURE__ */ jsxs("p", { className: "whitespace-pre-wrap text-[13px] leading-relaxed text-ink", children: [
       content.slice(0, count).map(
         (token, i) => token.cite ? /* @__PURE__ */ jsx(SourceChip, { source: sources[0] }, i) : /* @__PURE__ */ jsxs("span", { className: "inline", children: [
           token.text,

@@ -24,3 +24,10 @@
 @media(max-width: 600px) { .service-row { gap: 12px; } .brand-tile { width: 42px; height: 42px; } .service-row .button { padding: 9px 12px; } .service-row .button svg { display:none; } .services-heading { margin-top: 5px; } }
 
 .service-logo[data-monochrome]{background:#fff;border-radius:4px;padding:2px;box-sizing:border-box;}
+
+/* The Codex CLI install command on the ChatGPT card when Codex is missing. */
+.model-connection .install-command { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 0; }
+.model-connection .install-command code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+  padding: 3px 7px; border-radius: 6px; background: rgba(127, 127, 127, 0.14); user-select: all;
+}
