@@ -23,11 +23,13 @@ test('Idle Sleep consent persists, background work leaves chat usable, and resum
   await page.goto('/app/chat/'+conversationId);
   await expect(page.getByText('123 total tokens including conservative unknown-usage reservations')).toBeVisible();
   const toggle=page.getByRole('button',{name:'Sleep for this conversation',exact:true});
+  await page.getByText('How Sleep works',{exact:true}).click();
   await expect(page.getByText(/Allows isolated offline prototype checks/)).toBeVisible();
   await toggle.click();
-  await expect(page).toHaveURL(/\/app\/sleep\?view=conversations$/);
-  await expect(page.getByRole('link', {name:'Build a counter Sleep enabled'})).toBeVisible();
-  await page.goto('/app/chat/'+conversationId);
+  await expect(page).toHaveURL('/app/chat/'+conversationId);
+  await page.getByRole('link',{name:'View in Sleep',exact:true}).click();
+  await expect(page.getByRole('link', {name:'Build a counter Review available'})).toBeVisible();
+  await page.getByRole('link', {name:'Build a counter Review available'}).click();
   await expect(toggle).toHaveAttribute('aria-pressed','true');
   expect(consent).toMatchObject({scope:'isolated-local-drafts',budget:10000,durationMs:1200000,offlinePrototypeChecks:true});
   sleep={...sleep,state:'running',jobId:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'};

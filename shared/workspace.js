@@ -345,6 +345,12 @@ export function transition(current, action, now = Date.now()) {
         messages: [],
       });
       break;
+    case "prepare-conversation": {
+      required(typeof p.text === 'string' && p.text.trim(), 'Prepared context is required.');
+      if(s.conversations.some(c=>c.id===p.id))break;
+      s.conversations.unshift({id:p.id||uid(),title:String(p.title||'Prepared conversation').slice(0,70),generatedTitle:true,createdAt:now,messages:[{id:uid(),role:'user',text:p.text.slice(0,20000),at:now}]});
+      break;
+    }
     case "conversation-state": {
       const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");
       required(['archive','delete','restore'].includes(p.action),'Choose a conversation action.');
@@ -354,7 +360,15 @@ export function transition(current, action, now = Date.now()) {
       const c=s.conversations.find(c=>c.id===p.id);if(c&&!c.generatedTitle){c.title=String(p.title).trim().slice(0,70)||c.title;c.generatedTitle=true;}break;
     }
     case "conversation-sleep": {
-      const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");c.sleepEnabled=!!p.enabled;break;
+      const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");c.sleepEnabled=!!p.enabled;if(p.jobId)c.sleepObservedJobId=String(p.jobId).slice(0,100);break;
+    }
+    case "conversation-sleep-job": {
+      const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");
+      c.sleepObservedJobId=String(p.jobId).slice(0,100);break;
+    }
+    case "conversation-sleep-skipped": {
+      const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");
+      c.sleepJobId=String(p.jobId).slice(0,100);break;
     }
     case "chat-sleep-start": {
       const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");
