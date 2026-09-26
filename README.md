@@ -196,6 +196,7 @@ Environment variables switch on the external services:
 | Durable harness | integration tests against a disposable local `mongod` | `MONGODB_URI`, `OPENROUTER_API_KEY`, `OFFLOAD_MODEL` |
 | Sleep v2 | integration tests against a local `mongod`, with exact cosine in process instead of `$vectorSearch` | the harness variables plus `VOYAGE_API_KEY` |
 | Computer history | integration tests against a local `mongod`, with the fusion computed in the app | `MONGODB_URI`; Atlas Search, Vector Search and `$rankFusion` verified on the event cluster (MongoDB 8.0); `VOYAGE_API_KEY` for semantic embeddings |
+| REM tracing | nothing: every trace call in `rem/trace.js` is a plain pass-through, no LangSmith call is made | `LANGSMITH_API_KEY` traces day runs, planning, recall, tool calls, effects, the completion gate, model calls and night phases as nested LangSmith runs; `npm run rem:langsmith` also runs the gym as two comparable LangSmith experiments |
 
 Limits, stated plainly:
 
@@ -298,12 +299,14 @@ keep `VITE_STORAGE_MODE=browser` for a public demo, since the static site does n
 | Path | What |
 | --- | --- |
 | `rem/` | REM engine: day loop, ledger, night, evolution, gym, asks, database adapters |
+| `rem/trace.js` | optional LangSmith tracing (`traceable`, `annotate`, `traceModel`); a no-op without `LANGSMITH_API_KEY` |
 | `server/index.js` | Express API: workspace, durable harness, Sleep v2, computer history and REM (`server/rem.js`) |
 | `server/harness/`, `server/sleep/` | durable harness and Sleep v2 |
 | `server/activity/` | computer history: macOS capture, collector, sessions, search, routines, sample week |
 | `src/` | React 19 + Vite app and landing site |
 | `shared/workspace.js` | the mock engine behind the Offload workspace |
 | `scripts/rem-demo.mjs` | the terminal demo |
+| `scripts/rem-langsmith.mjs` | `npm run rem:langsmith`: uploads the gym as a LangSmith dataset and runs two genomes as two LangSmith experiments |
 | `desktop/` | Electron wrapper |
 | `.mcp.json`, `scripts/mongodb-mcp.mjs` | a MongoDB MCP server for Claude Code sessions, read-only on the same `MONGODB_URI` |
 | `tests/` | `node:test` suites and Playwright specs |

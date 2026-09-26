@@ -7,6 +7,7 @@ import { NOISE_THRESHOLD, factsOf } from "./facts.js";
 import { BUILTIN_TOOLS, currentHarness, renderDiff } from "./harness.js";
 import { queueAsks } from "./asks.js";
 import { TASK_KINDS, checkRun, describeTask, taskParams } from "./tasks.js";
+import { annotate, genomeSummary, traceable } from "./trace.js";
 import { createWorld, isInternal } from "./world.js";
 import { DAY_MS, canonicalJson, createClock, round, sum, weekLabel, weekNumber } from "./util.js";
 
@@ -432,14 +433,20 @@ async function verifiedOf(ctx, { day, evolved }) {
   };
 }
 
-export async function runNight(ctx, { day, proposer }) {
+async function runNightImpl(ctx, { day, proposer }) {
   const { db, clock } = ctx;
   const night = day;
   const timeline = [];
+  const current = await currentHarness(db);
+  // Parent run: this night (night number, the harness version going in, its genome summary).
+  annotate({ metadata: { night, harnessVersion: current?.version ?? null, genome: genomeSummary(current?.genome) }, tags: [`night-${night}`] });
+  // Child run per phase: Replay, Merge, Distill, Evolve, Asks. Evolve runs the gym (each task a
+  // nested day run, train tasks tagged "train", held-out tasks tagged "heldOut") and validates
+  // candidate edits, so its own trace nests every gym run and model call under "evolve".
   const phase = async (name, fn) => {
     const t0 = performance.now();
     const startedAt = new Date().toISOString();
-    const out = await fn();
+    const out = await traceable(fn, { name, run_type: "chain" })();
     timeline.push({ phase: name, startedAt, simAt: new Date(clock.now()).toISOString(), wallMs: Math.round(performance.now() - t0) });
     return out;
   };
@@ -490,3 +497,4 @@ export async function runNight(ctx, { day, proposer }) {
   await db.collection("briefs").insertOne(brief);
   return brief;
 }
+export const runNight = traceable(runNightImpl, { name: "night-run", run_type: "chain" });
