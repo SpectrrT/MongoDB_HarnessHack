@@ -106,8 +106,8 @@ Run `node scripts/benchmark-native-context.mjs docs/evidence/native-context-curr
 Next actions learns a repeated context-recovery habit from explicitly selected history. Reopening a project can propose
 one supported task. Accepting it runs four durable checkpoints, produces a source-checked Markdown artifact, and records
 feedback for a versioned policy change. Importing history alone cannot start work. No private history is imported automatically. Imported notes use configured MongoDB storage; remote model scoring
-requires explicit configuration. A five-read Atlas measurement beside 10,000 unrelated records reduced median
-read latency from 1,474 ms to 436 ms while examining three source documents; this is a small retrieval measurement,
+requires explicit configuration. Two five-read Atlas runs beside 10,000 unrelated records measured median
+read latency of 1,474 ms before reads were parallelized and 436 ms after (connection warm-up may explain part of the gap) while examining three source documents; this is a small retrieval measurement,
 not a long-term usefulness score. [Behavior, tests and reproduction](docs/personal-suggestions.md).
 
 ## See the cycle in one minute
@@ -128,7 +128,7 @@ Numbers from the current run:
 | --- | --- | --- |
 | Tasks passed | 2/4 | 4/4 |
 | Collateral damage | 3 | 0 |
-| Estimated cost for the day | $0.0861 | $0.0069 |
+| Estimated cost for the day | $0.1216 | $0.0095 |
 | Human interventions (corrections and reconnects) | 4 | 0 |
 | Memories with sleep (raw items without) | 15 (30) | 32 (118) |
 | Retrieval precision@k with sleep (without) | 1 (0.9) | 1 (0.4) |
@@ -140,11 +140,11 @@ characters/4 at placeholder prices.
   change stream on `connections` resumes it from its checkpoint after the reconnect. Over five days, 10 effects
   committed, 10 executed and 0 duplicated, and all 4 injected crashes were reconciled from the ledger.
 - **Evolution.** Night one accepted two edits (a "never include customer names" rule and an internal-recipients-only
-  guardrail) and rejected routing every executor call to the small model: it cut cost 82% but broke held-out task H2.
-  The held-out split went from 1/4 at gen 0 to 3/4 after night one and 4/4 after night two. Train went from 3/8 to 8/8
+  guardrail) and rejected routing every executor call to the small model: it cut cost 81% but broke held-out task H2.
+  The held-out split went from 1/5 at gen 0 to 3/5 after night one and 4/5 after night two. Train went from 3/9 to 9/9
   by harness v4. The proposer never sees held-out tasks; the gate does, so the split works as a validation set.
 - **Morning.** Approving the ask ("Want me to send the brief myself next time?") makes the distilled weekly-brief skill
-  autonomous. The same brief then takes 6 steps instead of 9 and $0.0321 instead of $0.0424, with no corrections. Day
+  autonomous. The same brief then takes 6 steps instead of 10 and $0.0399 instead of $0.0594, with no corrections. Day
   one's run also included the revoke and reconnect.
 
 ## How it works

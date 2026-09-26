@@ -6,10 +6,10 @@ persisted improvement. Jev is actually integrated; it estimates retention probab
 protects constraints, keeps complete tool exchanges, archives source records and owns the stopping rules.
 
 Current live repeated-context evidence: four synthetic snapshots, five answers per path, GPT-4o-mini on both paths.
-Both score 20/20. Full context uses 26,640 tokens; selected context including Jev uses 15,543, or 41.66% fewer.
-First use costs more. A separate three-task, twelve-stage evolving suite scores 11/12 on both paths and costs 29.95%
-more overall, because rescoring outweighs answer-model savings. Shortening the decision prompt reduces Jev overhead
-19.86% without changing those checks. Both adverse runs are retained. [Raw evidence and conditions](context-evolving-evidence.md).
+Both score 20/20. Full context uses 26,640 tokens; selected context including Jev uses 9,052, or 66.02% fewer (v9 policy).
+On a separate three-task, twelve-stage evolving suite, full context scores 11/12 and Offload 12/12, with 39,196 versus
+32,264 total tokens including Jev, 17.69% fewer (v9 policy; Jev decision cost is not billed separately, so tokens are
+compared). Earlier policies on that suite cost more, from 59.05% to 3.80% more; those adverse runs are retained. [Raw evidence and conditions](context-evolving-evidence.md).
 
 The checkpoint no longer contains the whole transcript. In a 300-step deterministic session with interruption and source
 recovery, the maximum working checkpoint is 18,852 bytes versus a reconstructed 1,245,224-byte full-history checkpoint.
@@ -26,7 +26,7 @@ eight-attempt scripted task with no progress now pauses after three calls; expli
 [Before/after execution evidence](sleep-task-execution.md).
 
 Opt-in native OpenRouter selection is tested with real local file tools and a scripted provider: one exact archived-key
-task passes on both paths, with 111,805 versus 45,148 cumulative prompt characters. It requires one extra model request
+task passes on both paths, with 116,021 versus 49,891 cumulative prompt characters. It requires one extra model request
 and 15 scripted decision calls. Those are integration measurements, not live token savings. Images remain intact,
 malformed tool IDs cannot execute, and known usage survives cancellation. [Native evidence](native-context.md).
 
