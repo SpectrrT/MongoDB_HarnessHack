@@ -71,3 +71,13 @@ test('cancelled and explicitly completed goals stay closed after a bare continua
  for(const text of ['Cancel this task and show the progress.','That is done.'])
   assert.equal(draft([...initial,source('closed',text),source('resume','Continue.')]),null,text);
 });
+
+
+test('typographic denials remain exact source constraints and suppress conflicting tasks and checks',()=>{
+ const rows=[source('private-rule','Don’t mention the customer name.'),source('goal','Build a local HTML counter with Increment and Reset.'),source('pause',STOP),source('resume','Continue.')];
+ const candidate=draft(rows);assert.ok(candidate);assert.ok(candidate.sourceMessageIds.includes('private-rule'));
+ assert.match(candidate.brief,/Don’t mention the customer name/);
+ assert.equal(draft([...initial,source('deny','Don’t build that.')]),null);
+ const noReset=draft([...rows,source('no-reset','Don’t include Reset.')]);
+ assert.equal(noReset.browserCheck,undefined);assert.match(noReset.brief,/Don’t include Reset/);
+});

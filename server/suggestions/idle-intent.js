@@ -1,6 +1,6 @@
 // User control commands are derived from authored conversation text, never assistant output.
 // Normalization is for matching only. Provenance retains the original source text.
-const normalize=text=>String(text).replace(/[’‘]/g,"'").replace(/\s+/g,' ').trim();
+export const normalizeIdleText=text=>String(text).replace(/[’‘]/g,"'").replace(/\s+/g,' ').trim();
 const LEAD="(?:(?:okay|ok|alright|now)[,!]?\\s+)?(?:please\\s+)?(?:(?:let's|let us|can you|could you|would you|i want you to|we should|we need to)\\s+)?";
 const boundary="(?=$|[,.!?;:]|\\s+(?:and|then|for|until|while|so|before|after)\\b)";
 const work="(?:(?:all|any|the|this|that|our|your)\\s+)?(?:work|working|implementation|coding|development|execution|tasks?|changes|building|doing)(?:\\s+(?:on\\s+)?(?:this|that|it))?";
@@ -13,7 +13,7 @@ const NEW_WORK=new RegExp('^'+LEAD+'(?:(?:instead|next)[,:]?\\s+)?(?:build|creat
 const STATUS=/\b(?:progress|status|assessment|what (?:everyone|we|you) (?:has|have|did)|what (?:is|was|has been) done)\b/i;
 
 export function idleControlIntent(text){
- const input=normalize(text);
+ const input=normalizeIdleText(text);
  if(!input||/^["'`>❯<]/.test(input))return null;
  if(CANCEL.test(input))return 'cancel';
  if(PAUSE.test(input)||HOLD.test(input)||NEGATIVE_CONTINUE.test(input)||/^(?:that's enough|no more work|not now)(?=$|[.!?,;]|\s+and\b)/i.test(input))return 'pause';
@@ -27,7 +27,7 @@ export function idleControlIntent(text){
 }
 
 export function hasExplicitNewWork(text){
- const input=normalize(text);
+ const input=normalizeIdleText(text);
  return NEW_WORK.test(input)&&!STATUS.test(input);
 }
 
