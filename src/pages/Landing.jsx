@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight, ArrowRight, Plus } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import Net from "../components/Net";
+import BenchmarkEvidence from "../components/BenchmarkEvidence";
 import {WorkDiagram,MemoryDiagram} from "../components/LandingDiagrams";
 import "../landing-ascii.css";
 export default function Landing() {
@@ -38,11 +39,12 @@ export default function Landing() {
               Open your workspace <ArrowUpRight size={17} />
             </Link>
             <span className="hero-note">
-              Your workspace stays on this device.
+              Choose what your agent can access.
             </span>
           </div>
           <WorkDiagram />
         </section>
+        <BenchmarkEvidence />
         <div className="ascii-sequence" aria-hidden="true"><span>[ observe ]</span><span>··············&gt;</span><span>[ remember ]</span><span>··············&gt;</span><span>[ suggest ]</span><span>··············&gt;</span><span>[ offload ]</span></div>
         <section className="site-preview" id="how">
           <div className="section-heading">

@@ -2,6 +2,36 @@
 
 The current selector preserves correctness when new evidence changes relevance. It does **not** save total tokens on every workload. Measurements below include decision overhead, answer-model calls, tool schemas, archive requests, and retrieved results. Character reductions are not token reductions.
 
+## Latest combined measurement
+
+The final v9 scorer plus production evidence interpretation policy uses **32,264 total tokens versus 39,196** full
+context, **17.69% fewer**, on this development suite. All 12 compacted exact checks pass. Full context passes 11/12; its
+failed release answer has the correct owner/readiness plus an extra `reason` field. There are zero observed
+compaction-only regressions and one successful source recovery. Expected values and the exact JSON checker were
+not changed. The inputs were repeatedly used during optimization, so these are development results.
+
+The intermediate combined v5 policy passed 12/12 on both paths but used 36,238 versus 34,910 tokens, 3.80% more. V9 keeps
+explicit retention questions, factors exact repeated strings without changing original content, and shares encoding
+metadata once. Its 20,253 scoring tokens and 12,011 answer tokens are both counted. Different model tool choices change
+baseline totals between runs despite temperature zero. No statistical or universal improvement is established.
+
+Rejected v6 overflowed 11 of 12 selections in the combined run, using 18,361 scoring tokens and producing only one paired
+answer. The complete total is unknown and no saving is claimed. The shorter v7/v8 questions also failed bounded
+probes. All paid receipts are preserved. V9 first passed a bounded retention probe before its full run.
+
+Final repeated snapshots: 26,640 versus 9,052 tokens, 66.02% fewer, 20/20 exact answers per path. This is a separate simpler
+workload. The current source and artifact identifiers are recorded in the raw reports.
+
+- [Combined v9](evidence/jev-context-evolving-combined-v9.json)
+- [Combined v5 overhead](evidence/jev-context-evolving-combined-v5.json)
+- [Rejected combined v6](evidence/jev-context-evolving-combined-v6.json)
+- [Final repeated v9](evidence/jev-context-repeated-schema-v9.json)
+- [Rejected v6 repeated run](evidence/jev-context-repeated-indexed-v6.json)
+- [V7 probe](evidence/jev-context-v7-prompt-probe.json), [v8 probe](evidence/jev-context-v8-prompt-probe.json), [v9 probe](evidence/jev-context-v9-prompt-probe.json)
+
+The sections below retain the earlier causal-policy measurements and their original conditions. They are historical,
+not the current headline. Personal-history reconstructed trials use independently frozen cases and are reported separately.
+
 ## Implementation change
 
 Before this change, decision reuse depended on the goal, caller revision, model, and candidate digest. Newly observed evidence could make an omitted record relevant while all those fields stayed unchanged. The selector now fingerprints the ordered, unique supplied evidence, including protection metadata. New content, reordering, changed goals, changed caller revisions, and changed scoring-policy versions invalidate reuse. Exact idempotent rereads remain reusable when the trusted adapter supplies the same `dedupeKey`.
@@ -19,7 +49,7 @@ The second revision removes duplicate candidate records from the shared evidence
 | Workload | Full-context exact checks | Compacted exact checks | Full-context tokens | Compacted tokens including Jev | Difference |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Historical repeated snapshots, prior implementation | 20/20 | 20/20 | 26,640 | 14,878 | 44.15% fewer |
-| Current repeated snapshots, `080eb7b` | 20/20 | 20/20 | 26,640 | 15,543 | 41.66% fewer |
+| Historical repeated snapshots, `080eb7b` | 20/20 | 20/20 | 26,640 | 15,543 | 41.66% fewer |
 | Evolving tasks, initial causal policy `2ffc0ca` | 11/12 | 11/12 | 43,623 | 69,384 | 59.05% more |
 | Evolving tasks, shorter scoring prompt `080eb7b` | 11/12 | 11/12 | 43,606 | 56,664 | 29.95% more |
 | Evolving tasks, exact repeat encoding v4 `fcc1f65` | 11/12 | 11/12 | 43,627 | 46,610 | 6.84% more |

@@ -6,9 +6,9 @@ Offload learns the work you repeat, so next time you can hand it over. Its engin
 runs the harness on a day/night cycle:
 
 - **Day.** The agent works long-horizon tasks through connected accounts, durably. Every step writes a checkpoint. Every
-  side effect is claimed in an effects ledger before it runs, so a crash or an expired login never loses progress or
-  sends the same email twice.
-- **Night.** It replays the day, merges duplicate memories and forgets noise, distills repeated work into a tested skill,
+  side effect is claimed in an effects ledger before it runs. Recovery is verified against the persisted fixture provider;
+  real external services still require their own idempotency and reconciliation contract.
+- **Night.** It replays the day, merges duplicate memories and archives omitted raw evidence, distills repeated work into a tested skill,
   and evolves its own harness (rules, guardrails, tool scopes, context policy, model routing) against a gym with a
   held-out split. Every edit carries a falsifiable prediction, and a no-regression gate decides what ships.
 - **Morning.** It asks once for any new authority it wants, such as letting a skill that sends email run on its own,
@@ -26,27 +26,36 @@ original evidence by run-scoped id. It preserves complete tool exchanges and det
 when the task state is unchanged, and removes identical read-only results without a model call. This is integrated
 before planner/executor calls in the REM runtime and displayed under **Sleep > Context memory**.
 
-**Current live result: 41.66% fewer total tokens on repeated snapshots, with 20/20 exact answers on each path.**
-The same GPT-4o-mini answer model sees four synthetic snapshots five times per path. Totals include every reported
-Jev decision token. Changing evidence is more expensive: the separate evolving suite uses **29.95% more total tokens**,
-with 11/12 exact answers on both paths. One routing stage fails on both paths. No compaction-only answer regression
-was observed in these 12 stages. The suite reports that shared failure rather than hiding it.
+**Latest complete development result: 17.69% fewer total tokens on evolving tasks, including Jev and recovery.**
+Full context uses 39,196 tokens; Offload uses 32,264. Offload passes 12/12 exact JSON checks, versus 11/12 for full
+context. The baseline failure is an extra `reason` field in an otherwise correct answer. The same GPT-4o-mini model,
+three synthetic tasks and twelve chronological stages are used on both paths. These inputs were used during
+optimization, so this is a development benchmark, not an untouched evaluation or a general intelligence claim.
 
-| Live workload | Full context | Compacted, including Jev | Exact checks, baseline / compacted |
+| Live workload and policy | Full context | Offload, including Jev | Exact checks, baseline / Offload |
 | --- | ---: | ---: | --- |
-| Stable snapshots, current causal policy | 26,640 tokens | 15,543 tokens, 41.66% fewer | 20/20 / 20/20 |
-| Evolving tasks, initial causal policy | 43,623 tokens | 69,384 tokens, 59.05% more | 11/12 / 11/12 |
-| Evolving tasks, shorter decision prompt | 43,606 tokens | 56,664 tokens, 29.95% more | 11/12 / 11/12 |
+| Evolving, original causal policy | 43,623 | 69,384, 59.05% more | 11/12 / 11/12 |
+| Evolving, shortened prompt | 43,606 | 56,664, 29.95% more | 11/12 / 11/12 |
+| Evolving, lossless v4 | 43,627 | 46,610, 6.84% more | 11/12 / 11/12 |
+| Evolving, evidence policy plus v5 | 34,910 | 36,238, 3.80% more | 12/12 / 12/12 |
+| Evolving, evidence policy plus v9 | 39,196 | 32,264, 17.69% fewer | 11/12 / 12/12 |
+| Stable snapshots, five calls each, v9 | 26,640 | 9,052, 66.02% fewer | 20/20 / 20/20 |
 
-The shorter scoring prompt cuts Jev overhead from 52,238 to 41,865 tokens (19.86%) without changing these exact-check
-outcomes. Stable evidence reuses persisted decisions with zero new Jev calls after restart. Initial compaction still
-costs more than one full-context answer. The older 44.15% result belongs to commit `00a412b`, before causal invalidation.
-Monetary savings are unknown where the decision provider reports no cost. These tests do not establish universal
-savings, calibrated probabilities, or billion-token performance.
+V9 factors exact repeated text, shares the encoding schema and retention rubric, and batches decisions while keeping
+original source identities, order, whitespace and multiplicity. New evidence still invalidates scores. It also keeps
+explicit retention questions: shorter experimental prompts failed live selection and were rejected. Their paid tokens
+remain in the evidence. This is measured optimization, not removal of safeguards or a changed answer checker.
 
-[Current repeated evidence](docs/evidence/jev-context-repeated-causal-v3.json),
-[evolving results including the adverse run](docs/context-evolving-evidence.md),
-[historical result](docs/evidence/jev-context-repeated.json), and
+The evolving total comprises 12,011 answer-model tokens and 20,253 Jev tokens; archive recovery passes 1/1 and
+restarted selections make zero new scoring calls. Answer-model tool choices vary between runs even with temperature
+zero, so changes in paired baselines are visible above. Direct TypeSafe did not return prices; combined evolving
+monetary savings are unknown. The repeated workload contains four snapshots answered five times per path, with 2,435
+answer tokens and 6,617 scoring tokens. Its reported OpenRouter spend is $0.000714378 versus $0.0023805. Neither test
+establishes universal savings, calibrated probabilities, or billion-token performance.
+
+[Latest evolving receipt](docs/evidence/jev-context-evolving-combined-v9.json),
+[latest repeated receipt](docs/evidence/jev-context-repeated-schema-v9.json),
+[all versions and adverse results](docs/context-evolving-evidence.md), and
 [research and configuration](docs/sleep-context-compaction.md).
 
 ### Bounded memory and actual restart recovery
@@ -86,11 +95,11 @@ Decision usage is included in the task total, including a failed selection; unkn
 An over-budget protected context stops before the next answer-model request. This opt-in adapter bounds selected tool history during a 40-step turn; initial instructions and images remain intact outside that budget; it does not implement native cross-turn recovery or replace Codex's context system.
 
 A paired scripted-provider test uses real local file tools and seven reads. Both paths recover the exact original key
-(1/1 each). Cumulative serialized model prompts fall from **111,805 to 45,148 characters (59.62%)**, including one extra
+(1/1 each). Cumulative serialized model prompts fall from **116,021 to 49,891 characters (57.00%)**, including one extra
 archive-recovery call. Model requests rise from **8 to 9**, and selection uses **15 scripted decision calls**. These are
 measured prompt characters and a correctness test, not paid-model token savings. Native-context tests cover recovery, protocol, owner isolation, protected denials, images and provider-call prevention after overflow. Cancellation preserves 105 already-reported fixture tokens; a malformed paid reply preserves its 130 reported tokens instead of recording zero; duplicate tool IDs execute zero tools.
-Run `node scripts/benchmark-native-context.mjs docs/evidence/native-context-paired.json`.
-[Raw paired evidence](docs/evidence/native-context-paired.json) and [integration details](docs/native-context.md).
+Run `node scripts/benchmark-native-context.mjs docs/evidence/native-context-current.json`.
+[Raw paired evidence](docs/evidence/native-context-current.json) and [integration details](docs/native-context.md).
 
 ### Source-backed next actions
 
@@ -427,9 +436,9 @@ Sleep assigned tasks now execute local drafts with a connected worker, a deadlin
 
 On three short synthetic local drafting tasks, the old queue saved 3/3 briefs but produced 0 verified artifacts because its runner was unconfigured. The new worker produced 3/3 verified files with OpenRouter `openai/gpt-4.1-mini`: **815 reported input plus output tokens, 3 calls, $0.000608, and 3.791 seconds**. One draft paused for explicit approval and resumed from persisted state without another generation. The initial implementation passed 2/3 using 1,721 tokens and 7 calls; clarifying exact acceptance phrases and retaining the failed draft reduced unnecessary repair calls. Both runs used temporary local MongoDB, fixed checks, and the same tasks. They are small smoke tests, not evidence of general savings or long-horizon scale. The former queue's zero token use reflects no execution.
 
-Raw results, artifacts, costs, and checks: [initial live run](docs/evidence/sleep-execution-live-initial.json), [refined live run](docs/evidence/sleep-execution-live.json). Reproduce with `node --env-file=.env scripts/sleep-execution-demo.mjs --live`. The focused durability and ownership suite passed 20/20 Node test results, including its parent suite. Scope is isolated local draft files; broader external tasks and semantic completion require additional executors and checks.
+Raw results, artifacts, costs, and checks: [initial live run](docs/evidence/sleep-execution-live-initial.json), [refined live run](docs/evidence/sleep-execution-live.json). Reproduce with `node --env-file=.env scripts/sleep-execution-demo.mjs --live`. The initial focused durability and ownership suite passed 20/20 Node test results, including its parent suite. Scope is isolated local draft files; broader external tasks and semantic completion require additional executors and checks.
 
-The continuation policy also detects unchanged failed checks. A scripted eight-attempt task now pauses after three calls when two repair attempts make no verified progress. Five permitted attempts remain unspent; explicit resume with corrected output completes on call four. This is a measured stopping-policy test, not an additional live token-savings claim. The expanded Sleep suite plus the shared continuation-policy suite pass 28/28 Node test results.
+The continuation policy also detects unchanged failed checks. A scripted eight-attempt task now pauses after three calls when two repair attempts make no verified progress. Five permitted attempts remain unspent; explicit resume with corrected output completes on call four. This is a measured stopping-policy test, not an additional live token-savings claim. That milestone passed 28/28 Sleep and shared continuation-policy test results; final integration results are reported separately.
 
 ## Appearance and reasoning
 
@@ -464,13 +473,35 @@ REM previously recreated its simulated provider state when the server restarted,
 
 These are fixture-model tasks against disposable local MongoDB, including a replica set for transactions. They do not exercise real Gmail/Drive, live Atlas, Jev or paid model providers. No token, latency or cost improvement is claimed. The fixture state is a single MongoDB document intended for the bounded demo, not billion-token storage. Raw regression evidence is in `docs/evidence/process-recovery.txt`; implementation and test conditions are in `docs/completion-contract.md`.
 
-### Evidence interpretation repair
+### Evidence interpretation repair: isolated probe before the combined result
 
 A live GPT-4o-mini probe reproduced the incorrect choice of an unselected routing plan. A shared production prompt
 now binds facts to the requested subject and treats retrieval time separately from event time. The original case plus
 two new shipping variants improve from 2/3 to 3/3 exact answers. Both paths take seven calls; total tokens rise from
 5,666 to 7,870. A shorter candidate also passes 3/3 but uses 8,493 tokens, so it was not selected. This is an accuracy
-repair with measured overhead, pending the full evolving-suite rerun. [All probe outcomes](docs/evidence/evidence-policy-probe.json)
+repair with measured overhead. The later complete v9 result is reported above. [All probe outcomes](docs/evidence/evidence-policy-probe.json)
 and [shorter candidate](docs/evidence/evidence-policy-probe-concise.json). No expected answer is supplied to the model.
 
 Benchmark receipts now persist after each answer and decision pass. Three accounting checks cover restart/rescore charges, interrupted paid calls and unavailable prices. Missing usage makes savings unknown; failed answers make the benchmark exit unsuccessfully. These are accounting checks, not additional live performance results.
+
+### Opt-in idle Sleep: actual work and verification
+
+After explicit consent and 30 idle minutes, Sleep derives one supported unfinished goal from the conversation and
+executes it inside a bounded isolated task. It preserves source provenance, pauses on activity, remembers compound
+stop requests even when a foreground provider fails, and allows revocation regardless of snapshot validity. An
+explicit continuation resumes the same task and preserves cumulative usage. Slow mode belongs inside Sleep.
+
+One synthetic live GPT-4.1-mini idle counter case used one paid call, 1,346 tokens, $0.0014084 and 8.227 seconds. It
+created two artifacts; a real offline browser observed 0, 1, 2 and Reset to 0 with stable values. Restart made zero
+additional calls. Before consent and before the injected 30-minute threshold there were zero calls and zero tasks.
+This is one bounded case using an injected idle clock, not proof of overnight autonomy. Independent browser tests
+reject a counter with inert buttons and animated values, nested-document escapes, forbidden resources and leaked
+processes. [Runtime evidence and limitations](docs/idle-sleep-validation.md), [browser checks](docs/sleep-prototype-checks.md).
+
+Raw episodes now archive transactionally before noise removal or new TTL retirement, in 64 KiB BSON parts with
+integrity checks. Agent tools recover bounded pages; explicit reset deletes the archive too. Startup backfill also archives surviving legacy
+records before their existing TTL can remove them. Previously deleted records cannot be recovered.
+
+The landing page shows measured evidence directly below the hero headline and links its receipt. Personal-history
+artifact replay is a separate evaluation using frozen pre-return context and private checkers. It does not compare
+historical cumulative session tokens against a small reconstructed artifact. Failed protocol trials remain in the ledger.

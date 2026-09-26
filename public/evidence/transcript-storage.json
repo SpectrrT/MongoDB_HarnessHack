@@ -1,0 +1,33 @@
+{
+  "fixture": "300 evolving tool exchanges, one fresh-worker restart, one old-source retrieval",
+  "provider": "none; deterministic model and retention fixture",
+  "totalSteps": 300,
+  "executorCalls": 301,
+  "canonicalBytes": 1242822,
+  "maxCheckpointBytes": 18852,
+  "baselineCheckpointBytes": 1245224,
+  "maxPromptBytes": 13992,
+  "modelToolBytes": 2832660,
+  "baselineReplayBytes": 191814470,
+  "decisionCalls": 179,
+  "decisionInputTokens": 7160,
+  "decisionOutputTokens": 716,
+  "historicalPartQueriesDuringRun": 0,
+  "checkpoints": [
+    {
+      "step": 1,
+      "checkpointBytes": 6067,
+      "canonicalBytes": 4137
+    },
+    {
+      "step": 120,
+      "checkpointBytes": 14417,
+      "canonicalBytes": 496836
+    },
+    {
+      "step": 300,
+      "checkpointBytes": 18852,
+      "canonicalBytes": 1242822
+    }
+  ]
+}

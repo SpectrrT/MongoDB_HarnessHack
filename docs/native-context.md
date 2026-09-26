@@ -17,12 +17,12 @@ This is not a native cross-turn durable runner. REM's separate transcript store 
 ## Quantitative check
 
 One paired scripted-provider task, seven real local file reads, exact archived-key check: baseline 1/1 success,
-compacted 1/1 success. Serialized prompt input totals are 111,805 versus 45,148 characters, a 59.62% reduction.
-Peak prompt sizes are 26,825 versus 8,470 characters. The compacted path makes 9 model requests versus 8 and uses
+compacted 1/1 success. Serialized prompt input totals are 116,021 versus 49,891 characters, a 57.00% reduction.
+Peak prompt sizes are 27,352 versus 8,997 characters. The compacted path makes 9 model requests versus 8 and uses
 15 scripted decision calls, including one archive recovery. Stub token counters verify accounting only and must not
 be reported as actual model tokens or savings.
 
-Reproduce with `node scripts/benchmark-native-context.mjs docs/evidence/native-context-paired.json`.
+Reproduce with `node scripts/benchmark-native-context.mjs docs/evidence/native-context-current.json`.
 The native regression suite now also verifies intact 40,000-character image data, usage after cancellation, and invalid tool protocol. A cancelled second selector batch preserves the first 105 reported tokens. A malformed paid answer preserves 130 reported tokens and $0.002 instead of dropping them. Duplicate tool IDs produce zero approval requests and zero files. These are injected-provider accounting checks, not live charges.
 
 Run `node --test tests/chat-context.test.js tests/openrouter.test.js tests/model.test.js` to reproduce.

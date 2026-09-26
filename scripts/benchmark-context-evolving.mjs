@@ -32,7 +32,7 @@ const report = {
   limitations: ['Small synthetic suite, one run per stage and no statistical significance.', 'No billion-token, overnight, general retrieval recall, or provider calibration claim.', 'Fresh evidence conservatively invalidates all scores. Repeated evidence can reuse scores.'],
   cases: [],
 };
-report.implementation = Object.fromEntries(await Promise.all(['../server/context/compaction.js', '../server/context/jev.js', './benchmark-context-evolving.mjs', './fixtures/evolving-context.mjs', '../server/context/evidence-policy.js'].map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')])));
+report.implementation = Object.fromEntries(await Promise.all(['../server/context/compaction.js', '../server/context/jev.js', './benchmark-context-evolving.mjs', './fixtures/evolving-context.mjs', '../server/context/evidence-policy.js', '../server/context/repeat-evidence.js'].map(async file => [file, createHash('sha256').update(await fs.readFile(new URL(file, import.meta.url))).digest('hex')])));
 const functions = [
   {type: 'function', function: {name: 'context_read', description: 'Read original archived evidence in this run by record id. Use this when a needed record is absent.', parameters: {type: 'object', properties: {id: {type: 'string'}, part: {type: 'integer', minimum: 0}}, required: ['id'], additionalProperties: false}}},
   {type: 'function', function: {name: 'context_list', description: 'List archived record ids in this run.', parameters: {type: 'object', properties: {offset: {type: 'integer', minimum: 0}}, additionalProperties: false}}},

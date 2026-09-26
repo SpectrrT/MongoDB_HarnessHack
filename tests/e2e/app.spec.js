@@ -29,7 +29,7 @@ test("landing, onboarding, suggestions and memory persist", async ({
   await page.getByRole("button", { name: "View all" }).click();
   await expect(page).toHaveURL(/\/app\/chat$/);
   await expect(
-    page.getByRole("heading", { name: "Your workspace, at a glance." }),
+    page.getByRole("heading", { name: "Hello Alex What can I help you with?" }),
   ).toBeVisible();
   await page.goto("/app/memory");
   await page
