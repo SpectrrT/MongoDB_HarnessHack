@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { executeLocalTool } from '../local-tools.js';
 import { LeaseLost } from '../harness/store.js';
+import { assessContinuation } from '../harness/continuation.js';
 import { outputPath } from './execution-store.js';
 
 const planSchema = z.object({ summary: z.string().max(2000), files: z.array(z.object({ path: outputPath,
@@ -97,9 +98,23 @@ export async function sleepExecutionTick(store, executor, { worker = randomUUID(
     const checkResults = await checkArtifacts(task, directory);
     await fence();
     if (checkResults.every(c => c.passed)) return await store.finish(task, 'completed', { artifacts, checkResults, reason: 'All required file checks passed.', pending: null });
-    const more = task.calls < task.input.maxAttempts && task.tokensUsed < task.input.budget;
-    return await store.finish(task, more ? 'queued' : 'incomplete', { artifacts, checkResults,
-      repairs: task.repairs + 1, pending: null, lastDraft: plan, reason: more ? 'Checks failed. Repair queued.' : 'acceptance-checks-failed' });
+    const failures = checkResults.reduce((sum, check) => sum + check.failed.length, 0);
+    const best = task.bestFailureCount ?? Number.MAX_SAFE_INTEGER;
+    const stalledAttempts = failures < best ? 0 : (task.stalledAttempts || 0) + 1;
+    const nextPrompt = executionPrompt({ ...task, checkResults, lastDraft: plan });
+    const continuation = assessContinuation({ objective: task.input.brief,
+      requiredCheckIds: task.input.checks.map((check, index) => `${index}:${check.path}`),
+      checks: checkResults.map((check, index) => ({ id: `${index}:${check.path}`, passed: check.passed })),
+      deadlineAt: task.input.deadline, attempts: task.calls, maxAttempts: task.input.maxAttempts,
+      tokensUsed: task.tokensUsed, tokenBudget: task.input.budget,
+      nextTokenReservation: Buffer.byteLength(nextPrompt) + 512 + 64,
+      stalledAttempts, maxStalledAttempts: 2,
+    }, { now: store.clock() });
+    const status = continuation.action === 'continue' ? 'queued' : continuation.action === 'pause' ? 'paused' : 'incomplete';
+    return await store.finish(task, status, { artifacts, checkResults, stalledAttempts,
+      bestFailureCount: Math.min(best, failures), continuationReason: continuation.reason,
+      repairs: task.repairs + 1, pending: null, lastDraft: plan,
+      reason: status === 'queued' ? 'Checks failed. Repair queued.' : status === 'paused' ? continuation.reason : 'acceptance-checks-failed' });
   } catch (e) {
     // Pauses, cancellation and another lease holder already own the outcome.
     if (e instanceof LeaseLost || controller.signal.reason instanceof LeaseLost) return await store.get(task.workspace, task._id);

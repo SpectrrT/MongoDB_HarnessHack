@@ -410,6 +410,8 @@ On three short synthetic local drafting tasks, the old queue saved 3/3 briefs bu
 
 Raw results, artifacts, costs, and checks: [initial live run](docs/evidence/sleep-execution-live-initial.json), [refined live run](docs/evidence/sleep-execution-live.json). Reproduce with `node --env-file=.env scripts/sleep-execution-demo.mjs --live`. The focused durability and ownership suite passed 20/20 Node test results, including its parent suite. Scope is isolated local draft files; broader external tasks and semantic completion require additional executors and checks.
 
+The continuation policy also detects unchanged failed checks. A scripted eight-attempt task now pauses after three calls when two repair attempts make no verified progress. Five permitted attempts remain unspent; explicit resume with corrected output completes on call four. This is a measured stopping-policy test, not an additional live token-savings claim. The expanded Sleep suite plus the shared continuation-policy suite pass 28/28 Node test results.
+
 ## Appearance and reasoning
 
 Settings ends with 17 palettes, including monochrome, Codex-style light/dark, Claude-style light/dark and common editor palettes. System matching is available for the Codex and Claude families. Paste a `codex-theme-v1` export to import any other Codex palette. These are Offload adaptations, not a claim that every editor palette ships with the Codex desktop app. Fonts and layout stay consistent while the colors change.

@@ -26,7 +26,7 @@ export class SleepExecutionStore {
     const fingerprint = createHash('sha256').update(JSON.stringify(input)).digest('hex');
     const task = { _id: randomUUID(), workspace, requestKey, fingerprint, input, status: 'queued',
       runner: 'sleep-file-worker', tokensUsed: 0, tokensReserved: 0, usageUnknown: 0, cost: 0,
-      calls: 0, repairs: 0, checkpoint: 0, leaseUntil: new Date(0), createdAt: new Date(now), updatedAt: new Date(now),
+      calls: 0, repairs: 0, stalledAttempts: 0, checkpoint: 0, leaseUntil: new Date(0), createdAt: new Date(now), updatedAt: new Date(now),
       grants: input.writeFiles, events: [], artifacts: [], checkResults: [] };
     try { await this.tasks.insertOne(task); return task; }
     catch (e) {
@@ -91,6 +91,7 @@ export class SleepExecutionStore {
     if (!status) throw new RunConflict('Invalid task action.');
     const fields = { status, leaseUntil: new Date(0), updatedAt: new Date(this.clock()) };
     if (action === 'approve') fields.approvedDigest = task.pendingDigest;
+    if (action === 'resume') fields.stalledAttempts = 0;
     return this.tasks.findOneAndUpdate({ _id: id, workspace, status: task.status, checkpoint: task.checkpoint },
       [{ $set: { ...fields, tokensUsed: { $add: ['$tokensUsed', '$tokensReserved'] }, tokensReserved: 0,
         usageUnknown: { $add: ['$usageUnknown', { $cond: [{ $gt: ['$tokensReserved', 0] }, 1, 0] }] },

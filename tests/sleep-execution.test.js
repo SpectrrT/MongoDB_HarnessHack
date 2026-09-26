@@ -56,6 +56,17 @@ test('Sleep assigned tasks: durable local execution and independent checks', asy
       const done = await tick(store, async () => ({ ...await executor(), plan: { summary: 'Done', files: [{ path: 'handoff.md', content: 'Missing facts' }] } }));
       assert.equal(done.status, 'incomplete'); assert.equal(done.reason, 'acceptance-checks-failed'); assert.equal(done.checkResults[0].passed, false);
     });
+    await t.test('unchanged failed checks pause larger budgets after three calls and retain progress across workers', async () => {
+      const store = await make(), task = await store.enqueue('owner', 'stall', input({ maxAttempts: 8 }));
+      const unchanged = async () => ({ ...await executor(), plan: { summary: 'Done', files: [{ path: 'handoff.md', content: 'Missing facts' }] } });
+      assert.equal((await tick(store, unchanged)).stalledAttempts, 0);
+      assert.equal((await tick(store, unchanged)).stalledAttempts, 1);
+      const paused = await tick(store, unchanged);
+      assert.equal(paused.status, 'paused'); assert.equal(paused.reason, 'no_verified_progress'); assert.equal(paused.calls, 3);
+      assert.equal(await tick(store, unchanged), null);
+      await store.control('owner', task._id, 'resume');
+      const done = await tick(store); assert.equal(done.status, 'completed'); assert.equal(done.calls, 4);
+    });
     await t.test('expired deadline prevents a model call or file write', async () => {
       let now = Date.now(); const store = await make({ clock: () => now });
       await store.enqueue('owner', 'late', input({ deadline: now + 1000 })); now += 1001;
