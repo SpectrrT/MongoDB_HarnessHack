@@ -165,7 +165,7 @@ test("probabilistic termination: a run below threshold attempts repair, then sto
   assert.equal(bad.turns, ok.turns + 1);
 });
 
-test("the Jev gate reads a probability and falls back to the labeled stub when OpenRouter refuses", async () => {
+test("the Jev gate reads a probability and fails closed when OpenRouter refuses", async () => {
   const cp = { instruction: "Check release readiness for W33", plan: [], transcript: [] };
   const good = createJevGate({ apiKey: "k", fetchImpl: async (url, init) => {
     const body = JSON.parse(init.body);
@@ -178,8 +178,9 @@ test("the Jev gate reads a probability and falls back to the labeled stub when O
   assert.deepEqual([v.p, v.source, v.tokens], [0.05, "typesafe/jev-1.13", 400]);
   const broke = createJevGate({ apiKey: "k", fetchImpl: async () => ({ ok: false, status: 402 }) });
   const f = await broke.check({ cp, final: "go", evidence: { failures: [] } });
-  assert.equal(f.source, "stub (jev unavailable: 402 payment required)");
-  assert.equal(typeof f.p, "number");
+  assert.equal(f.source, "jev unavailable: 402 payment required");
+  assert.equal(f.p, null);
+  assert.equal(f.available, false);
 });
 
 test("the morning brief reports cost per verified success and a timeline of the night", async () => {

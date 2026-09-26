@@ -1,6 +1,7 @@
 // REM API. One shared demo instance for every visitor (not per-visitor like /api/state): the
 // engine's harness, memory and ledger are the thing being demonstrated. Mutations run one at a time.
 import { z } from "zod";
+import { remAccess } from "./rem-access.js";
 import { createRem } from "../rem/index.js";
 import { review } from "../rem/cycle.js";
 import { createEmbedder } from "../rem/embed.js";
@@ -93,6 +94,7 @@ async function reviewFinished(rem) {
 }
 
 export function mountRem(app) {
+  app.use("/api/rem", remAccess());
   const handle = (fn) => async (req, res, next) => {
     try {
       res.json(await fn(req, res));

@@ -248,11 +248,11 @@ const pick = (args = {}) =>
     ["folder", "week", "query", "titlePrefix", "olderThan"].filter((k) => args[k] !== undefined).map((k) => [k, args[k]]),
   );
 
-export async function currentHarness(db) {
-  return db.collection("harnesses").findOne({}, { sort: { version: -1 } });
+export async function currentHarness(db, session) {
+  return db.collection("harnesses").findOne({}, { sort: { version: -1 }, ...(session ? { session } : {}) });
 }
 
-export async function commitHarness(db, { parent, genome, editIds = [], fitness = null, metrics = null, night = null, now }) {
+export async function commitHarness(db, { parent, genome, editIds = [], fitness = null, metrics = null, night = null, now }, session) {
   const version = parent ? parent.version + 1 : 0;
   const diff = parent ? diffGenomes(parent.genome, genome) : [];
   const doc = {
@@ -268,7 +268,7 @@ export async function commitHarness(db, { parent, genome, editIds = [], fitness 
     night,
     createdAt: new Date(now),
   };
-  await db.collection("harnesses").insertOne(doc);
+  await db.collection("harnesses").insertOne(doc, session ? { session } : {});
   return doc;
 }
 

@@ -3,7 +3,7 @@
 // always ask.
 import { TASK_KINDS } from "./tasks.js";
 import { setConnection } from "./agent.js";
-import { applyEdit, commitHarness, currentHarness } from "./harness.js";
+import { decideAuthority } from "./authority.js";
 
 const SCOPE_NOTE = {
   send: "needs Gmail send scope",
@@ -96,24 +96,7 @@ export async function decide(ctx, askId, decision, { answer } = {}) {
       .collection("skills")
       .updateOne({ name: ask.skill }, approved ? promote("human", now) : { $set: { declinedAt: now } });
   if (ask.kind === "reconnect" && approved) await setConnection(db, ask.provider, "valid", clock.now());
-  if (ask.kind === "edit.authority") {
-    const edit = await db.collection("edits").findOne({ _id: ask.editId });
-    let resultVersion = null;
-    if (approved) {
-      const parent = await currentHarness(db);
-      const next = await commitHarness(db, {
-        parent,
-        genome: applyEdit(parent.genome, edit),
-        editIds: [edit._id],
-        night: edit.night,
-        now: clock.now(),
-      });
-      resultVersion = next.version;
-    }
-    await db
-      .collection("edits")
-      .updateOne({ _id: edit._id }, { $set: { "outcome.status": approved ? "approved" : "denied", resultVersion } });
-  }
+  if (ask.kind === "edit.authority") return decideAuthority(ctx, ask, approved);
   if (ask.kind === "owner" && answer) {
     const summary = `Owner of "${ask.item}" is ${answer}`;
     await db.collection("episodes").insertOne({

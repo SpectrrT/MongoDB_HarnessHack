@@ -30,7 +30,7 @@ const PHASE_BY_COLLECTION = {
 };
 const PHASES = ["Replay", "Merge", "Distill", "Evolve", "Asks", "Brief"];
 const METRIC_ORDER = ["tasks", "passed", "passRate", "collateral", "cost", "steps", "interventions", "latencyMs"];
-const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", failed: "is-cancelled" };
+const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", incomplete: "is-blocked", failed: "is-cancelled" };
 
 const get = async (url) => {
   const r = await fetch(url);
@@ -39,7 +39,7 @@ const get = async (url) => {
   return v;
 };
 const post = async (url, body) => {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Offload-Client": "local" }, body: JSON.stringify(body ?? {}) });
   const v = await r.json();
   if (!r.ok) throw Error(v?.error || "Request failed.");
   return v;
@@ -311,6 +311,7 @@ function AsksList({ asks, onDecide, busy }) {
       {asks.map((a) => (
         <article key={a._id} className="rem-ask">
           <p>{a.text}</p>
+          {a.validation?.reason && <p className="muted">{a.validation.reason}</p>}
           <span className="muted">
             {a.kind}
             {a.risk ? ` · risk: ${a.risk}` : ""}
@@ -736,8 +737,9 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
     setBusy(true);
     setError("");
     try {
-      await post(`/api/rem/asks/${id}`, { decision });
+      const result = await post(`/api/rem/asks/${id}`, { decision });
       await reload();
+      if (result.ask?.validation && !result.ask.validation.passed) setError(result.ask.validation.reason);
     } catch (e) {
       setError(e.message);
     } finally {

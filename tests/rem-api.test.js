@@ -9,7 +9,7 @@ import { createApp } from "../server/index.js";
 test("REM API: run, pause for auth, reconnect, sleep, ask, simulate and reset", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "rem-api-"));
   try {
-    const api = request.agent(createApp({ dataDir: dir, serveStatic: false }));
+    const api = request.agent(createApp({ dataDir: dir, serveStatic: false })).set("X-Offload-Client", "local");
     await api.post("/api/rem/reset").expect(200);
     const start = await api.get("/api/rem/state").expect(200);
     assert.equal(start.body.harness.version, 0);
@@ -74,7 +74,7 @@ test("REM stream sends Server-Sent Events from the database change stream", asyn
     while (!text.includes("event: hello")) text += decoder.decode((await reader.read()).value);
     await fetch(`${base}/api/rem/connection`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", "X-Offload-Client": "local" },
       body: JSON.stringify({ provider: "gmail", state: "expired" }),
     });
     while (!text.includes('"collection":"connections"')) text += decoder.decode((await reader.read()).value);
