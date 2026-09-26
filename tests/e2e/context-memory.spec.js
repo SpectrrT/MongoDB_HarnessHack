@@ -7,7 +7,8 @@ test('Memory names the section correctly and shows context metrics on desktop an
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('/app/sleep?view=memory&memory=context');
  await expect(page).toHaveURL(/\/app\/memory\?.*tab=sleep/);
- await expect(page.getByRole('heading',{name:'Context memory',exact:true})).toBeVisible();
+ await expect(page.locator('details.memory-disclosure').filter({has:page.locator('summary strong',{hasText:'Context memory'})})).toHaveAttribute('open','');
+ await expect(page.getByRole('heading',{name:'How context is kept',exact:true})).toBeVisible();
  await expect(page.getByText('No context selections recorded yet.')).toBeVisible();
  // A rendering fixture, explicitly separate from the live benchmark.
  await page.route('**/api/rem/state',route=>route.fulfill({json:{engine:{compaction:'fixture selector',database:'test',model:'test'},runs:[{runId:'render-test',title:'UI fixture: release evidence',usage:{compactionInputTokens:123,compactionOutputTokens:4},compaction:{status:'compacted',source:'fixture selector',beforeChars:7200,afterChars:150,retained:3,archived:12,decisionCalls:2,cacheHits:10,latencyMs:500,inputTokens:123,outputTokens:4,usageKnown:true,errors:[]}},{runId:'byte-overflow',title:'UI fixture: checkpoint limit',status:'needs_review',compaction:{source:'working-transcript',status:'needs_review',beforeBytes:70000,budgetBytes:65536}}]}}));

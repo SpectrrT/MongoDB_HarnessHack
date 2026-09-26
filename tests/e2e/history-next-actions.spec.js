@@ -101,7 +101,7 @@ test('Legacy Sleep and REM links resolve into the Memory hub', async ({ page }) 
   await page.goto('/app/sleep?view=conversations');
   await expect(page).toHaveURL(/\/app\/memory\?view=conversations&tab=sleep$/);
   await expect(page.getByRole('navigation', { name: 'Memory views' }).getByRole('link', { name: 'Sleep', exact: true })).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByRole('heading', { name: 'Sleeping conversations', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Conversations and reviews', exact: true })).toBeVisible();
   await page.goto('/app/rem');
   await expect(page).toHaveURL(/\/app\/memory\?tab=rem$/);
   await expect(page.getByRole('navigation', { name: 'Memory views' }).getByRole('link', { name: 'Learning', exact: true })).toHaveAttribute('aria-current', 'page');
