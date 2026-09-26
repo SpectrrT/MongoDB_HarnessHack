@@ -51,6 +51,28 @@ test('Sleep assigned tasks: durable local execution and independent checks', asy
       const first = await tick(store, repair); assert.equal(first.status, 'queued'); assert.equal(first.repairs, 1);
       const second = await tick(store, repair); assert.equal(second.status, 'completed'); assert.equal(second.tokensUsed, 300); assert.equal(calls, 2);
     });
+    await t.test('nested JSON content is rejected and its schema error reaches the bounded repair', async () => {
+      const store=await make(),document={status:'draft',count:2};
+      const task=await store.enqueue('owner','json-contract',input({checks:[{path:'artifact.json',contains:[],minBytes:2,json:true}],writeFiles:['artifact.json'],maxAttempts:2}));
+      let calls=0;
+      const repair=async({prompt})=>{
+        const context=JSON.parse(prompt);assert.match(context.instruction,/content MUST be a STRING/);
+        if(calls===0)assert.equal(context.priorOutputError,null);
+        else{assert.match(context.priorOutputError,/files\.0\.content/);assert.match(context.priorOutputError,/expected string, received object/);}
+        return {...await executor(),plan:{summary:'JSON draft',files:[{path:'artifact.json',content:++calls===1?document:JSON.stringify(document)}]}};
+      };repair.retrySafe=true;
+      const rejected=await tick(store,repair);assert.equal(rejected.status,'queued');assert.equal(rejected.artifacts.length,0);assert.equal(rejected.tokensUsed,150);
+      await assert.rejects(fs.access(taskDirectory(root,task)),{code:'ENOENT'});
+      const done=await tick(store,repair);assert.equal(done.status,'completed');assert.equal(done.calls,2);assert.equal(done.tokensUsed,300);assert.equal(done.error,null);
+      assert.deepEqual(JSON.parse(await fs.readFile(path.join(taskDirectory(root,task),done.artifacts[0].directory,'artifact.json'),'utf8')),document);
+    });
+    await t.test('repeated invalid file content stops at the existing attempt limit without writing', async () => {
+      const store=await make();await store.enqueue('owner','invalid-json-limit',input({maxAttempts:2}));
+      const invalid=async()=>({...await executor(),plan:{summary:'Invalid',files:[{path:'handoff.md',content:{text:'Never coerce this object'}}]}});invalid.retrySafe=true;
+      assert.equal((await tick(store,invalid)).status,'queued');
+      const done=await tick(store,invalid);assert.equal(done.status,'incomplete');assert.equal(done.calls,2);assert.equal(done.tokensUsed,300);assert.equal(done.artifacts.length,0);
+      assert.match(done.error,/files\.0\.content/);assert.equal(await tick(store,invalid),null);
+    });
     await t.test('exhausted checks produce explicit incomplete with evidence', async () => {
       const store = await make(); await store.enqueue('owner', 'bad', input({ maxAttempts: 1 }));
       const done = await tick(store, async () => ({ ...await executor(), plan: { summary: 'Done', files: [{ path: 'handoff.md', content: 'Missing facts' }] } }));
