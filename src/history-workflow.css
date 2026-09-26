@@ -34,3 +34,6 @@
 .history-workflow footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
 .history-workflow .saved { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; }
 .history-workflow .source { margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--off-muted); }
+
+/* While the card is open, the empty chat stops centering, so the whole card can scroll into view on small screens. */
+.workspace .live-chat.empty-thread:has(.history-workflow) { justify-content: flex-start; height: auto; min-height: 100%; }
