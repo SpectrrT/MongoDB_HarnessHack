@@ -36,3 +36,10 @@ Supply a persisted snapshot with `objective`, `deadlineAt` (epoch milliseconds o
 The runner owns authorization, trusted evidence scoped to the current goal and artifact version, persistence, wakeups, leases and atomic token reservation. Count attempts across restarts; never reset them on a continuation prompt. Count a stall when an attempt adds no verified milestone or useful artifact change. Model self-reports and repeated text are not progress. Cancellation, deadline expiry and usage enforcement must also interrupt in-flight calls; evaluating this helper only between calls is insufficient. A continuation decision does not itself reserve budget or prevent concurrent workers.
 
 On `continue`, pass the reminder with the existing task constraints and relevant saved state. On `pause`, save the reason and surface the blocker instead of automatically repeating the same prompt. On `stop`, retain the artifact, evidence and unfinished criteria. The reminder asks for the next useful step and evidence, without inventing positive feedback or granting more authority. Runner integration must exercise restart, fencing, reservation, blocked-state wakeup and stop behavior end to end before claiming autonomous continuation works.
+
+
+# Process restart evidence
+
+`tests/harness-process.test.js` uses a disposable real MongoDB server and three separate Node processes. It kills the first worker with SIGKILL after the context checkpoint commits and a draft call starts. The second worker waits for the unchanged lease to expire and completes the handoff. Four unique receipts remain, the old lease cannot commit, and the third worker makes no further provider call for the terminal run. The draft provider is a fixture and runs twice because the first draft call was interrupted.
+
+This verifies the durable handoff worker's checkpoint and fencing behavior under real process death. It does not establish exactly-once external provider effects, live Atlas availability, or persistence of the separate REM simulated world.
