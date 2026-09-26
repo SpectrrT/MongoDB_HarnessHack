@@ -30,7 +30,7 @@ function AppScreens() {
     ? "workspace"
     : location.pathname;
   return (
-    <ScreenTransition screenKey={screen} className="app-screen" lift={false}>
+    <ScreenTransition screenKey={screen} className="app-screen" lift={false} page>
       <Suspense fallback={<OrbLoading />}>
         <Routes location={location}>
           <Route path="/" element={<Landing />} />

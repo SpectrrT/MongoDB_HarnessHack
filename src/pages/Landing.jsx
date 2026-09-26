@@ -2,8 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight, ArrowRight, Plus } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import Net from "../components/Net";
-import AsciiField from "../components/AsciiField";
-import AsciiMemory from "../components/AsciiMemory";
+import {WorkDiagram,MemoryDiagram} from "../components/LandingDiagrams";
 import "../landing-ascii.css";
 export default function Landing() {
   return (
@@ -42,7 +41,7 @@ export default function Landing() {
               Your workspace stays on this device.
             </span>
           </div>
-          <AsciiField />
+          <WorkDiagram />
         </section>
         <div className="ascii-sequence" aria-hidden="true"><span>[ observe ]</span><span>··············&gt;</span><span>[ remember ]</span><span>··············&gt;</span><span>[ suggest ]</span><span>··············&gt;</span><span>[ offload ]</span></div>
         <section className="site-preview" id="how">
@@ -111,7 +110,7 @@ export default function Landing() {
             </div>
           </div>
         </section>
-        <AsciiMemory />
+        <MemoryDiagram />
         <section className="site-story" id="control">
           <div>
             <p className="eyebrow">Your permissions</p>

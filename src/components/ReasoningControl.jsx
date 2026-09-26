@@ -37,7 +37,7 @@ export default function ReasoningControl({value,onChange,supported=[],disabled})
  };
  const displayed=choices[preview??index]?.[1]||effortLabel(value);
  return <div className="reasoning-control" ref={ref}>
-  <button type="button" className="reasoning-trigger" aria-label="Adjust reasoning" aria-expanded={open} aria-controls="reasoning-popover" disabled={disabled} onClick={()=>setOpen(v=>!v)}><SlidersHorizontal size={12}/>{effortLabel(value)}</button>
+  <button type="button" className="reasoning-trigger" aria-label="Adjust reasoning" aria-expanded={open} aria-controls="reasoning-popover" disabled={disabled} onClick={()=>setOpen(v=>!v)}><SlidersHorizontal size={16}/>{effortLabel(value)}</button>
   {createPortal(<AnimatePresence>{open&&<motion.div id="reasoning-popover" ref={popup} style={position} className="reasoning-popover" initial={{opacity:0,y:reduced?0:4}} animate={{opacity:1,y:0}} exit={{opacity:0,y:reduced?0:3}} transition={{duration:reduced?0:.14}}>
    <div className="reasoning-heading"><span>Reasoning</span><strong>{displayed}</strong></div>
    <div className="reasoning-slider-wrap" data-disabled={locked||undefined} data-dragging={preview!==null||undefined}>

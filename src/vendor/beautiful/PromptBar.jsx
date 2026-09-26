@@ -569,7 +569,7 @@ function PromptBar({
                         ]
                       }
                     ),
-                    controls && /* @__PURE__ */ jsx("div", { className: wide ? "col-start-3 row-start-2 justify-self-start" : "col-start-4 row-start-1", children: controls }),
+                    controls && /* @__PURE__ */ jsx("div", { className: `prompt-extra-controls flex items-center gap-1 ${wide ? "col-start-3 row-start-2 justify-self-start" : "col-start-4 row-start-1"}`, children: controls }),
                     /* @__PURE__ */ jsx(
                       "button",
                       {

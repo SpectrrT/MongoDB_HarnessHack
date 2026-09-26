@@ -1,0 +1,34 @@
+/* Offload graphics: existing serif/sans typography, with color reserved for meaning. */
+.work-diagram {position:relative;z-index:1;margin:0;width:100%;max-width:520px;justify-self:end;}
+.diagram-index {display:flex;justify-content:space-between;gap:12px;font:10px/1.5 var(--ascii-font,monospace);letter-spacing:.07em;color:#647068;margin-bottom:16px;}
+.work-diagram svg {display:block;width:100%;height:auto;}
+.diagram-node {font-family:'Inter',sans-serif;font-size:18px;font-weight:500;fill:#26332a;}
+.diagram-sub {font-family:'Inter',sans-serif;font-size:14px;}
+.diagram-wordmark {font:40px 'Instrument Serif',serif;}
+.work-diagram figcaption {display:flex;justify-content:space-between;margin-top:16px;font-size:12px;color:#606a61;}
+.ascii-site .hero {gap:56px;}
+.memory-diagram-section {max-width:1210px;margin:0 auto;padding:64px 50px 100px;display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:100px;}
+.diagram-kicker {font:10px/1.5 var(--ascii-font,monospace);letter-spacing:.04em;color:#657062;}
+.memory-diagram-copy h2 {font:400 53px/1.1 'Instrument Serif',serif;letter-spacing:-.02em;margin:24px 0;}
+.memory-diagram-copy p {font-size:15px;line-height:1.8;color:#6b706a;max-width:360px;margin-bottom:24px;}
+.memory-diagram-copy button {gap:20px;min-height:44px;}
+.memory-diagram {margin:0;padding:28px;background:#f5f3ed;border:1px solid #e8e4db;border-radius:8px;}
+.memory-note-stack {display:grid;gap:8px;min-height:328px;align-content:start;padding:12px 0 24px;}
+.memory-note {display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:44px;border-radius:4px;border:1px solid;transition:background-color .25s;}
+.note-blue {background:#e5ebfc;border-color:#c2cfef;color:#314b95;}
+.note-amber {background:#f8ebc7;border-color:#e2cf96;color:#796223;}
+.note-green {background:#e5eedc;border-color:#c5d6b5;color:#4a6637;}
+.note-pink {background:#f3e4df;border-color:#dec0b4;color:#7d5141;}
+.memory-note>span:nth-child(2) {font-size:13px;font-weight:500;}
+.note-mark {font:16px var(--ascii-font,monospace);}
+.note-tail {margin-left:auto;font:10px var(--ascii-font,monospace);opacity:.7;}
+.memory-output {border-top:1px solid #dcd8ce;padding-top:20px;display:flex;gap:12px;align-items:center;}
+.memory-output-icon {display:grid;place-items:center;width:36px;height:36px;background:#e5e1d5;border-radius:50%;font-size:18px;flex-shrink:0;}
+.is-reviewed .memory-output-icon {background:#dbe9ca;color:#406135;}
+.memory-output strong,.memory-output span:not(.memory-output-icon) {display:block;font-size:12px;line-height:1.6;}
+.memory-output strong {font-weight:500;}.memory-output div>span {color:#707267;}
+.memory-diagram figcaption {margin:20px 0 0;font:9px var(--ascii-font,monospace);color:#73766c;}
+@media(max-width:1000px){.ascii-site .hero{gap:32px;}.memory-diagram-section{gap:48px;}}
+@media(max-width:900px){.work-diagram{justify-self:center;max-width:480px;}.memory-diagram-section{gap:36px;}.memory-diagram-copy h2{font-size:44px;}}
+@media(max-width:680px){.memory-diagram-section{grid-template-columns:1fr;padding:28px 25px 64px;gap:28px;}.memory-diagram-copy h2{font-size:43px;}.memory-diagram{padding:20px;}.diagram-index{font-size:9px;}.work-diagram figcaption{font-size:11px;}.memory-diagram-copy p{max-width:none;}.memory-note-stack{min-height:328px;}.ascii-site .hero{gap:36px;}}
+@media(prefers-reduced-motion:reduce){.memory-note{transition:none;}}

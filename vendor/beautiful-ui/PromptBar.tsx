@@ -682,7 +682,7 @@ export default function PromptBar({
             </span>
           </button>
 
-          {controls && <div className={wide ? "col-start-3 row-start-2 justify-self-start" : "col-start-4 row-start-1"}>{controls}</div>}
+          {controls && <div className={`prompt-extra-controls flex items-center gap-1 ${wide ? "col-start-3 row-start-2 justify-self-start" : "col-start-4 row-start-1"}`}>{controls}</div>}
 
           {/* dictation */}
           <button

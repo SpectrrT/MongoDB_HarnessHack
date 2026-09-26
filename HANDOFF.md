@@ -1,3 +1,19 @@
+# UI and local agent checkpoint — September 26, afternoon
+
+- Landing page: colored context diagrams and a workspace transition. Sidebar: compact wordmark, separate Overview, Tasks, Memory, Sleep and Connections; collapsible conversation history.
+- New chats show rotating suggestions for coursework, recruiting, travel and planning. The former right-hand suggestions panel is removed. Reasoning and Sleep sit side by side; mobile gives the pair its own row.
+- Connection status no longer flashes a setup card while loading. Session modes have no extra checkbox; browser media permission prompts remain intact.
+- ChatGPT sign-in uses the native Codex managed flow. Its lifecycle is covered by mocked protocol tests; a fresh-account OAuth round trip has not been verified. Each teammate needs their own local account setup.
+- Opt-in conversation Sleep makes one bounded follow-up after 30 minutes idle while the local server runs. It preserves tool approvals. This is not a recurring-task scheduler or a measured token-saving feature.
+- Tool activity displays actual events with service labels. A live Gmail search succeeded; CourseWorks and Gradescope access is not verified because Chrome access encountered a policy/permission blocker. Do not present fabricated login progress.
+- Pending requests: conversation archive/delete/Sleep actions, recurring task creation and clarification, Claude account support (confirm the user's “cloud account” wording), and the remaining end-to-end browser integrations.
+- Validation: 84 unit/API tests passed, web build passed, and the header/session forms and Sleep control layout were checked in Chrome at desktop and 390 px widths. No new live recording was started in that UI check.
+- Repository destination: `SpectrrT/MongoDB_HarnessHack`; preserve its main history. Secrets and private recordings remain local. No public deployment was performed.
+
+This checkpoint supersedes conflicting older status notes below.
+
+---
+
 # Session update — new repository history
 
 Repository: `SpectrrT/MongoDB_HarnessHack`. Branch: `floyd/session-capture`, based on its `main` at `1a94250`. The previous agent/UI changes were reapplied as a new commit, without merging the old repository ancestry. `rem/`, `server/harness/`, and `server/sleep/` are preserved.

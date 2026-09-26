@@ -7,6 +7,7 @@ const exec = promisify(execFile);
 const binary = process.env.OFFLOAD_CODEX_BIN || path.join(os.homedir(), '.local/bin/codex');
 const environment = () => Object.fromEntries(['HOME','PATH','USER','TMPDIR','CODEX_HOME'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
 let cached;
+export function clearCodexCache(){cached=null;}
 export async function codexStatus() {
   try {
     const {stdout,stderr} = await exec(binary, ['login','status'], {env:environment(), timeout:5000});

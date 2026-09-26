@@ -228,6 +228,7 @@ export default function SidebarNav({
   const [demoActiveTitle, setDemoActiveTitle] = useState<string | null>(null);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [workspacePosition, setWorkspacePosition] = useState({ top: 0, left: 0 });
+  const [recentsOpen, setRecentsOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const workspaceButtonRef = useRef<HTMLButtonElement>(null);
@@ -334,8 +335,7 @@ export default function SidebarNav({
             label="New chat"
             onClick={() => {
               if (activeTitle === undefined) setDemoActiveTitle(null);
-              selectNav("chats");
-              onNewChat?.();
+              if(onNewChat)onNewChat();else selectNav("chats");
             }}
           />
           {navItems.map((item) => (
@@ -352,20 +352,20 @@ export default function SidebarNav({
 
         <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
           <div className="sidebar-copy relative mx-2 mb-1 h-8">
-            <div
-              aria-hidden={searchOpen}
+            <button type="button" aria-label={recentsOpen ? "Collapse conversations" : "Expand conversations"} aria-expanded={recentsOpen} aria-controls="conversation-list" onClick={()=>setRecentsOpen(v=>!v)}
+              aria-hidden={searchOpen} tabIndex={searchOpen?-1:0}
               className={`absolute inset-0 flex items-center gap-1.5 px-2 text-[12.5px] font-medium text-ink-3 transition-[opacity,transform] ${searchOpen ? "pointer-events-none -translate-x-1 opacity-0" : "translate-x-0 opacity-100"}`}
               style={{ transitionDuration: `${CHAT_SEARCH_MOTION.duration}ms`, transitionTimingFunction: CHAT_SEARCH_MOTION.easing }}
             >
-              <IconChevronDownSmall size={16} />
-              <span>Chats</span>
-            </div>
+              <span style={{transform:recentsOpen?'rotate(0deg)':'rotate(-90deg)',transition:'transform 180ms'}}><IconChevronDownSmall size={16} /></span>
+              <span>Conversations</span>
+            </button>
 
             <button
               type="button"
               aria-label="Search chats"
               aria-expanded={searchOpen}
-              onClick={() => setSearchOpen(true)}
+              onClick={() => {setRecentsOpen(true);setSearchOpen(true);}}
               className={`absolute right-0 top-0 z-10 flex size-8 items-center justify-center rounded-[8px] text-ink-3 transition-[opacity,background-color,color,transform] hover:bg-hover-2 hover:text-ink active:scale-[0.96] ${searchOpen ? "pointer-events-none opacity-0" : "opacity-100"}`}
               style={{ transitionDuration: `${CHAT_SEARCH_MOTION.duration}ms` }}
             >
@@ -411,7 +411,7 @@ export default function SidebarNav({
             </div>
           </div>
 
-          <GlideGroup>
+          <div id="conversation-list" hidden={!recentsOpen}><GlideGroup>
             {visibleRecents.map((item) => {
               const active = item.label === selectedTitle;
               return (
@@ -438,7 +438,7 @@ export default function SidebarNav({
             {query && visibleRecents.length === 0 && (
               <div className="sidebar-copy mx-2 px-2 py-2 text-[12.5px] text-ink-3">No chats found</div>
             )}
-          </GlideGroup>
+          </GlideGroup></div>
         </div>
 
         {footerLabel && <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
