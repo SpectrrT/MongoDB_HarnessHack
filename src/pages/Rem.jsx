@@ -337,7 +337,7 @@ function RunExtras({ run }) {
   if (!gate && !inj && !compact) return null;
   return (
     <div className="rem-run-extras">
-      {compact && <p>Sleep context: {compact.beforeChars} to {compact.afterChars} characters, {compact.archived} exchanges archived, {compact.decisionCalls} new decision calls. {compact.status === "needs_review" ? "Protected context exceeds budget." : ""}</p>}
+      {compact && Number.isFinite(compact.beforeBytes) ? <p>Sleep working transcript: {compact.beforeBytes} bytes, budget {compact.budgetBytes} bytes. Protected context needs review.</p> : compact && <p>Sleep context: {compact.beforeChars} to {compact.afterChars} characters, {compact.archived} exchanges archived, {compact.decisionCalls} new decision calls. {compact.status === "needs_review" ? "Protected context exceeds budget." : ""}</p>}
       {gate && (
         <p>
           P(goal satisfied | evidence) = {gate.p == null ? "unavailable" : Number(gate.p).toFixed(2)} vs threshold {gate.threshold}:{" "}

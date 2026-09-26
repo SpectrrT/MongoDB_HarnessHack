@@ -514,7 +514,7 @@ export function createAgent({
     if (driving.has(runId)) return driving.get(runId);
     const task = driveOnce(runId, opts).catch(async error => {
       if (!(error instanceof ContextBudgetError)) throw error;
-      await checkpoints.updateOne({runId, driver: workerId}, {$set: {status: "needs_review", final: error.message, updatedAt: now()}});
+      await checkpoints.updateOne({runId, driver: workerId}, {$set: {status: "needs_review", final: error.message, compaction: error.metrics, updatedAt: now()}});
       return checkpoints.findOne({runId});
     }).then(cp => transcripts.result(cp)).finally(() => driving.delete(runId));
     driving.set(runId, task);
