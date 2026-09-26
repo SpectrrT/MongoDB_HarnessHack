@@ -82,3 +82,11 @@
 .sleep-workspace label { color: var(--off-ink); }
 .sleep-workspace .memory-list article > p { color: var(--off-ink); }
 .sleep-workspace .sleep-schedule label { flex-direction: row; }
+
+.overnight-task-head>span,.overnight-meta { font-family:var(--font-sans); font-size:12px; }
+.overnight-instructions { margin:14px 0; font-family:var(--font-sans); font-size:12px; color:var(--off-muted); }
+.overnight-instructions summary { display:list-item; cursor:pointer; padding:4px 0; color:var(--off-ink); }
+.overnight-instructions pre { white-space:pre-wrap; overflow-wrap:anywhere; font:inherit; line-height:1.7; margin:12px 0 18px; }
+
+.overnight-meta { margin:16px 0 12px; }
+.overnight-task>details:not(.overnight-instructions) { margin:12px 0; }

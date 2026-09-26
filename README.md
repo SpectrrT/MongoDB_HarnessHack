@@ -25,13 +25,14 @@ The homepage now shows two flat graphs using the site fonts and neutral palette.
 
 | Model | Paired runs | SDK tokens | Offload all-in tokens | Exact checks, SDK / Offload |
 | --- | ---: | ---: | ---: | --- |
-| GPT-4o-mini | 3 | 111,118 | 100,377 (9.7% fewer) | 35/36 / 36/36 |
-| GPT-6 Astra | 2 | 53,388 | 61,790 (15.7% more) | 24/24 / 24/24 |
-| Claude Opus 5.5 | 2 | 135,119 | 119,710 (11.4% fewer) | 24/24 / 23/24 |
+| GPT-6 Astra | 3 | 80,092 | 77,523 | 36/36 / 36/36 |
+| Claude Opus 5.5 | 3 | 198,171 | 172,491 | 36/36 / 34/36 |
 
-Each run contains the same three synthetic tasks and twelve chronological stages. Opus's missed check was extra prose after otherwise correct JSON; GPT-4o-mini's reference missed a schema check. These are exact task/format checks, not general reasoning scores. Selector and retrieval overhead count. Offload took longer and made more calls. All-in cost is unknown where TypeSafe omitted prices. Three additional infrastructure-failed frontier attempts preserve all 25 rate-limit responses and known charges. The two paced replacements per frontier model were fixed before execution; no outcome-based stopping or prompt tuning occurred.
+The first graph divides all consumed tokens by answers passing the unchanged exact content and format checks. The second graph measures source-context characters kept per step, not total request tokens. Hover or tap a bar to see its measured value, passing-check count and individual trial values. Selector and retrieval overhead count. These are repeated development fixtures, not unseen tasks or general reasoning scores.
 
-Astra uses a verified Responses tool adapter in both arms. Opus and GPT-4o-mini use the matched Chat Completions protocol. This does not benchmark the complete Codex or Claude Code products. [All trials](docs/evidence/reference-summary.json), [methods](scripts/agents-reference/README.md), and [public report](public/evidence/benchmark-report.html).
+The v14 selector reduces Astra's measured token overhead. The three fixed Opus JSON-mode trials still contain two Offload formatting failures: JSON mode did not reliably prevent prose after a correct object. Earlier selectors, prompted-JSON runs and all 25 rate-limit responses remain in the report. No result was discarded for losing. All-in dollar savings remain unknown because selector prices are absent.
+
+Astra uses a verified Responses tool adapter in both arms. Opus and GPT-4o-mini use a matched Chat Completions protocol. This compares configured SDK loops, not complete Codex or Claude Code products. [All trials](docs/evidence/reference-summary.json), [methods](scripts/agents-reference/README.md), and [public report](public/evidence/benchmark-report.html).
 
 The app now groups REM and Memory under Sleep, preserves old URLs, and keeps live execution separate from the static hosted preview. A completed local chat job is acknowledged only after its final checkpoint write finishes.
 

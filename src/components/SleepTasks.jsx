@@ -12,11 +12,19 @@ async function api(url, value) {
   const result = await response.json(); if (!response.ok) throw Error(result.error || 'Sleep request failed.'); return result;
 }
 const labels = { queued: 'Queued', running: 'Working', approval: 'Approval needed', paused: 'Paused', completed: 'Checks passed', incomplete: 'Incomplete', cancelled: 'Cancelled' };
+const selectedAction = task => /^Selected action:\s*(.+)$/m.exec(task.brief || '')?.[1]?.replace(/^(?:Action(?: item)?|Todo|Follow-up):\s*/i, '').trim();
+const readableTitle = task => {
+  const action = selectedAction(task);
+  if (!action) return task.title;
+  const title = action.replace(/^(?:draft|write|prepare)\s+(?:an?\s+|the\s+)?/i, '').replace(/\.$/, '');
+  return title ? title[0].toUpperCase() + title.slice(1) : task.title;
+};
 export default function SleepTasks() {
   const { state, act } = useWorkspace();
   const queuedDraft = useLocation().state?.queuedDraft;
   const [tasks, setTasks] = useState([]), [status, setStatus] = useState(null), [draft, setDraft] = useState(null);
   const [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const taskCount = tasks.filter(task => task.status !== 'cancelled').length;
   const handedOffTask = tasks.find(task => task.id === queuedDraft?.id);
   const awaitingWorker = queuedDraft && (handedOffTask?.status ?? queuedDraft.status) === 'queued';
   const [loadError, setLoadError] = useState(''), [checking, setChecking] = useState(false);
@@ -42,14 +50,16 @@ export default function SleepTasks() {
   };
   return <div className="standard-page slow-page">
     <div className="slow-heading"><div><span className="slow-label"><Moon size={14}/> SLEEP</span><h1>Overnight tasks</h1><p>Assign a local draft with a deadline, token budget and checks.</p></div><button className="button" onClick={() => open()}><Plus size={16}/> Add a task</button></div>
-    {queuedDraft && <p className="suggestion-notice" role="status">Draft task saved: {queuedDraft.title}. {awaitingWorker && ((status?.enabled ?? queuedDraft.workerEnabled) ? 'Queued for the local Sleep worker.' : 'Waiting for the local Sleep worker to be enabled.')} The original action remains open.</p>}
+    {queuedDraft && <p className="suggestion-notice" role="status">Draft task saved. {awaitingWorker && ((status?.enabled ?? queuedDraft.workerEnabled) ? 'Queued for the local Sleep worker.' : 'Waiting for the local Sleep worker to be enabled.')} The original action remains open.</p>}
     {loadError && <SleepServiceNotice message={loadError} onRetry={retry} busy={checking} />}
     {error && <p role="alert">{error}</p>}
-    <div className="overnight-heading"><h2>Overnight queue</h2><span>{status ? `${tasks.filter(t => t.status !== 'cancelled').length} tasks` : 'Waiting for service'}</span></div>
+    <div className="overnight-heading"><h2>Overnight queue</h2><span>{status ? `${taskCount} ${taskCount === 1 ? 'task' : 'tasks'}` : 'Waiting for service'}</span></div>
     {status && !tasks.length && <div className="overnight-empty"><h3>What can wait until morning?</h3><p>Add the facts to work from and a file you can independently check.</p></div>}
     {tasks.map(task => <article className="overnight-task" key={task.id}>
-      <div className="overnight-task-head"><h3>{task.title}</h3><span>{labels[task.status] || task.status}</span></div>
-      <p>{task.brief}</p><div className="overnight-meta"><span>Due {new Date(task.deadline).toLocaleString()}</span><span>{task.tokensUsed.toLocaleString()} / {task.budget.toLocaleString()} tokens</span><span>{task.calls} model calls</span></div>
+      <div className="overnight-task-head"><h3>{readableTitle(task)}</h3><span>{labels[task.status] || task.status}</span></div>
+      <p>{selectedAction(task) || task.brief}</p>
+      {selectedAction(task) && <details className="overnight-instructions"><summary>Draft instructions and sources</summary><pre>{task.brief}</pre></details>}
+      <div className="overnight-meta"><span>Due {new Date(task.deadline).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span><span>{task.tokensUsed.toLocaleString()} / {task.budget.toLocaleString()} tokens</span><span>{task.calls} model {task.calls === 1 ? 'call' : 'calls'}</span></div>
       {task.reason && <p>{task.reason}</p>}
       {task.usageUnknown > 0 && <p>Usage includes {task.usageUnknown} conservative reservations where billed usage was unavailable.</p>}
       {task.checkResults?.map(check => <p key={check.id||check.path}>{check.path}: {check.passed ? 'checks passed' : check.failed.join(', ')}</p>)}

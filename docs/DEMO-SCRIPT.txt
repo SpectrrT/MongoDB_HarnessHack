@@ -1,3 +1,33 @@
+CURRENT INTEGRATED DEMO (September 26, 4 p.m. Eastern)
+
+Local homepage: http://127.0.0.1:5269/#benchmark-title
+Local Next actions: http://127.0.0.1:5269/app/sleep?view=suggestions
+The local service uses the isolated offload_engineering_demo database. Computer History has today's
+example meeting and notes plus three weekly query reviews. Capture is disabled; these are supplied examples.
+
+Three-minute flow:
+0:00 Show the homepage and explain that Offload keeps useful context while preserving source records.
+0:20 Open Sleep > Next actions > Try an example > Load sample notes. Choose the meeting follow-up's
+     Start once, then Draft this. Queue the bounded local draft. The configured model generates real files.
+0:50 Return to the homepage graphs while generation runs. Gray is the reference harness; black adds Offload.
+     Astra retains 36/36 passing checks with fewer tokens. Opus uses fewer tokens per correct answer but
+     misses two format checks. Hover for exact values. The linked report retains all earlier failed trials.
+1:30 Return to Overnight tasks. Review both exact proposed files and approve the local writes.
+     Completion means the declared file checks passed. It does not mean a database index was changed.
+2:10 Open Computer History. Show today's meeting/notes, then the three-week routine. The history-driven
+     proposal can be saved, but that alone does not execute it. Next actions is the separate draft executor.
+2:40 Close on the produced checklist and source references. A prepared Example workflow is available on
+     the homepage if a live provider is unavailable; it remains labeled as a prepared example.
+
+Keep the local server running. Do not reset a shared engine or enable capture during this demonstration.
+The static public website hosts graphs, evidence and the example; local APIs are not publicly exposed.
+GitHub visibility and the one-minute submission video remain organizer actions, not automatic deployment.
+
+HISTORICAL REM DEMO NOTES FOLLOW. These use scripted fixture tools and simulated days. References below
+to emails and exactly-once effects mean the tested fixture-provider case, not real Gmail delivery or a
+general guarantee for external providers. Earlier local ports, workspace inventories and unmerged notes
+are historical snapshots and do not describe the integrated local preview above.
+
 OFFLOAD x REM: DEMO KIT (Sat Sep 26, 2:55 PM)
 
 Rules to respect: show only what was built during the event, Atlas must be core, the repo must be public,

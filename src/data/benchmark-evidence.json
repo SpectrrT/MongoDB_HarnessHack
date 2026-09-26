@@ -213,65 +213,65 @@
       ]
     },
     {
-      "id": "opus-v14",
+      "id": "opus-v14-json",
       "label": "Claude Opus 5.5",
       "current": true,
       "selectorPolicyVersion": "retention-v14-shared-block-groups",
-      "outputFormat": "prompted JSON",
+      "outputFormat": "json_object",
       "baselineLabel": "SDK reference",
-      "baselineTokens": 198507,
-      "offloadTokens": 169892,
-      "baselinePassed": 35,
+      "baselineTokens": 198171,
+      "offloadTokens": 172491,
+      "baselinePassed": 36,
       "offloadPassed": 34,
       "stages": 36,
       "trialCount": 3,
       "answerModel": "anthropic/claude-opus-5.5",
       "decisionTokens": 46083,
       "baselineCalls": 50,
-      "offloadCalls": 97,
-      "baselineLatencyMs": 229329,
-      "offloadLatencyMs": 325617,
+      "offloadCalls": 98,
+      "baselineLatencyMs": 209080,
+      "offloadLatencyMs": 328050,
       "beforeContextChars": 232635,
-      "afterContextChars": 11061,
+      "afterContextChars": 10853,
       "runs": [
         {
-          "baselineTokens": 63119,
-          "offloadTokens": 61363,
-          "baselinePassed": 11,
-          "offloadPassed": 11,
-          "checks": 12,
-          "beforeContextChars": 6462.083333333333,
-          "afterContextChars": 308.8333333333333,
-          "receipt": "/evidence/agents-reference-opus-v14-1.json"
-        },
-        {
-          "baselineTokens": 67703,
-          "offloadTokens": 56405,
+          "baselineTokens": 67555,
+          "offloadTokens": 57429,
           "baselinePassed": 12,
           "offloadPassed": 11,
           "checks": 12,
           "beforeContextChars": 6462.083333333333,
-          "afterContextChars": 308.8333333333333,
-          "receipt": "/evidence/agents-reference-opus-v14-2.json"
+          "afterContextChars": 304.0833333333333,
+          "receipt": "/evidence/agents-reference-opus-v14-json-1.json"
         },
         {
-          "baselineTokens": 67685,
-          "offloadTokens": 52124,
+          "baselineTokens": 67558,
+          "offloadTokens": 58197,
+          "baselinePassed": 12,
+          "offloadPassed": 11,
+          "checks": 12,
+          "beforeContextChars": 6462.083333333333,
+          "afterContextChars": 304.0833333333333,
+          "receipt": "/evidence/agents-reference-opus-v14-json-2.json"
+        },
+        {
+          "baselineTokens": 63058,
+          "offloadTokens": 56865,
           "baselinePassed": 12,
           "offloadPassed": 12,
           "checks": 12,
           "beforeContextChars": 6462.083333333333,
-          "afterContextChars": 304.0833333333333,
-          "receipt": "/evidence/agents-reference-opus-v14-3.json"
+          "afterContextChars": 296.25,
+          "receipt": "/evidence/agents-reference-opus-v14-json-3.json"
         }
       ],
       "receipt": "/evidence/reference-summary.json",
       "description": "3 full paired trials, each with three synthetic tasks and twelve changing-context stages. Both arms use Claude Opus 5.5, identical goals, checks, archive tools and per-call limits. SDK reference receives full history; Offload selects context and can recover the originals.",
       "limitation": "Development fixtures, not independent unseen tasks or a broad reasoning benchmark. Exact JSON checks cover facts and required format. All-in Offload cost remains unknown because selector prices are absent. Request scheduling waits count in arm latency. Provider routing and caching are uncontrolled.",
       "trials": [
-        "/evidence/agents-reference-opus-v14-1.json",
-        "/evidence/agents-reference-opus-v14-2.json",
-        "/evidence/agents-reference-opus-v14-3.json"
+        "/evidence/agents-reference-opus-v14-json-1.json",
+        "/evidence/agents-reference-opus-v14-json-2.json",
+        "/evidence/agents-reference-opus-v14-json-3.json"
       ]
     }
   ],
