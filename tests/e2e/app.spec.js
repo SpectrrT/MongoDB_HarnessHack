@@ -58,12 +58,15 @@ test("connection setup and overnight tasks persist", async ({ page }) => {
   await page.getByRole('button',{name:'Add to workspace',exact:true}).click();
   await expect(page.getByText('Added · setup needed')).toBeVisible();
   await page.goto('/app/sleep');
+  // Sleep opens on the conversations left for later; overnight tasks have their own tab.
+  await page.getByRole('button',{name:'Overnight tasks',exact:true}).click();
   await page.getByRole('button',{name:'Add a task',exact:true}).click();
   await page.getByLabel('Task',{exact:true}).fill('Prepare a project update');
   await page.getByLabel('What should be ready?').fill('Draft the update with unresolved issues.');
   await page.getByRole('button',{name:'Save to queue',exact:true}).click();
   await expect(page.getByText('Runner needed')).toBeVisible();
   await page.reload();
+  await page.getByRole('button',{name:'Overnight tasks',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Prepare a project update'})).toBeVisible();
   await page.getByRole('button',{name:'Pause task',exact:true}).click();
   await expect(page.getByText('Paused',{exact:true})).toBeVisible();
