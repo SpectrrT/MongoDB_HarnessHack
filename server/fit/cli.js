@@ -23,8 +23,10 @@ export function printReport({ analysis, version, changed, patch }, log = console
   }
   if (!a.permissionBlocks)
     log(`No tool-access changes: all ${a.safetyBlocks} blocks were safety checks, and Harness fit never loosens those.`);
-  log(changed ? `\nCommitted harness v${version.version} (parent v${version.parent}):` : `\nHarness v${version?.version ?? 0} is unchanged.`);
-  for (const line of version?.diff || []) log(`  ${line.slice(0, 150)}`);
+  if (changed) {
+    log(`\nCommitted harness v${version.version} (parent v${version.parent}):`);
+    for (const line of version.diff) log(`  ${line.slice(0, 150)}`);
+  } else log(`\nHarness v${version?.version ?? 0} is unchanged: the same edits passed the gate.`);
   if (patch) log(`\nFor CLAUDE.md:\n${patch}`);
 }
 
