@@ -72,8 +72,11 @@ export async function createRem({
     onEvent: (e) => ctx.onEvent?.(e),
   });
   ctx.watcher = watchConnections(db, ctx.agent);
-  if (await currentHarness(db)) ctx.day = (await db.collection("briefs").countDocuments()) + 1;
-  else await bootstrap(ctx);
+  if (await currentHarness(db)) {
+    // A night that stopped after committing its harness has no brief but still counts, so the next night gets a new number.
+    const nights = (await db.collection("harnesses").find({}, { projection: { night: 1 } }).toArray()).map((h) => h.night ?? 0);
+    ctx.day = Math.max(await db.collection("briefs").countDocuments(), ...nights) + 1;
+  } else await bootstrap(ctx);
 
   const rem = {
     ctx,
@@ -131,7 +134,8 @@ export async function createRem({
         db.collection("metrics").find({}, { sort: { ts: 1 } }).toArray(),
         db.collection("asks").find({ status: "open" }, { sort: { createdAt: -1 } }).toArray(),
         db.collection("skills").find({}, { sort: { name: 1 } }).toArray(),
-        db.collection("checkpoints").find({}, { sort: { updatedAt: -1 }, limit: 20, projection: { transcript: 0, context: 0 } }).toArray(),
+        // Newest run first. updatedAt comes from the simulated clock, so a long run can sort above a newer one.
+        db.collection("checkpoints").find({}, { sort: { _id: -1 }, limit: 20, projection: { transcript: 0, context: 0 } }).toArray(),
         db.collection("effects").find({}, { sort: { createdAt: -1 }, limit: 20 }).toArray(),
         db.collection("briefs").findOne({}, { sort: { night: -1 } }),
         db.collection("connections").find({}, { sort: { provider: 1 } }).toArray(),

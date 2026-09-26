@@ -151,8 +151,8 @@ Change streams also feed `GET /api/rem/stream` (Server-Sent Events).
    (optionally `REM_DB_NAME`, default `rem`). `server/rem.js` then builds REM on `createMongoDb()`; for
    scripts use `createRem({ db: await createMongoDb({ uri }) })`. `POST /api/rem/reset` drops the database.
 2. Run once: `ensureIndexes(db)` (the facade does it) creates the collections, the time-series `metrics`,
-   all indexes and the search indexes. Wait for `listSearchIndexes()` to report READY. Check the cluster
-   version: `$rankFusion` needs 8.1+.
+   all indexes and the search indexes. Wait for `listSearchIndexes()` to report READY. The Sandbox's
+   Cluster0 runs MongoDB 8.0.32 and accepts `$rankFusion` (Computer history's search runs it there).
 3. Hybrid search: set `REM_ATLAS_SEARCH=1` to route `searchCollection()` through `rankFusionPipeline()`.
    Verify the `$vectorSearch` query shape for `autoEmbed` (the pipeline passes `query: { text }`) against the
    preview docs. If the preview misbehaves, leave it off: app-side RRF keeps working over stored vectors,

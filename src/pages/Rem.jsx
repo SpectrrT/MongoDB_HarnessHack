@@ -146,6 +146,23 @@ function FitnessTable({ title, before, after }) {
   );
 }
 
+// Nested policy values, such as the recall settings, read as "mode hybrid, k 5" rather than [object Object].
+const policyValue = (value) => {
+  if (value == null) return "not set";
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "none";
+  if (typeof value === "object")
+    return Object.entries(value)
+      .map(([k, v]) => `${label(k).toLowerCase()} ${policyValue(v)}`)
+      .join(", ");
+  return String(value);
+};
+
+// A night that stops after committing its harness leaves no brief, so the lineage is the record that it ran.
+const interruptedNight = (state) => {
+  const latest = state.harness.lineage.reduce((top, v) => ((v.night ?? 0) > (top?.night ?? 0) ? v : top), null);
+  return latest && latest.night > (state.brief?.night ?? 0) ? latest : null;
+};
+
 function GenomeView({ genome }) {
   if (!genome) return null;
   return (
@@ -189,7 +206,7 @@ function GenomeView({ genome }) {
         <ul>
           {Object.entries(genome.contextPolicy).map(([k, v]) => (
             <li key={k}>
-              {label(k)}: {String(v)}
+              {label(k)}: {policyValue(v)}
             </li>
           ))}
         </ul>
@@ -617,6 +634,7 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
   }, [nightEvents]);
 
   const brief = freshBrief || state.brief;
+  const interrupted = !sleeping && !freshBrief ? interruptedNight(state) : null;
 
   const runSleep = async () => {
     setBusy(true);
@@ -640,7 +658,7 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
     <section className="rem-section" aria-label="Night">
       <div className="section-line">
         <h2>{compact ? "Consolidate and improve" : "Night: consolidate and evolve"}</h2>
-        <span>night {brief?.night ?? "none yet"}</span>
+        <span>night {brief?.night ?? (interrupted ? `${interrupted.night}, interrupted` : "none yet")}</span>
       </div>
       <RemDisclosure compact={compact} title="Memory and skills">
       <p className="muted">
@@ -743,7 +761,13 @@ function NightPanel({ state, events, busy, setBusy, setError, reload, compact = 
           )}
         </div>
       )}
-      {!sleeping && !brief && <p className="muted">No night has run yet.</p>}
+      {interrupted && (
+        <p className="muted">
+          Night {interrupted.night} committed harness v{interrupted.version}, then stopped before it saved its morning brief.
+          Sleep starts the next night.
+        </p>
+      )}
+      {!sleeping && !brief && !interrupted && <p className="muted">No night has run yet.</p>}
       </RemDisclosure>
     </section>
   );
@@ -770,7 +794,7 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
       <div className="section-line">
         <h2>Morning: brief, diff, and asks</h2>
       </div>
-      {!brief && <p className="muted">No night has run yet. Sleep once to see a morning brief.</p>}
+      {!brief && <p className="muted">No morning brief yet. Sleep once to see one.</p>}
       {brief && (
         <>
           <div className="section-line">
@@ -858,12 +882,15 @@ export default function Rem({ compact = false }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const requestId = React.useRef(0);
 
   const load = useCallback(async () => {
+    const id = ++requestId.current;
     try {
-      setState(await get("/api/rem/state"));
+      const next = await get("/api/rem/state");
+      if (id === requestId.current) setState(next);
     } catch (e) {
-      setError(e.message);
+      if (id === requestId.current) setError(e.message);
     }
   }, []);
   useEffect(() => {
@@ -873,6 +900,13 @@ export default function Rem({ compact = false }) {
     if (hello) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hello?.day, hello?.harness]);
+  // Refresh after a quiet point in the live stream, including work from another browser.
+  useEffect(() => {
+    if (!events.length) return;
+    const timer = setTimeout(load, 350);
+    return () => clearTimeout(timer);
+  }, [events, load]);
+  useEffect(() => () => { requestId.current += 1; }, []);
 
   const doReset = async () => {
     setConfirmReset(false);
@@ -920,10 +954,19 @@ export default function Rem({ compact = false }) {
       )}
       {confirmReset && (
         <Modal title="Reset the REM engine?" onClose={() => setConfirmReset(false)}>
-          <p>This drops the day, night and lineage history in memory and starts a fresh harness at v0. There is no undo.</p>
-          <button className="button" onClick={doReset}>
-            Reset engine
-          </button>
+          <p>
+            {state?.engine?.database?.startsWith("atlas:")
+              ? `This permanently deletes the shared engine's runs, memories and harness history from the ${state.engine.database.slice(6)} database on Atlas, then starts again at v0. Every browser using this engine is affected. There is no undo.`
+              : "This clears the in-memory engine's runs, memories and harness history, then starts again at v0. There is no undo."}
+          </p>
+          <div className="button-row">
+            <button className="button secondary" onClick={() => setConfirmReset(false)}>
+              Cancel
+            </button>
+            <button className="button" disabled={busy} onClick={doReset}>
+              Reset engine
+            </button>
+          </div>
         </Modal>
       )}
     </div>
