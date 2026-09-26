@@ -494,7 +494,7 @@ function Suggestions({ onClose, onRun }) {
                       )
                     }
                   >
-                    Snooze until tomorrow
+                    Snooze for a day
                   </button>
                   <button
                     onClick={() =>

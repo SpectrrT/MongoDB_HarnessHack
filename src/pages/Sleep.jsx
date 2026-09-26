@@ -20,7 +20,7 @@ export default function Sleep() {
     finally { setBusy(false); }
   };
   return <div className="standard-page sleep-page">
-    <div className="page-title"><h1>Review your saved context</h1><p>Let the day settle. Keep what helps tomorrow.</p></div>
+    <div className="page-title"><h1>Review your saved context</h1><p>Let the day settle. Keep what helps next time.</p></div>
     <div className="sleep-intro sleep-hero">
       <ThinkingOrb state={working ? "weaving" : "breathing"} size={64} />
       <div>

@@ -7,7 +7,7 @@ export { createScriptedModel };
 const toWire = (name) => name.replace(/\./g, "__");
 const fromWire = (name) => name.replace(/__/g, ".");
 
-// TOMORROW: OpenAI-compatible chat completions with tool calling via OpenRouter. Untested tonight.
+// OpenAI-compatible chat completions with tool calling via OpenRouter (opt-in with REM_MODEL=openrouter).
 export function createOpenRouterModel({
   apiKey = process.env.OPENROUTER_API_KEY,
   baseUrl = "https://openrouter.ai/api/v1",

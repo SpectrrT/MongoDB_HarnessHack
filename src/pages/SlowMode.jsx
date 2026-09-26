@@ -27,12 +27,12 @@ export default function SlowMode({ children }) {
         {t.status !== 'cancelled' && <div className="overnight-actions"><button className="button small secondary" onClick={() => act('overnight', {id:t.id, status:t.status === 'paused' ? 'queued' : 'paused'}).catch(() => {})}>{t.status === 'paused' ? <Play size={14}/> : <Pause size={14}/>}{t.status === 'paused' ? 'Return to queue' : 'Pause task'}</button><button className="button small ghost" onClick={() => act('overnight', {id:t.id, status:'cancelled'}).catch(() => {})}><X size={14}/>Cancel task</button></div>}
       </article>)}
       <p className="runner-note">You can save tasks now. Overnight execution needs a connected worker. It will not start from this browser.</p>
-      <div className="overnight-heading"><h2>Ideas for tonight</h2><span>Choose what to queue</span></div>
+      <div className="overnight-heading"><h2>Ideas for overnight</h2><span>Choose what to queue</span></div>
       {state.suggestions.filter(s => s.status === 'pending').slice(0,4).map(s => <button className="night-suggestion" key={s.id} onClick={() => open(s)}><span><strong>{s.title}</strong><small>{s.reason}</small></span><ArrowUpRight size={18}/></button>)}
       <p className="runner-note">The token budget is saved as a target. The overnight worker is not connected, so no tokens are spent by queued tasks.</p>
     </div>}
     {draft && <Modal title="Queue an overnight task" onClose={() => setDraft(null)}><form className="overnight-form" onSubmit={async e => {e.preventDefault(); setBusy(true); setError(''); try {await act('overnight', {...draft, deadline: new Date(draft.deadline).getTime(), budget:Number(draft.budget)}); setDraft(null);} catch(e) {setError(e.message);} finally {setBusy(false);} }}>
-      <label>Task<input autoFocus required maxLength={160} value={draft.title} placeholder="Prepare tomorrow's project update" onChange={e => setDraft({...draft,title:e.target.value})}/></label>
+      <label>Task<input autoFocus required maxLength={160} value={draft.title} placeholder="Prepare the next project update" onChange={e => setDraft({...draft,title:e.target.value})}/></label>
       <label>What should be ready?<textarea required rows={4} maxLength={4000} value={draft.brief} placeholder="Describe the result and how to check it." onChange={e => setDraft({...draft,brief:e.target.value})}/></label>
       <div className="overnight-fields"><label>Ready by<input type="datetime-local" required value={draft.deadline} onChange={e => setDraft({...draft,deadline:e.target.value})}/></label><label>Token budget<input type="number" required min="1000" max="1000000" step="1000" value={draft.budget} onChange={e => setDraft({...draft,budget:e.target.value})}/></label></div>
       <p>This saves your brief. A worker must be connected before it can run.</p>{error && <p role="alert">{error}</p>}<button className="button" disabled={busy}>{busy ? 'Saving…' : 'Save to queue'}<Moon size={15}/></button>
