@@ -75,7 +75,8 @@ test('retrying a saved request after restart never executes it twice',async()=>{
  const dataDir=fs.mkdtempSync(path.join(os.tmpdir(),'offload-durable-test-'));let runs=0;
  const run=async()=>{runs++;return {text:'One execution',usage:{}}};const first=appWith(run,dataDir);
  await post(first,'/api/model/jobs',payload).expect(202);await untilJob(first,payload.requestId,j=>j.status==='completed');
- await new Promise(r=>setTimeout(r,30));const restarted=appWith(run,dataDir);
+ assert.equal(JSON.parse(fs.readFileSync(path.join(dataDir,'agent-jobs','one',payload.requestId,'job.json'),'utf8')).status,'completed');
+ const restarted=appWith(run,dataDir);
  const response=await post(restarted,'/api/model/jobs',payload).expect(200);assert.equal(response.body.status,'completed');assert.equal(runs,1);
 });
 test('artifact downloads work from private storage and reject another owner',async()=>{

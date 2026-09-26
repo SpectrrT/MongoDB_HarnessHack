@@ -8,7 +8,7 @@ import {createContextCompactor} from '../../server/context/compaction.js';
 import {createJevScorer} from '../../server/context/jev.js';
 import {EVIDENCE_POLICY_VERSION} from '../../server/context/evidence-policy.js';
 import {evolvingCases, exactAnswer} from '../fixtures/evolving-context.mjs';
-import {answer, BUDGET, MODEL, REASONING, RESPONSES, ENDPOINT, recordingFetch, totals, sha256, loadSdk} from './protocol.mjs';
+import {answer, BUDGET, MODEL, REASONING, RESPONSES, REQUEST_INTERVAL_MS, ENDPOINT, recordingFetch, totals, sha256, loadSdk} from './protocol.mjs';
 
 const args = process.argv.slice(2), live = args.includes('--live');
 const output = args.includes('--output') ? args[args.indexOf('--output') + 1] : null;
@@ -25,7 +25,7 @@ const policy = {budgetChars: 3000, recentCount: 1, threshold: 0.25};
 const report = {
   createdAt: new Date().toISOString(), mode: live ? 'live paired reference comparison' : 'offline protocol fixture, not model quality evidence',
   reference: 'OpenAI Agents SDK reference harness', treatment: 'Offload context selection and archive recovery',
-  protocol: {model: MODEL, answerProvider: 'OpenRouter', endpoint: ENDPOINT, budget: BUDGET, contextPolicy: policy, reasoningEffort: REASONING ?? null, evidencePolicy: EVIDENCE_POLICY_VERSION,
+  protocol: {model: MODEL, answerProvider: 'OpenRouter', requestIntervalMs: REQUEST_INTERVAL_MS, endpoint: ENDPOINT, budget: BUDGET, contextPolicy: policy, reasoningEffort: REASONING ?? null, evidencePolicy: EVIDENCE_POLICY_VERSION,
     adapter: RESPONSES ? 'Responses SDK loop in both arms' : 'Chat Completions SDK reference and Offload loop',
     sdk: {'@openai/agents': '0.18.0', openai: '7.23.0', zod: '4.2.1'}, node: process.version, platform: `${process.platform}/${process.arch}`, tracing: false, automaticRetries: 0,
     sourceCommit: execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim(),
@@ -33,7 +33,7 @@ const report = {
     tools: ['context_read', 'context_list'], database: 'in-memory synthetic archive, identical access in both arms',
     decisionProvider: live ? provider : 'fixture', decisionModel: live ? (provider === 'typesafe' ? 'jev-1.13.0' : 'typesafe/jev-1.13') : null,
   },
-  methodology: 'One paired run of the unchanged three-task/twelve-stage evolving-context fixture. Reference receives full accumulated evidence, Offload receives its selected evidence. Both share the identical system prompt, user schema, archive tool schemas and implementation, exact JSON checker, model, OpenRouter endpoint, configured temperature or reasoning effort, output limit and four-model-turn budget. Actual SDK Runner executes the reference agent; the Offload arm uses its existing answer loop with the same explicit default strict:false and stream:false fields emitted by the SDK. There is no persistent SDK session: both arms start fresh model state per stage from the prescribed evidence. Calls alternate reference-first and Offload-first by stage. Expected answers remain evaluator-only. Offline tests compared exact first and recovery wire requests. No score tuning or live retries.',
+  methodology: (RESPONSES ? 'Both arms run the same SDK Responses adapter. ' : '') + 'One paired run of the unchanged three-task/twelve-stage evolving-context fixture. Reference receives full accumulated evidence, Offload receives its selected evidence. Both share the identical system prompt, user schema, archive tool schemas and implementation, exact JSON checker, model, OpenRouter endpoint, configured temperature or reasoning effort, output limit and four-model-turn budget. Actual SDK Runner executes the reference agent; the Offload arm uses its existing answer loop with the same explicit default strict:false and stream:false fields emitted by the SDK. There is no persistent SDK session: both arms start fresh model state per stage from the prescribed evidence. Calls alternate reference-first and Offload-first by stage. Expected answers remain evaluator-only. Offline tests compared exact first and recovery wire requests. No score tuning or live retries.',
   accounting: 'Every network attempt is captured below the SDK/Offload/Jev layers, with raw request, response and usage but no HTTP headers. All reported input/output tokens include repeated prompts, tool schema, and retrieval follow-ups. Offload totals include selection, restart checks and all answer/retrieval calls. Missing usage or cost makes that total unknown, while known subtotals remain visible. Reported provider costs can reflect cache effects. MongoDB/tool execution uses no model tokens and its compute cost is not priced.',
   adapterNote: RESPONSES ? 'Both arms use the identical OpenAI Responses SDK Runner and archive tools. Only Offload applies its production selector and canonical archive. Stateless store:false; reasoning medium; same four-call and 4096-token per-call budgets. This isolates the context policy rather than comparing different API interfaces.' : null,
   limitations: ['This is a configured OpenAI Agents SDK reference harness, not Codex, Claude Code or a full product comparison. Using a frontier model does not make this a benchmark of its native product harness.', 'Small synthetic suite, one paired run, no statistical significance or general long-horizon claim.', `The answer model is ${MODEL} in both arms; Jev is extra Offload work, separately metered.`, 'Full history is an explicit reference configuration, not an assertion about the SDK default context strategy.', 'One stage uses only previous selected context plus new evidence and requires an explicit archive read. Other stages pass accumulated records to selection; this does not validate bounded history scanning.', 'Provider routing and caching are not controlled beyond the same OpenRouter endpoint and model; response provider identifiers are retained when returned.', 'No SDK session persistence, built-in compaction, handoffs, hosted tools or other unconfigured capabilities are evaluated.'],
@@ -51,6 +51,9 @@ function fixtureFetch(stage, recovery) {
   return async () => {
     count++;
     const call = recovery && count === 1;
+    if (RESPONSES) return new Response(JSON.stringify({id: `resp_offline_${count}`, object: 'response', created_at: 1, status: 'completed', model: MODEL,
+      output: call ? [{type: 'function_call', id: `fc_${count}`, call_id: `call_${count}`, name: 'context_read', arguments: JSON.stringify({id: stage.requiredRetrieval}), status: 'completed'}] : [{type: 'message', id: `msg_${count}`, role: 'assistant', status: 'completed', content: [{type: 'output_text', text: JSON.stringify(stage.expected), annotations: []}]}],
+      usage: {input_tokens: 10, output_tokens: 3, total_tokens: 13, cost: 0}}), {headers: {'Content-Type': 'application/json'}});
     return new Response(JSON.stringify({id: `offline-${count}`, object: 'chat.completion', created: 1, model: MODEL,
       choices: [{index: 0, finish_reason: call ? 'tool_calls' : 'stop', message: call ? {role: 'assistant', content: null, tool_calls: [{id: 'offline-read', type: 'function', function: {name: 'context_read', arguments: JSON.stringify({id: stage.requiredRetrieval})}}]} : {role: 'assistant', content: JSON.stringify(stage.expected)}}],
       usage: {prompt_tokens: 10, completion_tokens: 3, cost: 0}}), {headers: {'Content-Type': 'application/json'}});

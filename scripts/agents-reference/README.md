@@ -32,3 +32,7 @@ The provider catalog at https://openrouter.ai/api/v1/models listed Claude Opus 5
 ### Astra adapter follow-up
 
 At the user's request, a Responses adapter is now implemented for `BENCHMARK_MODEL=openai/gpt-6-astra`. Both arms use the exact same SDK Responses Runner, archive tools, medium reasoning, 4,096 output-token limit including reasoning, four-call limit, and stateless `store:false`. Only Offload adds selection and archive management. Offline tests verify identical wire requests through tool recovery, reasoning-inclusive usage, no hidden retries, and exhaustion. Exactly two full paired Astra trials are registered before execution. Keep both regardless of outcome. This supersedes the earlier adapter limitation, without relabeling the previous Chat Completions trials.
+
+### Provider rate-limit repair
+
+Both initial Opus runs are retained in full, including 18 HTTP 429 responses with absent usage. They overlapped and exceeded the provider's new-account limit of 20 requests/minute, so all-in token totals are unknown. These are infrastructure failures, not zero-token calls. Before further calls, register two replacement Opus runs, sequentially, with `BENCHMARK_REQUEST_INTERVAL_MS=3500` applied equally to both arms. No automatic retry, score/prompt/policy changes or ranking-based stopping. All four Opus attempts stay in the report. Any scheduling wait is included in end-to-end arm timing; transport receipts separately measure request time. The second Astra run uses the same pacing precaution.

@@ -17,6 +17,9 @@ export const TOOLS = [
 ];
 export const inputFor = (goal, units) => JSON.stringify({goal, records: units.map(({id, text}) => ({id, text})), archive: 'Earlier records may be omitted. Archive tools can recover them by id.'});
 export const sha256 = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(value)).digest('hex');
+export const REQUEST_INTERVAL_MS = Number(process.env.BENCHMARK_REQUEST_INTERVAL_MS || 0);
+if (!Number.isFinite(REQUEST_INTERVAL_MS) || REQUEST_INTERVAL_MS < 0 || REQUEST_INTERVAL_MS > 10000) throw Error('Invalid request interval');
+let lastAnswerRequestAt = 0;
 const valid = value => Number.isFinite(value) && value >= 0;
 export function usageFrom(body, decision = false) {
   const raw = body?.usage ?? null;
@@ -40,6 +43,11 @@ export function totals(receipts) {
 export function recordingFetch({receipts, context, fetchImpl = fetch, endpoint = ENDPOINT, decision = false}) {
   return async (url, init = {}) => {
     if (String(url) !== endpoint) throw Error('Unexpected benchmark endpoint');
+    if (!decision && REQUEST_INTERVAL_MS) {
+      const delay = Math.max(0, lastAnswerRequestAt + REQUEST_INTERVAL_MS - Date.now());
+      if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+      lastAnswerRequestAt = Date.now();
+    }
     const started = performance.now();
     const request = JSON.parse(init.body);
     const receipt = {...context, id: receipts.length + 1, startedAt: new Date().toISOString(), request, requestHash: sha256(request), status: null, response: null, usage: usageFrom(null, decision)};
