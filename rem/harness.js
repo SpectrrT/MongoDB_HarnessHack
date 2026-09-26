@@ -32,7 +32,7 @@ export const GEN0 = deepFreeze({
   },
 });
 
-export const BUILTIN_TOOLS = ["memory.search", "ask.owner", "auth.check"];
+export const BUILTIN_TOOLS = ["memory.search", "episode.list", "episode.read", "ask.owner", "auth.check"];
 
 export function allowedTools(genome) {
   const scoped = Object.entries(genome.toolScopes).flatMap(([provider, ops]) =>

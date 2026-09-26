@@ -12,6 +12,7 @@ import { completionRecord } from "./completion-record.js";
 import { createTranscriptStore, RunOwnershipError } from "./transcript.js";
 import { EVIDENCE_POLICY } from "../server/context/evidence-policy.js";
 import { sha256 } from "./util.js";
+import { readEpisodePage, listEpisodeArchive } from "./episode-archive.js";
 
 export const TOOL_LATENCY_MS = 250;
 // A failed completion check gets a bounded repair attempt, then stops explicitly incomplete.
@@ -266,7 +267,7 @@ export function createAgent({
         selection = await compactor.select({runId: cp.runId, goal: cp.instruction, revision, units: working.map(t => ({
           id: `step-${t.step}`, text: JSON.stringify(transcriptMessages([t])),
           dedupeKey: !t.error && !t.effectKey && ["drive.read", "gmail.read", "calendar.list"].includes(t.call.name) ? JSON.stringify({call: t.call, result: t.result}) : null,
-          pinned: t.effectKey ? "committed_effect" : t.error ? "tool_error" : t.call.name.startsWith("context.") ? "recovered_context" : null,
+          pinned: t.effectKey ? "committed_effect" : t.error ? "tool_error" : (t.call.name.startsWith("context.") || t.call.name.startsWith("episode.")) ? "recovered_context" : null,
         }))});
       } catch (error) {
         if (!(error instanceof ContextBudgetError)) throw error;
@@ -423,6 +424,12 @@ export function createAgent({
         if (/^Invalid context/.test(error.message)) throw new ToolError(error.message);
         throw error;
       }
+    }
+    if (["episode.list", "episode.read"].includes(call.name)) {
+      try {
+        return call.name === "episode.list" ? await listEpisodeArchive(db, args)
+          : await readEpisodePage(db, args.id, args) || { error: "Episode not found." };
+      } catch (error) { throw new ToolError(error.message); }
     }
     if (call.name === "memory.search") {
       // The genome's recall policy governs explicit searches too (mode, decay, minScore, kinds).

@@ -110,6 +110,19 @@ export function mountRem(app) {
     "/api/rem/state",
     handle(async () => (await getRem()).state()),
   );
+  app.get("/api/rem/archive", handle(async req => {
+    const query = z.object({ runId: z.string().min(1).max(200).optional(), kind: z.string().min(1).max(200).optional(),
+      after: z.string().min(1).max(200).optional(), limit: z.coerce.number().int().min(1).max(50).default(20) }).strict().parse(req.query);
+    return (await getRem()).episodeArchive(query);
+  }));
+  app.get("/api/rem/episodes/:id", handle(async (req, res) => {
+    const id = z.string().min(1).max(200).parse(req.params.id);
+    const query = z.object({ offset: z.coerce.number().int().min(0).max(33554432).default(0),
+      limit: z.coerce.number().int().min(1).max(8000).default(4000) }).strict().parse(req.query);
+    const result = await (await getRem()).episode(id, query);
+    if (!result) { res.status(404); return { error: "Episode not found." }; }
+    return result;
+  }));
   app.post(
     "/api/rem/run",
     handle((req) =>

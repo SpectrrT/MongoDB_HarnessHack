@@ -36,6 +36,15 @@ test("REM API: run, pause for auth, reconnect, sleep, ask, simulate and reset", 
     const night = await api.post("/api/rem/sleep").expect(200);
     assert.match(night.body.brief.text, /^Morning brief · night 1 · harness v0 → v1/);
     assert.equal(night.body.day, 2);
+    const archive = await api.get('/api/rem/archive?limit=2').expect(200);
+    assert.equal(archive.body.episodes.length, 2);
+    const archivedId = archive.body.episodes[0].id;
+    const raw = await api.get(`/api/rem/episodes/${archivedId}?limit=80`).expect(200);
+    assert.equal(raw.body.source, 'archive');
+    assert.equal(raw.body.text.length, 80);
+    assert.equal(raw.body.referenceOnly, true);
+    await api.get('/api/rem/archive?limit=5000').expect(400);
+    await api.get(`/api/rem/episodes/${archivedId}?limit=9000`).expect(400);
     const morning = await api.get("/api/rem/state").expect(200);
     assert.equal(morning.body.harness.version, 1);
     const ask = morning.body.asks.find((a) => a.kind === "skill.autonomous");
@@ -53,6 +62,8 @@ test("REM API: run, pause for auth, reconnect, sleep, ask, simulate and reset", 
     assert.equal(after.body.metrics.length, 1);
 
     await api.post("/api/rem/reset").expect(200);
+    await api.get(`/api/rem/episodes/${archivedId}`).expect(404);
+    assert.deepEqual((await api.get('/api/rem/archive').expect(200)).body.episodes, []);
     assert.equal((await api.get("/api/rem/state").expect(200)).body.harness.version, 0);
   } finally {
     await fs.rm(dir, { recursive: true, force: true });

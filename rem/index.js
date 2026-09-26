@@ -15,6 +15,7 @@ import { createCatalogProposer, trackRecord } from "./proposer.js";
 import { OFFLOAD_ALIASES, TASK_KINDS, describeTask, taskParams } from "./tasks.js";
 import { createWorld } from "./world.js";
 import { createPersistentWorld } from "./persistent-world.js";
+import { readEpisodePage, listEpisodeArchive } from "./episode-archive.js";
 import { createCompletionGate } from "./completion.js";
 import { checkRun } from "./tasks.js";
 import { settleSearch } from "./search.js";
@@ -119,6 +120,8 @@ export async function createRem({
     simulateDays: (n, opts) => simulateDays(rem, n, opts),
     memoryMetrics: (week = scheduleFor(Math.max(1, ctx.day - 1)).week) => memoryMetrics(ctx, week),
     trackRecord: () => trackRecord(db),
+    episode: (id, opts) => readEpisodePage(db, id, opts),
+    episodeArchive: (opts) => listEpisodeArchive(db, opts),
     async state() {
       const [harness, versions, edits, metrics, asks, skills, runs, effects, brief, connections] = await Promise.all([
         currentHarness(db),
@@ -141,6 +144,7 @@ export async function createRem({
         metrics,
         asks,
         memory: {
+          archivedEpisodes: await db.collection("episode_archive").countDocuments(),
           active: await memories.countDocuments({ active: true }),
           retired: await memories.countDocuments({ active: false }),
           episodes: await db.collection("episodes").countDocuments({ kind: { $ne: "trajectory" } }),

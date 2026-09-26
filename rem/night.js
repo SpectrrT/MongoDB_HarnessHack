@@ -6,6 +6,7 @@ import { evolve } from "./evolve.js";
 import { NOISE_THRESHOLD, factsOf } from "./facts.js";
 import { BUILTIN_TOOLS, currentHarness, renderDiff } from "./harness.js";
 import { queueAsks } from "./asks.js";
+import { retireEpisodes } from "./episode-archive.js";
 import { TASK_KINDS, checkRun, describeTask, taskParams } from "./tasks.js";
 import { annotate, genomeSummary, traceable } from "./trace.js";
 import { createWorld, isInternal } from "./world.js";
@@ -179,12 +180,9 @@ export async function merge({ db, embedder, clock }, { night }) {
     }
   }
 
-  if (noise.length) await episodes.deleteMany({ _id: { $in: noise } });
+  if (noise.length) await retireEpisodes(db, { _id: { $in: noise } }, { now, remove: true, reason: "low-importance" });
   const expireAt = new Date(clock.now() + RETENTION_MS);
-  await episodes.updateMany(
-    { _id: { $in: [...referenced] } },
-    { $set: { consolidated: true, consolidatedAt: now, expireAt } },
-  );
+  await retireEpisodes(db, { _id: { $in: [...referenced] } }, { now, expireAt });
   return {
     episodesIn: raw.length,
     facts: facts.length,
@@ -456,12 +454,7 @@ async function runNightImpl(ctx, { day, proposer }) {
   const evolved = await phase("evolve", () => evolve(ctx, { night, proposer }));
   const asks = await phase("asks", () => queueAsks(ctx, { night }));
   const verified = await verifiedOf(ctx, { day, evolved });
-  await db
-    .collection("episodes")
-    .updateMany(
-      { consolidated: false },
-      { $set: { consolidated: true, consolidatedAt: new Date(clock.now()), expireAt: new Date(clock.now() + RETENTION_MS) } },
-    );
+  await retireEpisodes(db, { consolidated: false }, { now: clock.now(), expireAt: clock.now() + RETENTION_MS });
   const brief = {
     night,
     day,

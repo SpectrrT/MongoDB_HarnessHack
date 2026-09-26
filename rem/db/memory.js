@@ -1,6 +1,7 @@
 // In-process stand-in for the MongoDB Node driver: same call shapes, so tomorrow's Atlas swap is
 // createMongoDb() instead of createMemoryDb(). Reads can see uncommitted transaction writes.
 import { EventEmitter } from "node:events";
+import { randomBytes } from "node:crypto";
 import { canonicalJson } from "../util.js";
 import {
   MongoServerError,
@@ -442,11 +443,13 @@ class MemoryDb {
     this.collections = new Map();
     this.streams = new Set();
     this.idSeq = 0;
+    this.idPrefix = randomBytes(8).toString("hex");
     this.eventSeq = 0;
     this.sessionSeq = 0;
   }
   newId() {
-    return (++this.idSeq).toString(16).padStart(24, "0");
+    // A reset must not make old provenance ids point at new, unrelated records.
+    return this.idPrefix + (++this.idSeq).toString(16).padStart(8, "0");
   }
   toId(id) {
     return String(id);
