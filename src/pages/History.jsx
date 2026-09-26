@@ -603,7 +603,7 @@ function SearchPanel({ status, onShow, refreshKey }) {
         <input
           type="search"
           aria-label="Search your computer history"
-          placeholder="When did I last work on the weekly brief?"
+          placeholder="When did I investigate the slow aggregation?"
           value={query}
           maxLength={200}
           onChange={(e) => {

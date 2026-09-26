@@ -23,6 +23,7 @@ const Icons: Record<string, React.ReactNode> = {
 export type ToolDetailLine = { text: string; tone?: "add" };
 
 export type ToolStep = {
+  id?: string;
   icon: string;
   iconNode?: React.ReactNode;
   working?: boolean;
@@ -161,11 +162,11 @@ export default function ToolChips({
     return () => clearTimeout(t);
   }, [step, total, live]);
 
-  const toggleRow = (label: string) =>
+  const toggleRow = (key: string, label: string) =>
     setOpenRows((current) => {
       const next = new Set(current);
-      next.has(label) ? next.delete(label) : next.add(label);
-      onToggleRow?.(label, next.has(label));
+      next.has(key) ? next.delete(key) : next.add(key);
+      onToggleRow?.(label, next.has(key));
       return next;
     });
 
@@ -195,14 +196,15 @@ export default function ToolChips({
             row hover pills room inside this overflow-hidden clip box */}
         <div className="-mx-1 overflow-hidden px-1.5 pb-1">
         <div className="mt-1.5 flex flex-col gap-1">
-          {steps.slice(0, live ? steps.length : step).map((row) => {
-            const rowOpen = openRows.has(row.label);
+          {steps.slice(0, live ? steps.length : step).map((row, index) => {
+            const rowKey = row.id ?? `${index}:${row.label}`;
+            const rowOpen = openRows.has(rowKey);
             return (
-            <div key={row.label} style={{ animation: "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" }}>
+            <div key={rowKey} style={{ animation: "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" }}>
               <button
                 type="button"
                 aria-expanded={rowOpen}
-                onClick={() => toggleRow(row.label)}
+                onClick={() => toggleRow(rowKey, row.label)}
                 className="tool-activity-row group/row -mx-[3px] flex h-7 w-[calc(100%+6px)] min-w-0 items-center gap-2 rounded-control px-[3px] text-left transition-colors duration-100 hover:bg-hover-2"
               >
                 <span className="relative flex size-4 shrink-0 items-center justify-center text-ink-3">
@@ -237,9 +239,9 @@ export default function ToolChips({
               >
                 <div className="min-h-0 overflow-hidden">
                   <div className="mt-0.5 mb-1 ml-2 flex flex-col gap-0.5 border-l border-line py-0.5 pl-3.5">
-                    {row.detail.map((line) => (
+                    {row.detail.map((line, lineIndex) => (
                       <span
-                        key={line.text}
+                        key={lineIndex}
                         className={`truncate text-[11.5px] leading-[1.6] ${row.detailMono ? "font-mono" : ""} ${line.tone === "add" ? "text-green" : "text-ink-2"}`}
                       >
                         {line.text}

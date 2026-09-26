@@ -108,7 +108,7 @@ export default function LiveChat({id,onRevealSidebar}) {
         const x=to.left+to.width/2-(from.left+from.width/2),y=to.top+to.height/2-(from.top+from.height/2);
         await surface.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${x}px,${y}px) scale(.025)`,opacity:0}],{duration:460,easing:'cubic-bezier(.4,0,.2,1)',fill:'forwards'}).finished;
       }
-      navigate('/app/sleep');
+      navigate('/app/memory?tab=sleep');
     }
   }catch(e){setError(e.message);setMovingToSleep(false);}};
   useEffect(()=>{

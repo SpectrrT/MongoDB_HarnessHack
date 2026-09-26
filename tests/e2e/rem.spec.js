@@ -9,7 +9,9 @@ async function openRem(page) {
   state.profile.name = "Tester";
   await page.addInitScript((s) => localStorage.setItem("offload.workspace.v1", JSON.stringify(s)), state);
   await page.goto("/app/rem");
-  await expect(page.getByRole("heading", { name: "REM", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/app\/memory\?tab=rem$/);
+  await expect(page.getByRole("heading", { name: "Memory", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Memory views" }).getByRole("link", { name: "Learning", exact: true })).toHaveAttribute("aria-current", "page");
 }
 
 test("REM: run a task live, sleep, and see the morning brief and diff", async ({ page }, info) => {
@@ -32,16 +34,20 @@ test("REM: run a task live, sleep, and see the morning brief and diff", async ({
   await expect(page.locator(".rem-run-row").first()).toBeVisible();
 
   // Night: sleep once and see the real phases render (Replay, Merge, Distill, Evolve, asks, brief).
-  // The workspace shell has its own Sleep control; target the REM night section.
-  await page.getByRole("region", { name: "Night" }).getByRole("button", { name: "Sleep", exact: true }).click();
+  // The Memory hub keeps the live REM cycle in its Learning view.
+  await page.getByRole("region", { name: "Night" }).getByRole("button", { name: "Run sleep cycle", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Replay", exact: true })).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("heading", { name: "Merge", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Distill", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Evolve", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Asks queued", exact: true })).toBeVisible();
-  await expect(page.locator(".rem-table").first()).toBeVisible();
+  await expect(page.getByRole("region", { name: "Night" }).locator(".rem-table").first()).toBeVisible();
 
-  // Morning: the brief, the genome diff, the lineage and the open asks are all live API data.
+  // Morning details stay accessible in the compact view, including when there are no open asks.
+  const morningSummary = page.locator(".rem-compact-section > summary").filter({ hasText: /^Harness and morning review/ });
+  await expect(morningSummary).toBeVisible();
+  if (await morningSummary.locator("..").getAttribute("open") === null) await morningSummary.click();
+  // The brief, genome diff, lineage and asks still come from live API data.
   await expect(page.getByRole("heading", { name: "Morning: brief, diff, and asks" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Night timeline", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: /^Genome: current harness/ })).toBeVisible();

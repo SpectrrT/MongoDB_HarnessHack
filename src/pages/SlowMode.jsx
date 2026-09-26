@@ -6,14 +6,14 @@ import { useWorkspace } from '../store';
 import { Modal } from '../components/Modal';
 import '../slow-mode.css';
 const defaultDeadline = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(8,0,0,0); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16); };
-export default function SlowMode({ children }) {
+export default function SlowMode({ children, initialTab = 'conversations', embedded = false }) {
   const { state, act } = useWorkspace();
   const navigate=useNavigate();
-  const [tab, setTab] = useState('conversations'), [draft, setDraft] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const [tab, setTab] = useState(initialTab), [draft, setDraft] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const open = (suggestion) => { setError(''); setDraft({title: suggestion?.title || '', brief: suggestion ? `${suggestion.reason}\nPrepare a draft for me to review. Do not send or publish anything.` : '', deadline: defaultDeadline(), budget: '10000'}); };
   const tasks = state.overnight || [];
   return <>
-    <div className="slow-tabs"><button className={tab==='conversations'?'active':''} onClick={()=>setTab('conversations')}>Conversations</button><button className={tab === 'tasks' ? 'active' : ''} onClick={() => setTab('tasks')}>Overnight tasks</button><button className={tab === 'memory' ? 'active' : ''} onClick={() => setTab('memory')}>Memory review</button></div>
+    {!embedded && <div className="slow-tabs"><button className={tab==='conversations'?'active':''} onClick={()=>setTab('conversations')}>Conversations</button><button className={tab === 'tasks' ? 'active' : ''} onClick={() => setTab('tasks')}>Overnight tasks</button><button className={tab === 'memory' ? 'active' : ''} onClick={() => setTab('memory')}>Memory review</button></div>}
     {tab==='conversations'?<div className="standard-page sleeping-conversations"><h1>Sleep</h1><p>Conversations you’ve left for later.</p>
       {state.conversations.filter(c=>c.sleepEnabled).map(c=><article key={c.id} className="sleeping-chat"><Moon size={20}/><Link to={'/app/chat/'+c.id}><strong>{c.title}</strong><span>{c.pending?'Working':c.sleepJobId?'Review available':'Reviews after 30 minutes idle'}</span></Link><button className="text-button" onClick={async()=>{try{await modelRequest('sleep/'+c.id,{enabled:false});await act('conversation-sleep',{id:c.id,enabled:false});navigate('/app/chat/'+c.id);}catch(e){setError(e.message);}}}>Wake</button></article>)}
       {!state.conversations.some(c=>c.sleepEnabled)&&<p className="sleep-empty">Use the moon beside a chat’s model controls to move it here.</p>}{error&&<p role="alert">{error}</p>}

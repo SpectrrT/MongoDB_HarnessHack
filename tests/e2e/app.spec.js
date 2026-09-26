@@ -63,15 +63,16 @@ test("connection setup and overnight tasks persist", async ({ page }) => {
   await page.getByRole('button',{name:'Add to workspace',exact:true}).click();
   await expect(page.getByText('Added · setup needed')).toBeVisible();
   await page.goto('/app/sleep');
-  // Sleep opens on the conversations left for later; overnight tasks have their own tab.
-  await page.getByRole('button',{name:'Overnight tasks',exact:true}).click();
+  await expect(page).toHaveURL(/\/app\/memory\?tab=sleep$/);
+  await expect(page.getByRole('navigation', { name: 'Memory views' }).getByRole('link', { name: 'Sleep', exact: true })).toHaveAttribute('aria-current', 'page');
+  await page.locator('.memory-disclosure > summary').filter({ hasText: 'Overnight queue' }).click();
   await page.getByRole('button',{name:'Add a task',exact:true}).click();
   await page.getByLabel('Task',{exact:true}).fill('Prepare a project update');
   await page.getByLabel('What should be ready?').fill('Draft the update with unresolved issues.');
   await page.getByRole('button',{name:'Save to queue',exact:true}).click();
   await expect(page.getByText('Runner needed')).toBeVisible();
   await page.reload();
-  await page.getByRole('button',{name:'Overnight tasks',exact:true}).click();
+  await page.locator('.memory-disclosure > summary').filter({ hasText: 'Overnight queue' }).click();
   await expect(page.getByRole('heading',{name:'Prepare a project update'})).toBeVisible();
   await page.getByRole('button',{name:'Pause task',exact:true}).click();
   await expect(page.getByText('Paused',{exact:true})).toBeVisible();
@@ -96,7 +97,8 @@ test("sleep cancellation, scheduling, evidence and history persist", async ({ pa
   await page.clock.install({ time: new Date(2026, 8, 25, 12) });
   await onboard(page);
   await page.goto("/app/sleep");
-  await page.getByRole("button", { name: "Memory review" }).click();
+  await expect(page).toHaveURL(/\/app\/memory\?tab=sleep$/);
+  await page.locator(".memory-disclosure > summary").filter({ hasText: "Review history and routines" }).click();
   await page.getByRole("checkbox", { name: "Schedule daily review" }).click();
   await expect(page.getByRole("checkbox", { name: "Schedule daily review" })).toBeChecked();
   await page.getByLabel("Local review time").fill("23:59");
@@ -112,7 +114,8 @@ test("sleep cancellation, scheduling, evidence and history persist", async ({ pa
   await page.getByRole("button", { name: "Approve routine" }).click();
   await expect(page.getByRole("button", { name: "Pause routine" })).toBeVisible();
   await page.reload();
-  await page.getByRole("button", { name: "Memory review" }).click();
+  await expect(page).toHaveURL(/\/app\/memory\?tab=sleep$/);
+  await page.locator(".memory-disclosure > summary").filter({ hasText: "Review history and routines" }).click();
   await expect(page.getByRole("button", { name: "Pause routine" })).toBeVisible();
   await expect(page.locator(".sleep-history details")).toHaveCount(2);
   await page.getByRole("button", { name: "Needs approval", exact: true }).click();

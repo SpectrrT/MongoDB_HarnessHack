@@ -1,5 +1,6 @@
 import React,{useContext,useState} from 'react';
 import {artifactTarget} from '../../shared/artifact-target.js';
+import {fetchArtifactBlob} from './artifact-fetch.js';
 export const ArtifactContext=React.createContext(null);
 export const ArtifactProvider=ArtifactContext.Provider;
 const h=React.createElement;
@@ -14,9 +15,7 @@ export function ResponseLink({href,children,title,id,'aria-label':label}){
  const download=async event=>{
   event.preventDefault();if(busy)return;setBusy(true);setError('');
   try{
-   const response=await fetch(url,{headers:{'X-Offload-Client':'local'}});
-   if(!response.ok)throw Error('This file is no longer available. Ask the agent to generate it again.');
-   const blob=await response.blob(),objectUrl=URL.createObjectURL(blob),anchor=document.createElement('a');
+   const blob=await fetchArtifactBlob(url),objectUrl=URL.createObjectURL(blob),anchor=document.createElement('a');
    anchor.href=objectUrl;anchor.download=target.name;document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
   }catch(e){setError(e.message);}finally{setBusy(false);}
  };
