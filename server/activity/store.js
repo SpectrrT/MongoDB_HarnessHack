@@ -5,7 +5,7 @@
 import os from 'node:os';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { embedText } from '../../rem/embed.js';
+import { cosine, embedText } from '../../rem/embed.js';
 import { hybridRank } from '../../rem/search.js';
 
 export const RETENTION_DAYS = 7;
@@ -96,6 +96,30 @@ const stable = (value) =>
   );
 
 // The same window on several days is one result: the latest visit, with the days it recurred.
+// $vectorSearch returns its nearest neighbours however unrelated they are, so an Atlas hit is kept only if it shares a
+// word with the query (one typo allowed, like the text index's fuzzy match) or clears the vector floor the local ranker
+// uses. Without this, a query that matches nothing still shows five confident results.
+export const MIN_VECTOR = 0.25;
+const oneEditApart = (a, b) => {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0, j = 0, edits = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++edits > 1) return false;
+    if (a.length > b.length) i++;
+    else if (b.length > a.length) j++;
+    else { i++; j++; }
+  }
+  return edits + (a.length - i) + (b.length - j) <= 1;
+};
+const wordsOf = (text) => String(text || '').toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1);
+export function relevantHit(doc, query, queryVector, key) {
+  const tokens = wordsOf([doc.app, doc.title, doc.domain, doc.url].filter(Boolean).join(' '));
+  if (wordsOf(query).some((w) => tokens.some((t) => oneEditApart(w, t)))) return true;
+  return cosine(queryVector, doc.vectors?.[key]) >= MIN_VECTOR;
+}
+
 function collapse(results, limit) {
   const groups = new Map();
   for (const r of results) {
@@ -511,7 +535,7 @@ export class ActivityStore {
         },
       },
       { $limit: limit },
-      { $project: { start: 1, end: 1, durationSec: 1, app: 1, title: 1, domain: 1, day: 1, label: 1, source: 1, private: 1, activeShare: 1 } },
+      { $project: { start: 1, end: 1, durationSec: 1, app: 1, title: 1, domain: 1, url: 1, vectors: 1, day: 1, label: 1, source: 1, private: 1, activeShare: 1 } },
     ];
   }
 
@@ -521,7 +545,9 @@ export class ActivityStore {
     const queryVector = await this.embedder.embedQuery(q);
     if (this.searchMode.atlas) {
       try {
-        const results = await this.sessions.aggregate(this.rankFusionPipeline(workspace, q, queryVector, Math.min(100, limit * 10))).toArray();
+        const results = (await this.sessions.aggregate(this.rankFusionPipeline(workspace, q, queryVector, Math.min(100, limit * 10))).toArray())
+          .filter((r) => relevantHit(r, q, queryVector, this.embedder.key))
+          .map(({ url, vectors, ...r }) => r);
         return { mode: 'atlas-hybrid', results: collapse(results.map((r, i) => ({ ...r, score: 1 / (60 + i + 1) })), limit) };
       } catch (error) {
         this.log(`Atlas hybrid search failed, ranking in the app instead: ${error.message}`);
