@@ -20,3 +20,11 @@ The offline protocol tests compare actual outgoing SDK and Offload requests thro
 Every live network attempt has a raw request, response, usage and status receipt, including failures. Selection and restart decision calls belong to Offload's all-in totals. Provider-reported costs are used without estimated conversions; absent cost makes the total unknown. The first arm alternates each stage. Underlying OpenRouter routing and caching are not controlled, and any returned provider identifiers remain in the receipts. Ordinary compute/storage costs are not priced.
 
 Source: [OpenAI SDK model/provider guidance](https://developers.openai.com/api/docs/guides/agents/models), [quickstart](https://developers.openai.com/api/docs/guides/agents/quickstart), and [agent loop](https://developers.openai.com/api/docs/guides/agents/running-agents). Exact installed SDK source was inspected for custom Chat Completions transport, retry and tool serialization behavior.
+
+## September 26 replication plan
+
+Two additional complete GPT-4o-mini trials were fixed before execution, with no outcome-based stopping, fixture changes or score tuning. Report all three trials including the original. The trusted-role policy update only affects typed conversation histories; these synthetic units are untyped.
+
+The separately registered frontier-model profile uses `BENCHMARK_MODEL=anthropic/claude-opus-5.5`, medium reasoning, no temperature override, a 4,096 output-token cap including reasoning and four model calls per stage in both arms. Exactly two paired trials are planned. The same three-task suite, goals, checks, archive tools and selector policy remain unchanged. All selector tokens count. SDK and Offload wire-equivalence tests pass for both profiles before new paid calls. Do not pool models or these different budgets into a model ranking.
+
+The provider catalog at https://openrouter.ai/api/v1/models listed Claude Opus 5.5 and GPT-6 Astra on September 26. Astra is not tested by this Chat Completions runner: OpenAI documents that its function calling requires Responses (https://developers.openai.com/api/docs/guides/reasoning). No Astra result or native Claude Code result is claimed. No further trials will be added based on winning or losing outcomes.

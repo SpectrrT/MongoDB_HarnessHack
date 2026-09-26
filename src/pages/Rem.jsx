@@ -832,7 +832,7 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
             <h3>Before / after on the gym</h3>
           </div>
           <FitnessTable title="Whole gym" before={brief.evolve.baseline} after={brief.evolve.fitness} />
-          <Disclosure title="Rehearsal and calibration details"><div className="rem-table-scroll"><RemSelfCheck brief={brief} /></div></Disclosure>
+          <Disclosure title="Rehearsal and calibration details"><div className="rem-table-wrap"><RemSelfCheck brief={brief} /></div></Disclosure>
           {brief.verified && (
             <div className="rem-table-wrap" tabIndex={0} role="region" aria-label="Verified work costs">
             <table className="rem-table">
