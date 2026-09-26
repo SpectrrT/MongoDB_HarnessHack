@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 import fs from 'node:fs/promises';
+import {localDomainConfig} from './local-domain-config.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {execFileSync,spawnSync} from 'node:child_process';
+import {setTimeout as delay} from 'node:timers/promises';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const dir=path.join(root,'.data/local-https'), ca=path.join(dir,'ca');
 const config=path.join(dir,'Caddyfile'), socket=path.join(os.homedir(),'.offload','https',crypto.createHash('sha256').update(root).digest('hex').slice(0,12),'admin.sock');
@@ -39,6 +41,19 @@ async function probe(port,explicit=false){
  if(!res.ok||!/<title>Offload\b/i.test(html)||!html.includes('id="root"'))throw Error(`${port} is not serving the Offload frontend.`);
  return {port,vite:html.includes('/@vite/client')};
 }
+async function startProxy(site,checkOnly=false){
+  if(!await exists(path.join(dir,'offload.pem')))throw Error('Run npm run local:https:prepare first.');
+  if(!checkOnly&&!(await fs.readFile('/etc/hosts','utf8')).includes(block))throw Error('Run install-admin first.');
+  const {port,vite}=site;
+  await fs.mkdir(path.dirname(socket),{recursive:true,mode:0o700});
+  await fs.writeFile(config,localDomainConfig({port,socket,certificate:path.join(dir,'offload.pem'),key:path.join(dir,'offload-key.pem')}),{mode:0o600});
+  run('caddy',['validate','--config',config,'--adapter','caddyfile'],{stdio:'inherit'});
+  if(checkOnly){console.log('Validated local domain configuration on port '+port);return;}
+  if(await exists(socket)){try{run('caddy',['reload','--address','unix/'+socket,'--config',config,'--adapter','caddyfile'],{stdio:'inherit'});}catch{throw Error('Proxy reload failed. Run stop, then start.');}}
+  else run('caddy',['start','--config',config,'--adapter','caddyfile','--pidfile',path.join(dir,'pid')],{stdio:'inherit'});
+  console.log(`https://offload.ai → 127.0.0.1:${port} (${vite?'development':'built site'})`);
+}
+
 await fs.mkdir(ca,{recursive:true,mode:0o700});
 try{
  if(process.platform!=='darwin')throw Error('This setup supports macOS. Do not run its admin steps on another OS.');
@@ -65,21 +80,26 @@ try{
    if(result.status!==0&&!result.stderr.includes('could not be found'))throw Error(result.stderr);
    console.log('Removed the Offload hosts block and its dedicated CA trust. Other entries and certificates are unchanged.');
   }
+ }else if(cmd==='check'){
+  await startProxy(await detectPort(),true);
  }else if(cmd==='start'){
-  if(!await exists(path.join(dir,'offload.pem')))throw Error('Run npm run local:https:prepare first.');
-  if(!(await fs.readFile('/etc/hosts','utf8')).includes(block))throw Error('Run install-admin first.');
-  const {port,vite}=await detectPort();
-  await fs.mkdir(path.dirname(socket),{recursive:true,mode:0o700});
-  const quote=s=>JSON.stringify(s);
-  await fs.writeFile(config,`{\n admin ${quote('unix/'+socket)}\n auto_https off\n servers {\n  protocols h1 h2\n }\n}\nhttps://offload.ai {\n bind 127.0.0.1 ::1\n tls ${quote(path.join(dir,'offload.pem'))} ${quote(path.join(dir,'offload-key.pem'))}\n reverse_proxy 127.0.0.1:${port}\n}\n`,{mode:0o600});
-  run('caddy',['validate','--config',config,'--adapter','caddyfile'],{stdio:'inherit'});
-  if(await exists(socket)){try{run('caddy',['reload','--address','unix/'+socket,'--config',config,'--adapter','caddyfile'],{stdio:'inherit'});}catch{throw Error('Proxy reload failed. Run stop, then start.');}}
-  else run('caddy',['start','--config',config,'--adapter','caddyfile','--pidfile',path.join(dir,'pid')],{stdio:'inherit'});
-  console.log(`https://offload.ai → 127.0.0.1:${port} (${vite?'development':'built site'})`);
+  await startProxy(await detectPort());
+ }else if(cmd==='watch'){
+  let stopping=false,lastPort=null,lastMessage='';
+  const stop=()=>{stopping=true;};process.on('SIGINT',stop);process.on('SIGTERM',stop);
+  console.log('Local domain: watching for the Offload frontend.');
+  while(!stopping){
+   try{
+    const site=await detectPort();
+    if(site.port!==lastPort||!await exists(socket)){await startProxy(site);lastPort=site.port;lastMessage='';}
+   }catch(e){if(e.message!==lastMessage){console.log('Local domain: '+e.message);lastMessage=e.message;}}
+   if(!stopping)await delay(2000);
+  }
+  if(lastPort&&await exists(socket))spawnSync('caddy',['stop','--address','unix/'+socket],{stdio:'inherit'});
  }else if(cmd==='stop'){
   if(await exists(socket))run('caddy',['stop','--address','unix/'+socket],{stdio:'inherit'});
   console.log('Offload HTTPS proxy stopped. The development app is unchanged.');
  }else if(cmd==='status'){
   console.log(`Hosts entry: ${(await fs.readFile('/etc/hosts','utf8')).includes(block)}\nProxy socket: ${await exists(socket)}\nPrivate certificate directory: ${dir}`);
- }else throw Error('Use prepare, install-admin, start, stop, status, or undo-admin.');
+ }else throw Error('Use prepare, install-admin, check, start, watch, stop, status, or undo-admin.');
 }catch(e){console.error(e.message);process.exitCode=1;}

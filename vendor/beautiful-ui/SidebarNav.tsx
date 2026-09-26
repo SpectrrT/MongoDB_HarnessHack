@@ -1,4 +1,5 @@
 "use client";
+import {Archive,Trash2,Moon,LoaderCircle} from "lucide-react";
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -34,6 +35,7 @@ export type SidebarRecent = {
   id: string;
   label: string;
   prompt?: string;
+  running?: boolean;
 };
 
 const DEFAULT_RECENTS: SidebarRecent[] = [
@@ -65,6 +67,8 @@ type SidebarNavProps = {
   footerLabel?: string;
   footerIcon?: ReactNode;
   onFooterClick?: () => void;
+  onConversationAction?: (id:string,action:string) => void;
+  onOpenArchive?: () => void;
   recents?: SidebarRecent[];
   variant?: string;
 };
@@ -217,6 +221,7 @@ export default function SidebarNav({
   footerIcon,
   onFooterClick,
   recents = DEFAULT_RECENTS,
+  onConversationAction,onOpenArchive,
 }: SidebarNavProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [internalNav, setInternalNav] = useState("chats");
@@ -361,6 +366,7 @@ export default function SidebarNav({
               <span>Conversations</span>
             </button>
 
+            {onOpenArchive&&!searchOpen&&<button type="button" className="sidebar-archive-link" aria-label="Archived and deleted conversations" title="Archived and deleted conversations" onClick={onOpenArchive}><Archive size={14}/></button>}
             <button
               type="button"
               aria-label="Search chats"
@@ -415,8 +421,9 @@ export default function SidebarNav({
             {visibleRecents.map((item) => {
               const active = item.label === selectedTitle;
               return (
+                <div key={item.id} className="conversation-row">
                 <button
-                  key={item.id}
+                  aria-label={item.label}
                   data-row
                   type="button"
                   title={item.label}
@@ -429,10 +436,17 @@ export default function SidebarNav({
                     active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""
                   }`}
                 >
+                  {item.running&&<LoaderCircle size={14} className="conversation-running" aria-label="Running"/>}
                   <span className={`sidebar-copy min-w-0 flex-1 truncate text-[14px] font-medium ${active ? "text-ink" : "text-ink-2"}`}>
                     {item.label}
                   </span>
                 </button>
+                {onConversationAction&&<div className="conversation-actions">
+                  <button type="button" aria-label={'Move '+item.label+' to Sleep'} title="Move to Sleep" onClick={()=>onConversationAction(item.id,'sleep')}><Moon size={14}/></button>
+                  <button type="button" aria-label={'Archive '+item.label} title="Archive" onClick={()=>onConversationAction(item.id,'archive')}><Archive size={14}/></button>
+                  <button type="button" aria-label={'Delete '+item.label} title="Delete" onClick={()=>onConversationAction(item.id,'delete')}><Trash2 size={14}/></button>
+                </div>}
+                </div>
               );
             })}
             {query && visibleRecents.length === 0 && (

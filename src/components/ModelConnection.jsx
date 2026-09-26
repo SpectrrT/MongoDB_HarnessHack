@@ -7,13 +7,14 @@ const listeners = new Set();
 const emit = () => listeners.forEach(fn=>fn());
 async function refreshStatus() {
   if(inflight)return inflight;
-  snapshot = {status:null,error:''};emit();
-  inflight = modelRequest('status').then(status=>{snapshot={status,error:''};}).catch(e=>{snapshot={status:null,error:e.message};}).finally(()=>{inflight=null;emit();});
+  snapshot = {...snapshot,error:''};emit();
+  inflight = modelRequest('status').then(status=>{snapshot={status,error:''};}).catch(e=>{snapshot={...snapshot,error:e.message};}).finally(()=>{inflight=null;emit();});
   return inflight;
 }
 export function useModelStatus() {
   const current = useSyncExternalStore(fn=>{listeners.add(fn);return()=>listeners.delete(fn);},()=>snapshot);
   useEffect(()=>{if(!snapshot.status&&!snapshot.error)refreshStatus();},[]);
+  useEffect(()=>{if(!current.error)return;const timer=setTimeout(refreshStatus,3000);return()=>clearTimeout(timer);},[current.error]);
   return {...current,refresh:refreshStatus};
 }
 export default function ModelConnection() {

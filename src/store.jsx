@@ -1,3 +1,4 @@
+import {watchModelJob} from './watch-model-job';
 import {modelRequest} from './model-api';
 import React, {
   createContext,
@@ -22,6 +23,8 @@ const MODE = import.meta.env.VITE_STORAGE_MODE || "browser";
 export function WorkspaceProvider({ children }) {
   const [state, setState] = useState(null),
     [error, setError] = useState("");
+  const [liveJobs,setLiveJobs]=useState({}),[jobConnections,setJobConnections]=useState({});
+  const watchers=useRef(new Map());
   const ref = useRef(null),
     queue = useRef(Promise.resolve());
   const put = useCallback((s) => {
@@ -144,6 +147,36 @@ export function WorkspaceProvider({ children }) {
     addEventListener("storage", h);
     return () => removeEventListener("storage", h);
   }, []);
+  const pendingSignature=JSON.stringify((state?.conversations||[]).filter(c=>c.pending).map(c=>[c.id,c.pending.id]));
+  useEffect(()=>{
+    const pending=new Map((ref.current?.conversations||[]).filter(c=>c.pending).map(c=>[c.pending.id,c.id]));
+    for(const [jobId,stop] of watchers.current)if(!pending.has(jobId)){stop();watchers.current.delete(jobId);}
+    for(const [jobId,id] of pending)if(!watchers.current.has(jobId)){
+      watchers.current.set(jobId,watchModelJob({
+        read:()=>modelRequest('jobs/'+jobId),
+        onUpdate:job=>setLiveJobs(current=>({...current,[jobId]:job})),
+        onConnection:message=>setJobConnections(current=>({...current,[jobId]:message})),
+        onFinish:job=>act('chat-finish',{id,jobId,...(job.status==='completed'?{text:job.result.text,usage:job.result.usage,agent:job.result.agent}:{error:job.error||'You stopped this reply.',...(job.stream?{text:'Partial reply:\n\n'+job.stream.slice(0,19000)}:{})})}),
+      }));
+    }
+  },[pendingSignature,act]);
+  useEffect(()=>()=>{for(const stop of watchers.current.values())stop();watchers.current.clear();},[]);
+  const naming=useRef(new Map());
+  useEffect(()=>{
+    for(const c of state?.conversations||[]){
+      const first=c.messages.find(m=>m.role==='user');
+      if(!first||c.generatedTitle||c.listStatus||naming.current.has(c.id))continue;
+      const job={stopped:false,attempts:0};naming.current.set(c.id,job);
+      const name=async()=>{try{
+        const result=await modelRequest('titles',{conversationId:c.id,text:(first.displayText||first.text).slice(0,20000)});
+        if(job.stopped)return;
+        if(result.status==='completed')await act('conversation-title',{id:c.id,title:result.title});
+        else if(result.status==='pending'&&++job.attempts<30)job.timer=setTimeout(name,3000);
+      }catch{ /* Keep the first-message title if naming is unavailable. */ }};
+      void name();
+    }
+  },[state?.conversations,act]);
+  useEffect(()=>()=>{for(const job of naming.current.values()){job.stopped=true;clearTimeout(job.timer);}naming.current.clear();},[]);
   const reset = async () => {
     if(ref.current?.conversations.some(c=>c.sleepEnabled))await modelRequest("sleep/reset",{});
     if (MODE === "api") {
@@ -154,7 +187,7 @@ export function WorkspaceProvider({ children }) {
   };
   return (
     <Context.Provider
-      value={{ state, act, error, setError, reset, mode: MODE }}
+      value={{ state, act, error, setError, reset, mode: MODE, liveJobs, jobConnections }}
     >
       {children}
     </Context.Provider>

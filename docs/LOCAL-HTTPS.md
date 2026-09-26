@@ -21,39 +21,45 @@ npm run local:https
 
 Enter your Mac password in Terminal when asked. Open **https://offload.ai**. The admin step adds a marked block to `/etc/hosts` and trusts a dedicated local development CA. Private keys stay in the ignored `.data/local-https/` folder. Never share that folder or commit certificates.
 
-The proxy binds only to `127.0.0.1` and `::1`, uses the local certificate and makes no public certificate request. Browser certificate checks stay enabled. Caddy's control socket is private to your user; no admin port is exposed. No login service is installed.
+The proxy binds only to `127.0.0.1` and `::1`, uses the local certificate and makes no public certificate request. Browser certificate checks stay enabled. Caddy's control socket is private to your user; no admin port is exposed. No login service is installed. The proxy runs with the app, not at Mac login.
 
 ## Start
 
-Start the app, then start the proxy:
+After the one-time admin setup, run:
 
 ```sh
 npm run dev
-# In another Terminal:
-npm run local:https
 ```
 
-The script checks listening ports for the Offload frontend and prefers the live Vite site over the built site. On Floyd's Mac the current frontend is **5193**; **5194** serves the API and built site. If several frontends are open, choose explicitly:
+Open **http://offload.ai** or **https://offload.ai**. HTTP redirects to HTTPS, including the path and query. The app's start command now starts the local proxy automatically. `npm start` does the same for the built app; run `npm run build` first. `npm run dev:web` starts the frontend and proxy when your API is already running.
+
+The proxy checks listening ports every two seconds, verifies the Offload page, and prefers Vite over the built site. It reloads when the frontend port changes. If more than one Offload frontend is open, explicitly choose one:
 
 ```sh
-OFFLOAD_PORT=6200 npm run local:https
+OFFLOAD_PORT=6200 PORT=6201 OFFLOAD_WEB_PORT=6200 npm run dev
 ```
 
-It verifies that the selected port serves Offload. Run the start command again after a port change to reload the proxy. To choose different app ports:
+For teammates, `OFFLOAD_WEB_PORT` sets the web port and `PORT` sets the API port. Each Mac needs its own hosts entry and certificate; never share private keys. The default web port is 5193 and API port is 5194.
+
+Both HTTP and HTTPS bind only to loopback. The proxy passes WebSockets for live updates. Vite allows `offload.ai`; the model bridge accepts the local HTTPS origin. No public DNS is changed. This automatic setup is disabled outside macOS and under `NODE_ENV=production`.
+
+To run without the domain proxy:
 
 ```sh
-PORT=6201 OFFLOAD_WEB_PORT=6200 npm run dev
+OFFLOAD_LOCAL_DOMAIN=0 npm run dev
 ```
-
-Vite allows only the added `offload.ai` hostname. WebSockets pass through the proxy for live updates. The model bridge accepts the local HTTPS origin in development and remains disabled under `NODE_ENV=production`.
 
 ## Stop
+
+Control-C stops the app and its automatically started proxy. The hosts entry remains until undo, so offload.ai points locally even while the app is stopped; it does not fall back to the public website.
+
+For a proxy started manually:
 
 ```sh
 npm run local:https:stop
 ```
 
-This stops only the HTTPS proxy. Stop the app with Control-C in its Terminal. The hosts entry stays in place until undo, so offload.ai will fail locally while the proxy is off.
+If `npm run dev` was already running before this update, restart it after saving your work. Alternatively, run `node scripts/local-https.mjs watch` in another Terminal until the next restart.
 
 ## Undo
 

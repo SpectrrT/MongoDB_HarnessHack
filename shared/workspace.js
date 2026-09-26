@@ -345,6 +345,14 @@ export function transition(current, action, now = Date.now()) {
         messages: [],
       });
       break;
+    case "conversation-state": {
+      const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");
+      required(['archive','delete','restore'].includes(p.action),'Choose a conversation action.');
+      c.listStatus=p.action==='restore'?null:p.action==='delete'?'deleted':'archived';break;
+    }
+    case "conversation-title": {
+      const c=s.conversations.find(c=>c.id===p.id);if(c&&!c.generatedTitle){c.title=String(p.title).trim().slice(0,70)||c.title;c.generatedTitle=true;}break;
+    }
     case "conversation-sleep": {
       const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");c.sleepEnabled=!!p.enabled;break;
     }

@@ -153,7 +153,7 @@ function ToolChips({
               type: "button",
               "aria-expanded": rowOpen,
               onClick: () => toggleRow(row.label),
-              className: "group/row -mx-[3px] flex h-7 w-[calc(100%+6px)] min-w-0 items-center gap-2 rounded-control px-[3px] text-left transition-colors duration-100 hover:bg-hover-2",
+              className: "tool-activity-row group/row -mx-[3px] flex h-7 w-[calc(100%+6px)] min-w-0 items-center gap-2 rounded-control px-[3px] text-left transition-colors duration-100 hover:bg-hover-2",
               children: [
                 /* @__PURE__ */ jsxs("span", { className: "relative flex size-4 shrink-0 items-center justify-center text-ink-3", children: [
                   row.iconNode || /* @__PURE__ */ jsx(
@@ -168,7 +168,7 @@ function ToolChips({
                       children: Icons[row.icon]
                     }
                   ),
-                  /* @__PURE__ */ jsx(
+                  !row.iconNode && /* @__PURE__ */ jsx(
                     "svg",
                     {
                       width: "12",
@@ -185,11 +185,11 @@ function ToolChips({
                     }
                   )
                 ] }),
-                /* @__PURE__ */ jsx("span", { className: "shrink-0 text-[12.5px] font-medium text-ink", children: row.label }),
+                /* @__PURE__ */ jsx("span", { className: "tool-activity-label shrink-0 text-[12.5px] font-medium text-ink", children: row.label }),
                 /* @__PURE__ */ jsxs(
                   "span",
                   {
-                    className: `inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-field px-1.5
+                    className: `tool-activity-status inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-field px-1.5
                     text-[11.5px] text-ink-2 shadow-hairline transition-colors duration-100 hover:bg-hover-2
                     ${row.mono ? "font-mono" : ""}`,
                     children: [

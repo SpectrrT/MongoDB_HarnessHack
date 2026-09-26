@@ -1,3 +1,5 @@
+import ConversationArchive from './ConversationArchive';
+import {modelRequest} from '../model-api';
 import {PERSONAL_SUGGESTIONS} from '../../shared/personal-suggestions';
 import Session from "../components/Session";
 import Harness from "./Harness";
@@ -157,13 +159,25 @@ export default function Workspace() {
           />
           <div className="beautiful-sidebar beautiful-ui">
             <SidebarNav fill workspaceName="offload" workspaceLogo={null}
-              navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18}/>}))}
+              navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18} data-sleep-destination={key==='sleep'?'true':undefined}/>}))}
               activeNav={page} activeTitle={state.conversations.find(c=>c.id===route[1])?.title || null}
               onNewChat={newChat} onCollapse={()=>setSidebar(false)}
               onWorkspaceClick={()=>navigate("/")}
               onNavigate={key=>{navigate("/app"+(key?"/"+key:""));if(innerWidth<900)setSidebar(false);}}
               onPick={id=>{navigate("/app/chat/"+id);if(innerWidth<900)setSidebar(false);}}
-              recents={state.conversations.map(c=>({id:c.id,label:c.title}))}
+              recents={state.conversations.filter(c=>!c.sleepEnabled&&!c.listStatus).map(c=>({id:c.id,label:c.title,running:!!c.pending}))}
+              onOpenArchive={()=>navigate('/app/archive')}
+              onConversationAction={async(id,action)=>{try{const c=state.conversations.find(c=>c.id===id);
+                if(action==='sleep'){
+                  const messages=c.messages.slice(-16).map(m=>({role:m.role,text:m.text.slice(0,20000)}));
+                  const context=messages.length?{model:c.pending?.model||c.messages.findLast(m=>m.role==='assistant')?.model||state.settings.modelSelection||'gpt-5.5',provider:state.settings.modelProvider||'codex',effort:state.settings.reasoningEffort||'low',messages,notes:[]}:undefined;
+                  await modelRequest('sleep/'+id,{enabled:true,...(context?{context}:{})});await act('conversation-sleep',{id,enabled:true});navigate('/app/sleep');
+                }else{
+                  if(action==='delete'&&c.pending)await modelRequest('jobs/'+c.pending.id+'/stop',{});
+                  if(c.sleepEnabled){await modelRequest('sleep/'+id,{enabled:false});await act('conversation-sleep',{id,enabled:false});}
+                  await act('conversation-state',{id,action});if(route[1]===id)navigate('/app/chat');
+                }
+              }catch(e){setError(e.message);}}}
               footerLabel="" footerIcon={<Settings size={16}/>} onFooterClick={()=>navigate("/app/settings")}/>
           </div>
         </>
@@ -223,9 +237,10 @@ export default function Workspace() {
           className={"app-content page-" + (page || "home")}
         >
           {page === "" && <Overview onRun={run} onSession={()=>setSession(true)} onSuggestions={()=>navigate("/app/chat")} />}
-          {page === "chat" && <LiveChat id={route[1]} onNew={newChat} />}
+          {page === "chat" && <LiveChat id={route[1]} onRevealSidebar={()=>setSidebar(true)} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
           {page === "memory" && <Memory />}
+          {page === "archive" && <ConversationArchive/>}
           {page === "sleep" && <SlowMode><Sleep /></SlowMode>}
           {page === "harness" && <Harness />}
           {page === "adapt" && <Adapt />}

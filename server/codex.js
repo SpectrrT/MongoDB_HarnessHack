@@ -1,10 +1,11 @@
+import {findCodex} from './codex-installation.js';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 const exec = promisify(execFile);
-const binary = process.env.OFFLOAD_CODEX_BIN || path.join(os.homedir(), '.local/bin/codex');
+const binary = findCodex();
 const environment = () => Object.fromEntries(['HOME','PATH','USER','TMPDIR','CODEX_HOME'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
 let cached;
 export function clearCodexCache(){cached=null;}

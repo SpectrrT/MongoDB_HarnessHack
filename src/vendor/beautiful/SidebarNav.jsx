@@ -1,6 +1,7 @@
 // Adapted from the original publicly provided Beautiful UI source. See THIRD_PARTY.md.
 "use client";
 import { jsx, jsxs } from "react/jsx-runtime";
+import { Archive, Trash2, Moon, LoaderCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LogOut as IconArrowBoxLeft } from "lucide-react";
@@ -165,7 +166,9 @@ function SidebarNav({
   footerLabel = "Upgrade",
   footerIcon,
   onFooterClick,
-  recents = DEFAULT_RECENTS
+  recents = DEFAULT_RECENTS,
+  onConversationAction,
+  onOpenArchive
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [internalNav, setInternalNav] = useState("chats");
@@ -320,6 +323,7 @@ function SidebarNav({
                 ]
               }
             ),
+            onOpenArchive && !searchOpen && /* @__PURE__ */ jsx("button", { type: "button", className: "sidebar-archive-link", "aria-label": "Archived and deleted conversations", title: "Archived and deleted conversations", onClick: onOpenArchive, children: /* @__PURE__ */ jsx(Archive, { size: 14 }) }),
             /* @__PURE__ */ jsx(
               "button",
               {
@@ -383,22 +387,32 @@ function SidebarNav({
           /* @__PURE__ */ jsx("div", { id: "conversation-list", hidden: !recentsOpen, children: /* @__PURE__ */ jsxs(GlideGroup, { children: [
             visibleRecents.map((item) => {
               const active = item.label === selectedTitle;
-              return /* @__PURE__ */ jsx(
-                "button",
-                {
-                  "data-row": true,
-                  type: "button",
-                  title: item.label,
-                  onClick: () => {
-                    selectNav("chats");
-                    if (activeTitle === void 0) setDemoActiveTitle(item.label);
-                    onPick?.(item.id, item.label, item.prompt);
-                  },
-                  className: `sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.98] ${active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""}`,
-                  children: /* @__PURE__ */ jsx("span", { className: `sidebar-copy min-w-0 flex-1 truncate text-[14px] font-medium ${active ? "text-ink" : "text-ink-2"}`, children: item.label })
-                },
-                item.id
-              );
+              return /* @__PURE__ */ jsxs("div", { className: "conversation-row", children: [
+                /* @__PURE__ */ jsxs(
+                  "button",
+                  {
+                    "aria-label": item.label,
+                    "data-row": true,
+                    type: "button",
+                    title: item.label,
+                    onClick: () => {
+                      selectNav("chats");
+                      if (activeTitle === void 0) setDemoActiveTitle(item.label);
+                      onPick?.(item.id, item.label, item.prompt);
+                    },
+                    className: `sidebar-row relative z-10 mx-2 flex h-8 items-center rounded-[8px] px-2 text-left transition-[width,background-color,color,transform] duration-150 active:scale-[0.98] ${active ? "bg-hover-2 group-hover/glide:bg-transparent" : ""}`,
+                    children: [
+                      item.running && /* @__PURE__ */ jsx(LoaderCircle, { size: 14, className: "conversation-running", "aria-label": "Running" }),
+                      /* @__PURE__ */ jsx("span", { className: `sidebar-copy min-w-0 flex-1 truncate text-[14px] font-medium ${active ? "text-ink" : "text-ink-2"}`, children: item.label })
+                    ]
+                  }
+                ),
+                onConversationAction && /* @__PURE__ */ jsxs("div", { className: "conversation-actions", children: [
+                  /* @__PURE__ */ jsx("button", { type: "button", "aria-label": "Move " + item.label + " to Sleep", title: "Move to Sleep", onClick: () => onConversationAction(item.id, "sleep"), children: /* @__PURE__ */ jsx(Moon, { size: 14 }) }),
+                  /* @__PURE__ */ jsx("button", { type: "button", "aria-label": "Archive " + item.label, title: "Archive", onClick: () => onConversationAction(item.id, "archive"), children: /* @__PURE__ */ jsx(Archive, { size: 14 }) }),
+                  /* @__PURE__ */ jsx("button", { type: "button", "aria-label": "Delete " + item.label, title: "Delete", onClick: () => onConversationAction(item.id, "delete"), children: /* @__PURE__ */ jsx(Trash2, { size: 14 }) })
+                ] })
+              ] }, item.id);
             }),
             query && visibleRecents.length === 0 && /* @__PURE__ */ jsx("div", { className: "sidebar-copy mx-2 px-2 py-2 text-[12.5px] text-ink-3", children: "No chats found" })
           ] }) })

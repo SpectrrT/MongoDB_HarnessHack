@@ -108,6 +108,7 @@ function ApprovalCard({
   onAnswerChange,
   resettable = true,
   manual = false,
+  variant,
   onSkipped
 } = {}) {
   const t = { ...DEFAULT_LABELS, ...labels };
@@ -185,6 +186,13 @@ function ApprovalCard({
     setOpen(true);
     measured.current = false;
   };
+  if (variant === "decision") return /* @__PURE__ */ jsxs("div", { className: "approval-decision", children: [
+    /* @__PURE__ */ jsx("p", { children: questions[0]?.q }),
+    /* @__PURE__ */ jsxs("div", { className: "approval-decision-actions", children: [
+      /* @__PURE__ */ jsx(Button, { type: "button", variant: "secondary", onClick: () => onSkipped?.(), children: "Decline" }),
+      /* @__PURE__ */ jsx(Button, { type: "button", onClick: () => onSubmitted?.({ 0: [0] }, {}), children: "Allow once" })
+    ] })
+  ] });
   if (!open) {
     return /* @__PURE__ */ jsx("button", { type: "button", onClick: () => setOpen(true), className: "rounded-control bg-surface px-3 py-2 text-[12.5px] font-medium text-ink shadow-btn transition-colors duration-150 hover:bg-hover", children: "Open approval" });
   }

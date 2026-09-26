@@ -102,6 +102,7 @@ function PromptBar({
   variant = "Rounded",
   local = true,
   tall = false,
+  modelDisabled,
   placeholder,
   onSend,
   models,
@@ -557,7 +558,7 @@ function PromptBar({
                         type: "button",
                         "aria-expanded": modelOpen,
                         "aria-label": "Choose model",
-                        disabled,
+                        disabled: modelDisabled ?? disabled,
                         onClick: () => {
                           setPlusOpen(false);
                           setModelOpen((current) => !current);

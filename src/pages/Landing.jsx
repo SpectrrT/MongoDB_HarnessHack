@@ -179,7 +179,6 @@ export default function Landing() {
       </main>
       <footer>
         <span className="wordmark">offload</span>
-        <span>Your work stays on this device.</span>
         <Link to="/app/settings">Privacy & local data</Link>
       </footer>
     </div>

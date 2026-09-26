@@ -2,7 +2,7 @@ import {useState,useEffect} from 'react';
 import {useWorkspace} from '../store';
 import {modelRequest} from '../model-api';
 import {ConnectionLogo} from './ConnectionLogo';
-export function useOpenRouterStatus(){const [status,setStatus]=useState(null),[error,setError]=useState('');const refresh=async()=>{try{setStatus(await modelRequest('openrouter/status'));setError('');}catch(e){setError(e.message);}};useEffect(()=>{refresh();},[]);return {status,error,refresh};}
+export function useOpenRouterStatus(){const [status,setStatus]=useState(null),[error,setError]=useState('');const refresh=async()=>{try{setStatus(await modelRequest('openrouter/status'));setError('');}catch(e){setError(e.message);}};useEffect(()=>{refresh();},[]);useEffect(()=>{if(!error)return;const timer=setTimeout(refresh,3000);return()=>clearTimeout(timer);},[error]);return {status,error,refresh};}
 export default function OpenRouterConnection(){
  const {state,act}=useWorkspace(),{status,error,refresh}=useOpenRouterStatus(),[busy,setBusy]=useState(false),[failure,setFailure]=useState('');
  const connect=async()=>{setBusy(true);try{const {url}=await modelRequest('openrouter/start',{});location.assign(url);}catch(e){setFailure(e.message);setBusy(false);}};

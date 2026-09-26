@@ -15,7 +15,7 @@ export function createIdleReviews({dataDir,launch,getJob,cancel,isBusy,now=Date.
   async get(owner,id){await ready;const row=rows.get(key(owner,id));await reconcile(row);return view(row);},
   async reset(owner){await ready;for(const row of rows.values())if(row.owner===owner)await api.set(owner,row.id,false);},
   async tick(){await ready;if(ticking)return;ticking=true;try{for(const row of rows.values()){
-   await reconcile(row);if(!row.enabled||row.state!=='waiting'||!row.latest||row.nextAt>now()||isBusy())continue;
+   await reconcile(row);if(!row.enabled||row.state!=='waiting'||!row.latest||row.nextAt>now()||isBusy(row.owner,row.id))continue;
    const generation=row.generation;row.state='starting';row.jobId=crypto.randomUUID();await save(row);
    // Exactly one review per idle period; a new user message is needed to arm another.
    const prompt='Sleep review: revisit the user’s goal in this conversation. If useful work remains, do one bounded pass of read-only research or a local draft. Do not invent a new goal, send messages, publish, buy, change accounts, or approve permissions. Stop and report any missing access. If the goal is already satisfied, say so briefly. Summarize what changed and what still needs the user. Keep this review concise.';

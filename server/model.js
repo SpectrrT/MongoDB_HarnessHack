@@ -1,3 +1,4 @@
+import {mountChatTitles} from './chat-titles.js';
 import {createIdleReviews} from "./idle-reviews.js";
 import {mountCodexLogin} from "./codex-login-routes.js";
 import {createOpenRouter} from "./openrouter.js";
@@ -14,6 +15,8 @@ const localOrigin=origin=>/^http:\/\/(127\.0\.0\.1|localhost):([1-9]\d{0,4})$/.t
 const input=z.object({requestId:z.string().uuid(),conversationId:z.string().uuid().optional(),folder:z.string().max(1000).refine(p=>!p||path.isAbsolute(p)).optional(),images:z.array(z.object({name:z.string().max(120),data:z.string().max(4000000).regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/)})).max(3).default([]),provider:z.enum(["codex","openrouter"]).default("codex"),model:z.string().min(1).max(100),effort:z.enum(["low","medium","high","xhigh","max","ultra"]).default("low"),messages:z.array(z.object({role:z.enum(['user','assistant']),text:z.string().max(20000)})).min(1).max(20),notes:z.array(z.object({id:z.string().max(100),source:z.string().max(80),text:z.string().max(360)})).max(4)}).strict();
 export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.resolve(".data"),enabled=process.env.NODE_ENV !== 'production'}={}) {
   const jobs=new Map(), router=createOpenRouter({dataDir});
+  const busy=(owner,conversationId)=>[...jobs.values()].some(j=>j.status==='running'&&j.owner===owner&&j.conversationId===conversationId);
+  const full=()=>[...jobs.values()].filter(j=>j.status==='running').length>=8;
   const jobFolder=(owner,id)=>path.join(dataDir,'agent-jobs',owner,id);
   const save=async job=>{const folder=jobFolder(job.owner,job.id);await fs.mkdir(folder,{recursive:true,mode:0o700});const temp=path.join(folder,'job-'+crypto.randomUUID()+'.tmp');await fs.writeFile(temp,JSON.stringify(publicJob(job)),{mode:0o600});await fs.rename(temp,path.join(folder,'job.json'));};
   const getJob=async(owner,id)=>{const current=jobs.get(owner+':'+id);if(current)return current;if(!/^[a-f0-9-]{36}$/.test(id))return null;try{const saved=JSON.parse(await fs.readFile(path.join(jobFolder(owner,id),'job.json'),'utf8'));return {...saved,owner,...(saved.status==='running'?{status:'failed',approvals:[],error:'The local service restarted. Continue the conversation to resume its saved agent session.'}:{})};}catch{return null;}};
@@ -22,6 +25,7 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     if(!enabled || !localHost(host) || (origin && (!localOrigin(origin)||new URL(origin).host!==host)) || req.get('X-Offload-Client')!=='local')return res.status(403).json({error:'The model connection is available only in the local Offload app.'});
     next();
   });
+  mountChatTitles(app,{status});
   mountCodexLogin(app,{status,onConnected:clearCodexCache,isBusy:()=>[...jobs.values()].some(j=>j.status==='running')});
   app.get('/api/model/status',async(req,res)=>res.json(await status()));
   app.get('/api/model/openrouter/status',async(req,res)=>{try{res.json(await router.status(req.workspaceKey));}catch{res.status(503).json({error:'OpenRouter is unavailable. Try again.'});}});
@@ -34,14 +38,17 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
   async function launch(owner,p){
     const key=owner+':'+p.requestId;
     const previous=await getJob(owner,p.requestId);if(previous)return {job:publicJob(previous),created:false};
-    if([...jobs.values()].some(j=>j.status==='running'))throw Object.assign(Error('A task is already running on this Mac. Wait or stop it first.'),{status:409});
+    const conversationId=p.conversationId||p.requestId;
+    if(busy(owner,conversationId))throw Object.assign(Error('This conversation already has a running task. Open a new chat to work in parallel.'),{status:409});
     const connection=p.provider==='openrouter'?await router.status(owner):await status();if(!connection.connected)throw Object.assign(Error(connection.message),{status:409});
     if(!connection.models.some(m=>m.id===p.model))throw Object.assign(Error('Choose a model available to your account.'),{status:400});
     if(connection.models.find(m=>m.id===p.model)?.efforts?.length&&!connection.models.find(m=>m.id===p.model)?.efforts?.includes(p.effort))throw Object.assign(Error("This model does not support that reasoning level."),{status:400});
-    // Recheck after authentication so concurrent requests cannot start two jobs.
-    if([...jobs.values()].some(j=>j.status==='running'))throw Object.assign(Error('A task is already running.'),{status:409});
+    // Reserve synchronously after authentication: one run per conversation, independent chats in parallel.
+    const existing=jobs.get(key);if(existing)return {job:publicJob(existing),created:false};
+    if(busy(owner,conversationId))throw Object.assign(Error('This conversation already has a running task.'),{status:409});
+    if(full())throw Object.assign(Error('Eight conversations are running. Wait for one to finish or stop it.'),{status:409});
     if(jobs.size>=100){for(const [k,j] of jobs){if(j.status!=='running'){jobs.delete(k);break;}}}
-    const job={id:p.requestId,owner:owner,status:'running',background:!!p.background,createdAt:Date.now(),controller:new AbortController(),events:[],decisions:[],approvals:new Map(),stream:''};jobs.set(key,job);
+    const job={id:p.requestId,owner:owner,conversationId,status:'running',background:!!p.background,createdAt:Date.now(),controller:new AbortController(),events:[],decisions:[],approvals:new Map(),stream:''};jobs.set(key,job);
     await save(job);
     const onEvent=event=>{
       if(job.status!=='running')return;
@@ -56,7 +63,7 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
       if(job.status!=='running'||job.controller.signal.aborted)return reject(Error('Stopped.'));
       const id=crypto.randomUUID(),request={id,method,params:structuredClone(params),rpcId,resolve,reject};job.approvals.set(id,request);
     });
-    (async()=>{
+    job.finished=(async()=>{
       const folder=await sessionFolder(dataDir,job.owner,p.conversationId||p.requestId,p.folder);job.cwd=folder.cwd;await save(job);
       const args={owner:job.owner,model:p.model,messages:p.messages,notes:p.notes,effort:p.effort,images:p.images,cwd:folder.cwd,onEvent,onRequest,signal:job.controller.signal};
       const result=p.provider==='openrouter'?await router.run(args):await run({...args,...folder,prompt:modelPrompt(folder.threadId?p.messages.slice(-1):p.messages,p.notes)});
@@ -67,8 +74,8 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     })().catch(e=>{if(job.status==='running'){job.status='failed';job.error=e.message;}}).finally(async()=>{for(const a of job.approvals.values())a.reject(Error('Run ended.'));job.approvals.clear();await save(job).catch(()=>{});});
     return {job:publicJob(job),created:true};
   }
-  const cancel=async(owner,id)=>{const job=jobs.get(owner+':'+id);if(job?.status==='running'){job.status='cancelled';job.controller.abort();for(const approval of job.approvals.values())approval.reject(Error('Stopped.'));job.approvals.clear();await save(job);}};
-  const idle=createIdleReviews({dataDir,launch,getJob,cancel,isBusy:()=>!enabled||[...jobs.values()].some(job=>job.status==='running')});
+  const cancel=async(owner,id)=>{const job=jobs.get(owner+':'+id);if(job?.status==='running'){job.status='cancelled';job.controller.abort();for(const approval of job.approvals.values())approval.reject(Error('Stopped.'));job.approvals.clear();await job.finished;await save(job);}};
+  const idle=createIdleReviews({dataDir,launch,getJob,cancel,isBusy:(owner,id)=>!enabled||full()||busy(owner,id)});
   app.post('/api/model/sleep/reset',async(req,res)=>{await idle.reset(req.workspaceKey);res.json({ok:true});});
   app.use('/api/model/sleep/:conversationId',(req,res,next)=>{if(!z.string().uuid().safeParse(req.params.conversationId).success)return res.status(400).json({error:'Choose a conversation.'});next();});
   app.get('/api/model/sleep/:conversationId',async(req,res)=>res.json(await idle.get(req.workspaceKey,req.params.conversationId)));
@@ -77,7 +84,7 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
   app.post('/api/model/jobs',async(req,res)=>{
     const parsed=input.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:'The request is too long or incomplete.'});
     try{
-     for(const job of jobs.values())if(job.owner===req.workspaceKey&&job.background&&job.status==='running')await cancel(job.owner,job.id);
+     for(const job of jobs.values())if(job.owner===req.workspaceKey&&job.conversationId===(parsed.data.conversationId||parsed.data.requestId)&&job.background&&job.status==='running')await cancel(job.owner,job.id);
      const result=await launch(req.workspaceKey,parsed.data);if(result.created)await idle.observe(req.workspaceKey,parsed.data);res.status(result.created?202:200).json(result.job);
     }catch(e){res.status(e.status||500).json({error:e.message});}
   });
