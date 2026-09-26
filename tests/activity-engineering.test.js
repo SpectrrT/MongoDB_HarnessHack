@@ -9,8 +9,12 @@ import { mongodbDemoSources, mongodbDemoOccurrences } from '../shared/mongodb-de
 test('MongoDB engineer example is explicitly synthetic and uses three separate weeks', () => {
   const now = new Date('2026-09-26T19:30:00Z');
   const occurrences = mongodbDemoOccurrences(now);
-  assert.deepEqual(occurrences, ['2026-09-06T19:00:00.000Z', '2026-09-13T19:00:00.000Z', '2026-09-20T19:00:00.000Z']);
+  assert.deepEqual(occurrences, ['2026-09-06T15:00:00.000Z', '2026-09-13T15:00:00.000Z', '2026-09-20T15:00:00.000Z']);
   const sources = mongodbDemoSources(now);
+  assert.deepEqual(mongodbDemoSources(new Date('2026-09-26T19:30:45Z')), sources, 'clicks in the same minute have immutable identical sources');
+  const nextHour = mongodbDemoSources(new Date('2026-09-26T20:30:00Z'));
+  assert.deepEqual(nextHour.slice(0, 3), sources.slice(0, 3), 'weekly source identities remain stable within the day');
+  assert.notEqual(nextHour[3].sourceId, sources[3].sourceId, 'a new meeting observation gets a fresh immutable source identity');
   assert.equal(sources.length, 5);
   assert.equal(new Set(sources.filter(x => x.kind === 'routine').map(x => x.text)).size, 1);
   assert.ok(sources.every(x => x.locator.startsWith('example://') && /^Example/.test(x.text)));
