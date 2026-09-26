@@ -46,9 +46,13 @@ test('Jev combines up to sixteen bounded candidates and archives unchanged origi
   assert.equal(Object.keys(request.questions).length, 14);
   assert.ok(Buffer.byteLength(JSON.stringify(request)) < 65536);
   for (const [i, record] of request.state.records.entries()) {
-    assert.equal(request.questions[`keep_${i}`].instructions, `Keep records[${i}]?`);
-    assert.equal(expandRepeatedEvidence(record, request.state.dictionary), units[i].text);
+    assert.equal(request.questions[`keep_${i}`].instructions, `Does record ${i} need retention under retentionPolicy?`);
+    assert.equal(record.record, i);
+    const decoded = typeof record.text === 'string' ? record.text : {encoding: 'exact-repeat-v1', ...record.text};
+    assert.equal(expandRepeatedEvidence(decoded, request.state.dictionary), units[i].text);
+    if (typeof record.text !== 'string') assert.equal(record.text.encoding, undefined);
   }
+  assert.match(request.state.encoding, /exact-repeat-v1/);
   assert.equal((await compactor.read({runId: 'bounded', id: 'item-0'})).text, units[0].text);
 });
 
