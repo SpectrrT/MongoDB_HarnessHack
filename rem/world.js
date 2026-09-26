@@ -90,6 +90,16 @@ export const TOOLS = deepFreeze({
     description: "List calendar events for a week.",
     parameters: { type: "object", properties: { week: str } },
   },
+  "context.read": {
+    provider: null, effect: false,
+    description: "Recover an archived tool exchange from this run. Start at part 0; request further parts if needed.",
+    parameters: {type: "object", properties: {id: str, part: {type: "integer", minimum: 0}, digest: str}, required: ["id"]},
+  },
+  "context.list": {
+    provider: null, effect: false,
+    description: "List archived context ids from this run in pages of 20.",
+    parameters: {type: "object", properties: {offset: {type: "integer", minimum: 0}}},
+  },
   "memory.search": {
     provider: null,
     effect: false,

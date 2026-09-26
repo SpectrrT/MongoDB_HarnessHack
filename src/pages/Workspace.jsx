@@ -75,7 +75,7 @@ const nav = [
   ["adapt", "Harness sleep", Moon],
   ["rem", "REM", Sparkles],
   ["memory", "Memory", Brain],
-  ["sleep", "Slow mode", Moon],
+  ["sleep", "Sleep", Moon],
   ["connections", "Connections", Plug],
 ];
 const date = (x) =>

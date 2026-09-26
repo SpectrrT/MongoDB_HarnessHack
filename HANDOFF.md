@@ -1,3 +1,16 @@
+# Sleep context compaction update: September 26
+
+Local branch `ryan/jev-context` adds live Jev selection to the REM planner/executor prompt path, MongoDB archives and
+run-scoped recovery, state-keyed decision reuse, exact read deduplication, context pause/resume, and a Context memory tab
+inside Sleep. No push or deployment. Separate native chat paths are not integrated by this change.
+
+Measured paired benchmark: 20/20 exact answers on each path, 26,640 full-context tokens versus 14,878 including Jev
+(44.15% fewer) across four snapshots answered five times each. Initial single answers cost more with compaction.
+97 unit/API tests passed, one optional Atlas search smoke skipped, four desktop/mobile browser checks passed, build passed.
+See README.md for the baseline table and docs/sleep-context-compaction.md for reproduction and scale limits.
+
+---
+
 # Session update — new repository history
 
 Repository: `SpectrrT/MongoDB_HarnessHack`. Branch: `floyd/session-capture`, based on its `main` at `1a94250`. The previous agent/UI changes were reapplied as a new commit, without merging the old repository ancestry. `rem/`, `server/harness/`, and `server/sleep/` are preserved.

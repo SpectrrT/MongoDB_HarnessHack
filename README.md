@@ -19,6 +19,52 @@ both problem statements: recursive harnessing (the harness edits its own rules, 
 long-horizon engineering (durable execution, plus memory that gets smaller and more precise as it grows, judged by hard
 metrics).
 
+## Sleep: measured context compaction (September 26, 2026)
+
+Sleep now selects useful tool history with **Jev probabilities**, archives omitted records in **MongoDB**, and recovers
+original evidence by run-scoped id. It preserves complete tool exchanges and detected constraints, reuses decisions
+when the task state is unchanged, and removes identical read-only results without a model call. This is integrated
+before planner/executor calls in the REM runtime and displayed under **Sleep > Context memory**.
+
+**Live measured result: 44.15% fewer total tokens across repeated context, with the same 20/20 exact-answer
+success rate.** Both paths used `openai/gpt-4o-mini`. Four synthetic task snapshots were each answered five times per
+path. Totals include provider-reported input/output tokens and Jev's initial screening overhead; cached tokens are not
+added twice. The compacted path used 14,878 tokens versus 26,640 for the full-context baseline.
+
+| Task snapshot | Full-context tokens, 5 answers | Sleep tokens including Jev, 5 answers | Exact JSON checks |
+| --- | ---: | ---: | --- |
+| release | 6,650 | 3,767 | 5/5, both paths |
+| meeting | 6,650 | 3,756 | 5/5, both paths |
+| retry | 6,695 | 3,826 | 5/5, both paths |
+| correction | 6,645 | 3,529 | 5/5, both paths |
+| **Total** | **26,640** | **14,878** | **20/20, both paths** |
+
+| Session/context check | Baseline or before | With this change | Measurement boundary |
+| --- | --- | --- | --- |
+| First answer, before reuse | 1,329 to 1,339 tokens | 3,157 to 3,414 tokens | **Compaction costs more initially**; reuse creates the measured savings |
+| Required fact retention | Full history: 8/8; newest-three-record window: 0/8 | Jev selection: 8/8 | Four synthetic tasks; labels never sent to Jev |
+| Selected record text | 7,219 to 7,235 characters | 149 to 165 characters | About 98% shorter record text, not a token-savings claim |
+| Atlas selection latency | 4.45 to 8.22 seconds with sequential database operations | 0.96 to 1.82 seconds with batched writes | Observed runs; includes storage and Jev, not just inference |
+| Repeated selection after restart | Initial selection needed 2 Jev calls per task | 0 new Jev calls for unchanged state | Durable decision reuse verified |
+| Additional challenge answers | Full context: 4/4 | Selected context: 4/4 | Changed owner, cross-record reference, denied permission, exact artifact/hash |
+| Automated checks | Existing suite plus new context checks | 97 passed, 1 Atlas smoke skipped; 4 browser checks passed | Local tests, desktop/mobile, production build passed |
+
+**Limits:** these are repeated-snapshot microbenchmarks, not evolving multi-day tasks. Selection bounds active tool
+history, while the existing checkpoint still stores the full canonical transcript. This does **not** establish
+billion-token scalability or universal savings. Native Codex/OpenRouter chat and the separate chat-Sleep worktree are
+not wired into this REM selector. This work does not expand Jev's separate, pre-existing completion gate.
+
+Evidence and reproduction: [repeated live measurements](docs/evidence/jev-context-repeated.json),
+[first-call overhead](docs/evidence/jev-context-atlas-paired.json),
+[challenge measurements](docs/evidence/jev-context-challenge-verified.json), and
+[architecture, research, commands and limitations](docs/sleep-context-compaction.md).
+
+Enable with `REM_COMPACTION=jev`, a private Jev API key, and the intended Atlas environment. Run
+`npm run context:benchmark` for labeled deterministic fixtures, or the documented `--live --atlas` commands for paid
+live measurements. The implementation adapts state-aware compression principles from
+[StateComp (September 2026)](https://arxiv.org/abs/2609.27298) and reversible, just-in-time memory ideas from
+[Anthropic (September 2025)](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents).
+
 ## See the cycle in one minute
 
 Requires Node 22.12+ or 24.
@@ -210,7 +256,7 @@ Chat uses the original Beautiful UI Prompt Bar, Streaming Text, Loading State an
 
 The local bridge accepts only the loopback app origins and requires the app request header. It runs one model task at a time. Child runs use read-only permissions, an empty temporary folder, and disabled shell, app, plugin, hook, image, web and agent tools. It does not copy credentials into the browser. The bridge is disabled when `NODE_ENV=production`. This is a single-user local integration, not a public authentication service.
 
-Overnight tasks save a brief, deadline and token target. They do not execute until an overnight worker is connected. Jev and external app authorization remain unconfigured.
+Overnight tasks save a brief, deadline and token target. They do not execute until an overnight worker is connected. Native chat context compaction and external app authorization remain separate work; the REM Sleep selector is documented above.
 
 ### Appearance and reasoning
 
@@ -287,7 +333,7 @@ Chat uses the original Beautiful UI Prompt Bar, Streaming Text, Loading State an
 
 The local bridge accepts only the loopback app origins and requires the app request header. It runs one model task at a time. Codex runs use App Server with persistent conversation threads, image input, workspace-write permissions, live tool activity, and approval prompts. Each chat has its own working folder under `~/.offload/workspaces`, unless a project folder is selected in Settings. Installed tools depend on the local Codex configuration and account. Additional permissions are requested for the current turn; inherited automatic app/tool approval settings are overridden. Stopping a run terminates its process group. Generated files are snapshotted for download; HTML and SVG files are never embedded as active content. It does not copy credentials into the browser. The bridge is disabled when `NODE_ENV=production`. This is a single-user local integration, not a public authentication service.
 
-Overnight tasks save a brief, deadline and token target. They do not execute until an overnight worker is connected. Jev and external app authorization remain unconfigured. The desktop package must be rebuilt separately; this change is running in the local browser app. No public deployment was made. Code is on the MyName branch of SpectrrT/MongoDB_HarnessHack.
+Overnight tasks save a brief, deadline and token target. They do not execute until an overnight worker is connected. Native chat context compaction and external app authorization remain separate work; the REM Sleep selector is documented above. The desktop package must be rebuilt separately; this change is running in the local browser app. No public deployment was made. Code is on the MyName branch of SpectrrT/MongoDB_HarnessHack.
 
 ## Appearance and reasoning
 

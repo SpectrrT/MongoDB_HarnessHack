@@ -332,9 +332,11 @@ function AsksList({ asks, onDecide, busy }) {
 function RunExtras({ run }) {
   const gate = run?.completion;
   const inj = run?.injected;
-  if (!gate && !inj) return null;
+  const compact = run?.compaction;
+  if (!gate && !inj && !compact) return null;
   return (
     <div className="rem-run-extras">
+      {compact && <p>Sleep context: {compact.beforeChars} to {compact.afterChars} characters, {compact.archived} exchanges archived, {compact.decisionCalls} new decision calls. {compact.status === "needs_review" ? "Protected context exceeds budget." : ""}</p>}
       {gate && gate.p != null && (
         <p>
           P(goal satisfied | evidence) = {Number(gate.p).toFixed(2)} vs threshold {gate.threshold}:{" "}

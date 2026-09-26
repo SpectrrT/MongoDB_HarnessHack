@@ -16,6 +16,7 @@ import { createCompletionGate } from "./completion.js";
 import { checkRun } from "./tasks.js";
 import { settleSearch } from "./search.js";
 import { createClock } from "./util.js";
+import { createContextCompactor } from "../server/context/compaction.js";
 
 const strip = (doc) => {
   if (!doc || typeof doc !== "object") return doc;
@@ -34,6 +35,7 @@ export async function createRem({
   workspace = LIVE_WORKSPACE,
   proposer = createCatalogProposer(),
   completion = createCompletionGate(),
+  compactor = process.env.REM_COMPACTION === "jev" ? createContextCompactor({db}) : null,
   onEvent = null,
 } = {}) {
   await ensureIndexes(db, { dims: embedder.dims || 1024 });
@@ -51,6 +53,7 @@ export async function createRem({
     },
     chaos: { point: (p) => ctx.chaos?.point(p), expireNow: () => ctx.chaos?.expireNow() ?? false },
     completion,
+    compactor,
     // The completion gate's evidence: the end-state checks on the live workspace, run before finishing.
     evidence: completion
       ? async (cp, final) => {
@@ -149,6 +152,7 @@ export async function createRem({
           embedder: embedder.name,
           model: model.name || "scripted",
           completion: completion?.name || "off",
+          compaction: compactor?.name || "off",
         },
         recall: recallOf(harness.genome),
         completionThreshold: completionThresholdOf(harness.genome),

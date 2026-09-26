@@ -68,3 +68,11 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - Defend against reward hacking by construction: the gym, fixtures and checkers are read-only to the proposer.
 - Atlas: work inside the team's own project ("Tensae Harness Eng"). Org-level settings belong to the organizers.
 - Never commit secrets. `.env` is gitignored; `.env.example` documents the variables.
+
+## Performance evidence convention (Ryan, September 26)
+
+For every noticeable context-compaction or session-execution change, update README.md and the judge-facing/project
+change description with quantitative baseline-versus-current evidence. Include task count, success criteria, model and
+provider, real versus scripted execution, all decision/retrieval overhead, and the raw evidence path. Report losses as
+well as improvements. Label projections, estimates, repeated-snapshot tests and untested scale explicitly. Never carry
+forward a performance claim without its test conditions. Keep the feature under the product name Sleep.

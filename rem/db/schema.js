@@ -1,5 +1,7 @@
 // Collections and indexes from docs/03-rem-concept.md "MongoDB shape".
 export const COLLECTIONS = Object.freeze({
+  context_archive: "context_archive",
+  context_decisions: "context_decisions",
   episodes: "episodes",
   memories: "memories",
   skills: "skills",
@@ -14,6 +16,8 @@ export const COLLECTIONS = Object.freeze({
 });
 
 export const INDEXES = Object.freeze({
+  context_archive: [{key: {runId: 1, unitId: 1, part: 1}, name: "context_run_unit"}],
+  context_decisions: [{key: {runId: 1}, name: "context_decisions_run"}],
   episodes: [
     { key: { expireAt: 1 }, name: "episodes_ttl", expireAfterSeconds: 0 },
     { key: { day: 1, runId: 1, seq: 1 }, name: "episodes_day_run" },
