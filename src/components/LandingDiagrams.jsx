@@ -10,7 +10,7 @@ export function WorkDiagram(){
  const [active,setActive]=useState(0),[paused,setPaused]=useState(false),[hover,setHover]=useState(false),reduced=useReducedMotion();
  useEffect(()=>{if(paused||hover||reduced)return;const timer=setInterval(()=>setActive(value=>1-value),5000);return()=>clearInterval(timer);},[paused,hover,reduced]);
  return <figure className={'work-diagram harness-diagram track-'+active} aria-label="Offload: long horizon engineering and recursive harnessing" onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)} onFocusCapture={()=>setHover(true)} onBlurCapture={e=>{if(!e.currentTarget.contains(e.relatedTarget))setHover(false);}}>
-  <div className="diagram-index"><span>THE HARNESS, IN MOTION</span><button type="button" aria-label={paused?'Animate diagram':'Pause diagram'} onClick={()=>setPaused(value=>!value)}>{paused?<Play size={13}/>:<Pause size={13}/>}</button></div>
+  <div className="diagram-index"><button type="button" aria-label={paused?'Animate diagram':'Pause diagram'} onClick={()=>setPaused(value=>!value)}>{paused?<Play size={13}/>:<Pause size={13}/>}</button></div>
   <div className={'harness-board '+(paused?'motion-paused':'')}>
    <div className="diagram-ascii" aria-hidden="true">{Array.from({length:15},(_,row)=>Array.from({length:24},(_,col)=>(row*7+col*3)%13===0?'+':(row+col)%7===0?':':'.').join(' ')).join('\n')}</div>
    <svg className="harness-paths" viewBox="0 0 500 450" aria-hidden="true"><defs><marker id="harness-arrow" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M1 1 6 4 1 7" fill="none" stroke="currentColor" strokeWidth="1.2"/></marker></defs>
