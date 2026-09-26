@@ -33,9 +33,11 @@ const evaluatorPath = value('--evaluator') || path.join(path.dirname(packetPath)
 const evaluatorCommand = evaluatorPath.endsWith('.py') ? 'python3' : process.execPath;
 const evaluatorBytes = await fs.readFile(evaluatorPath);
 const hash = value => createHash('sha256').update(value).digest('hex');
-const frozenFiles = [packetPath, evaluatorPath, ...(value('--checks') ? [value('--checks')] : []), ...(value('--manifest') ? [value('--manifest')] : [])];
+const frozenFiles = [packetPath, evaluatorPath, ...(value('--checks') ? [value('--checks')] : []), ...(value('--manifest') ? [value('--manifest')] : []), ...(value('--audit-manifest') ? [value('--audit-manifest')] : [])];
 const frozenHashes = new Map(await Promise.all(frozenFiles.map(async file => [file, hash(await fs.readFile(file))])));
 async function verifyFrozen() {for (const [file, digest] of frozenHashes) if (hash(await fs.readFile(file)) !== digest) throw Error('A frozen benchmark input or evaluator changed.');}
+const audit = value('--audit-manifest') ? JSON.parse(await fs.readFile(value('--audit-manifest'))) : null;
+const auditedSpan = audit ? (Date.parse(audit.sourceLastTimestamp) - Date.parse(audit.sourceFirstTimestamp)) / 3600000 : null;
 const brief = JSON.stringify({goal: packet.goal, input: packet.input || {}});
 if (brief.length > 4000) throw Error('Packet current task exceeds the production Sleep brief limit.');
 const units = packet.history.map(record => ({id: record.id, text: JSON.stringify({role: record.role, timestamp: record.timestamp, text: record.text}),
@@ -48,9 +50,12 @@ const report = {
   model, scorerPolicy: createJevScorer().policyVersion, trials, startTrial,
   provenance: {packetSha256: hash(sourceBytes), evaluatorSha256: hash(evaluatorBytes),
     frozenFiles: Object.fromEntries([...frozenHashes].map(([file, digest]) => [path.basename(file), digest])),
-    origin: packet.source?.origin, sessionSpanHours: packet.source?.sessionSpanHours,
-    observedReturnGapSeconds: packet.source?.observedReturnGapSeconds,
-    cutoffAt: packet.source?.cutoffAt, historyRecords: units.length, authoredTextChars: packet.history.reduce((n, record) => n + record.text.length, 0), serializedHistoryChars: rawChars},
+    origin: packet.source?.origin, sessionSpanHours: Number.isFinite(auditedSpan) ? auditedSpan : packet.source?.sessionSpanHours,
+    observedReturnGapSeconds: audit?.gapAuditNotForModels?.lastAssistantToFirstUserReturnSeconds ?? packet.source?.observedReturnGapSeconds,
+    gapMeaning: audit?.gapAuditNotForModels?.interpretation ?? packet.source?.gapMeaning,
+    cutoffAt: audit?.cutoff?.timestamp ?? packet.source?.cutoffAt,
+    curatedSourceCounts: audit?.counts, curatedAssistantSourceLines: audit?.assistantLines,
+    historyRecords: units.length, authoredTextChars: packet.history.reduce((n, record) => n + record.text.length, 0), serializedHistoryChars: rawChars},
   policy: {budgetChars: 16000, recentCount: 2, threshold: 0.25, maxAttempts: 3, tokenBudget: 100000,
     maxOutputTokens: packet.limits?.maxOutputTokens || 1800, tools: [], storage: 'Fresh temporary local MongoDB, real driver'},
   disclosure: [...(packet.disclosure || []),
