@@ -40,6 +40,15 @@ test('content, ordering and protection changes alter the evidence fingerprint', 
   }
 });
 
+test('a revised scoring prompt does not reuse decisions from the older policy', async () => {
+  const db = createMemoryDb();
+  const options = {db, budgetChars: 800, recentCount: 0};
+  await createContextCompactor({...options, scorer: {...scorer(() => 0.02), policyVersion: 'v1'}}).select({runId: 'r', goal: 'g', units: noise});
+  const next = await createContextCompactor({...options, scorer: {...scorer(() => 0.02), policyVersion: 'v2'}}).select({runId: 'r', goal: 'g', units: noise});
+  assert.equal(next.metrics.cacheHits, 0);
+  assert.equal(next.metrics.decisionCalls, 2);
+});
+
 test('bounded evidence windows carry late observations without truncating records', () => {
   const units = [...noise, {id: 'old', text: 'Plan J17 uses eu-central-1.'}, {id: 'latest', text: 'The active migration follows plan J17.'}];
   const state = contextEvidenceWindow(units, 1000);

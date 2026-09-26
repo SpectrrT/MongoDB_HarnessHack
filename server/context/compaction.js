@@ -79,7 +79,7 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
       const metrics = {source: scorer.name, beforeChars, afterChars: beforeChars, budgetChars, retained: units.length, archived: 0, duplicateOmissions: 0, decisionCalls: 0, cacheHits: 0, inputTokens: 0, outputTokens: 0, reportedCost: 0, costKnown: true, usageKnown: true, errors: [], status: 'under_budget'};
       if (beforeChars <= budgetChars) return {units, decisions: [], metrics};
       const evidenceKey = contextEvidenceKey(units), currentEvidence = contextEvidenceWindow(units);
-      const stateKey = hash(JSON.stringify({goal, revision, evidenceKey, scorer: scorer.name, policy: POLICY_VERSION}));
+      const stateKey = hash(JSON.stringify({goal, revision, evidenceKey, scorer: scorer.name, scorerPolicy: scorer.policyVersion || null, policy: POLICY_VERSION}));
       Object.assign(metrics, {evidenceKey, stateChars: currentEvidence.chars, statePartial: currentEvidence.partial, unscored: 0});
       const scored = [];
       const latestEquivalent = new Map();
