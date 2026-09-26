@@ -4,6 +4,12 @@ Problem Statement Two, **Long Horizon Engineering**, asks for a harness that sus
 
 Jev is actually integrated. It estimates a retention probability for each candidate record. The harness protects instructions and effects, archives exact source records before omission, preserves tool exchanges and makes omitted evidence recoverable. The probabilities are model estimates, not calibrated guarantees. Identical read results can be deduplicated without another model call; unchanged decisions survive restart. New evidence invalidates stale scores.
 
+Current live repeated-context evidence: four synthetic snapshots, five answers per path, GPT-4o-mini on both paths.
+Both score 20/20. Full context uses 26,640 tokens; selected context including Jev uses 9,052, or 66.02% fewer (v9 policy).
+On a separate three-task, twelve-stage evolving suite, full context scores 11/12 and Offload 12/12, with 39,196 versus
+32,264 total tokens including Jev, 17.69% fewer (v9 policy; Jev decision cost is not billed separately, so tokens are
+compared). Earlier policies on that suite cost more, from 59.05% to 3.80% more; those adverse runs are retained. [Raw evidence and conditions](context-evolving-evidence.md).
+
 | Measured workload | Comparison | Current result and boundary |
 | --- | --- | --- |
 | Three evolving synthetic tasks, twelve stages, GPT-4o-mini | 39,196 full-context tokens versus 32,264 including Jev and recovery | **17.69% fewer**; 11/12 versus 12/12 exact JSON checks. Baseline failure was an extra field, not an incorrect owner or readiness. Development cases used during optimization. |
@@ -15,6 +21,11 @@ Jev is actually integrated. It estimates a retention probability for each candid
 The evolving total includes 12,011 answer-model tokens and 20,253 scoring tokens. Direct TypeSafe prices are unavailable, so its combined monetary saving is unknown. The repeated-context run reports $0.000714378 versus $0.0023805. Earlier evolving configurations consumed **59.05%, 29.95%, 6.84% and 3.80% more tokens**; those receipts remain public. Shorter prompts that failed selection were rejected. We did not remove their charges or change the exact answer checker to obtain a positive result.
 
 Real personal-session replays provide a harder counterexample. In the first three paired research trials, both paths failed to generate artifacts after 18 total calls and 105,645 tokens. An output-format fix produces valid files in one call. On the subsequent frozen small-history cases, however, neither path fully passes any of the three research or three onboarding trials. Research achieves 63/93 versus 64/93 criteria; onboarding 19/36 versus 18/36. These inputs fit below the selector threshold, make zero Jev calls and produce identical request hashes between paths. Their small token differences are ordinary generation variation, **not compaction savings**. Private source histories and artifact contents stay private; public receipts retain hashes, usage and outcomes.
+
+Opt-in native OpenRouter selection is tested with real local file tools and a scripted provider: one exact archived-key
+task passes on both paths, with 116,021 versus 49,891 cumulative prompt characters. It requires one extra model request
+and 15 scripted decision calls. Those are integration measurements, not live token savings. Images remain intact,
+malformed tool IDs cannot execute, and known usage survives cancellation. [Native evidence](native-context.md).
 
 A subsequent development pilot jointly changes the generic task contract and model to production Sleep's GPT-4.1-mini. Research improves to 29/31 on both paths; onboarding to 10/12 versus 9/12. Neither fully passes. Those pairs also make zero Jev calls. All personal experiments through this milestone total **35 calls, 203,997 tokens and $0.0330104**, including the failures. This is not a causal claim about either intervention alone or a context-compaction gain.
 

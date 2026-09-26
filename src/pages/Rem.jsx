@@ -176,6 +176,23 @@ function FitnessTable({ title, before, after }) {
   );
 }
 
+// Nested policy values, such as the recall settings, read as "mode hybrid, k 5" rather than [object Object].
+const policyValue = (value) => {
+  if (value == null) return "not set";
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "none";
+  if (typeof value === "object")
+    return Object.entries(value)
+      .map(([k, v]) => `${label(k).toLowerCase()} ${policyValue(v)}`)
+      .join(", ");
+  return String(value);
+};
+
+// A night that stops after committing its harness leaves no brief, so the lineage is the record that it ran.
+const interruptedNight = (state) => {
+  const latest = state.harness.lineage.reduce((top, v) => ((v.night ?? 0) > (top?.night ?? 0) ? v : top), null);
+  return latest && latest.night > (state.brief?.night ?? 0) ? latest : null;
+};
+
 function GenomeView({ genome }) {
   if (!genome) return null;
   return (
@@ -649,7 +666,8 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
     return seen;
   }, [nightEvents]);
 
-  const brief = state.brief;
+  const brief = freshBrief || state.brief;
+  const interrupted = !sleeping && !freshBrief ? interruptedNight(state) : null;
 
   const runSleep = async () => {
     setBusy(true);
@@ -673,7 +691,7 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
     <section className="rem-section" aria-label="Night">
       <div className="section-line">
         <h2>Night: consolidate and evolve</h2>
-        <span>night {brief?.night ?? "none yet"}</span>
+        <span>night {brief?.night ?? (interrupted ? `${interrupted.night}, interrupted` : "none yet")}</span>
       </div>
       <p className="muted">
         Turn the day’s work into useful memory. Test proposed improvements before accepting them, and queue anything that needs your approval.
@@ -777,7 +795,13 @@ function NightPanel({ state, events, busy, setBusy, setError, reload }) {
           )}
         </div>
       )}
-      {!sleeping && !brief && <p className="muted">No night has run yet.</p>}
+      {interrupted && (
+        <p className="muted">
+          Night {interrupted.night} committed harness v{interrupted.version}, then stopped before it saved its morning brief.
+          Sleep starts the next night.
+        </p>
+      )}
+      {!sleeping && !brief && !interrupted && <p className="muted">No night has run yet.</p>}
     </section>
   );
 }
@@ -808,7 +832,7 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
         <span>{state.asks.length}</span>
       </div>
       <AsksList asks={state.asks} onDecide={decide} busy={busy} />
-      {!brief && <p className="muted">No night has run yet. Sleep once to see a morning brief.</p>}
+      {!brief && <p className="muted">No morning brief yet. Sleep once to see one.</p>}
       {brief && (
         <>
           <div className="section-line">

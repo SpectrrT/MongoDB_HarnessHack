@@ -24,3 +24,12 @@ test('failed scheduled jobs pause instead of silently repeating',async()=>{
  const api=createRecurringTasks({dataDir,interval:0,now:()=>1000,isBusy:()=>false,getJob:async(owner,id)=>({id,status:'failed',error:'Access needed'}),launch:async()=>{}});
  try{const task=await api.create('a',{title:'Check',brief:'Check',repeat:'daily',nextAt:1000,planningId:'p'});await api.update('a',task.id,'activate',{messages:[{role:'user',text:'Check'}]});await api.tick();await api.tick();const row=(await api.list('a'))[0];assert.equal(row.status,'paused');assert.equal(row.error,'Access needed');}finally{api.close();await fs.rm(dataDir,{recursive:true,force:true});}
 });
+test('rescheduling moves the next run, keeps the plan, and waits for a run in flight',async()=>{
+ const dataDir=await fs.mkdtemp(path.join(os.tmpdir(),'offload-schedule-'));let clock=1000;const jobs=new Map();
+ const api=createRecurringTasks({dataDir,interval:0,now:()=>clock,isBusy:()=>false,getJob:async(owner,id)=>jobs.get(id),launch:async(owner,p)=>{jobs.set(p.requestId,{id:p.requestId,status:'running'});}});
+ try{const task=await api.create('a',{title:'Summary',brief:'Summarize the week',repeat:'weekly',nextAt:5000,planningId:'p'});
+  const moved=await api.update('a',task.id,'reschedule',{nextAt:9000,repeat:'daily'});assert.equal(moved.nextAt,9000);assert.equal(moved.repeat,'daily');assert.equal(moved.status,'paused');
+  await api.update('a',task.id,'activate',{messages:[{role:'user',text:'Agreed plan'}]});clock=9000;await api.tick();
+  await assert.rejects(api.update('a',task.id,'reschedule',{nextAt:20000,repeat:'daily'}),/current run/);
+ }finally{api.close();await fs.rm(dataDir,{recursive:true,force:true});}
+});
