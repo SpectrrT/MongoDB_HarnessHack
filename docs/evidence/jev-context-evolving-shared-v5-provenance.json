@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "7de228c1310c6e6fe51a79e91119590f7d2402ec",
+  "scorerPolicy": "retention-v5-shared-lossless",
+  "benchmark": "Frozen original answer instructions, no shared production evidence-policy changes.",
+  "evidenceFile": "jev-context-evolving-shared-v5.json",
+  "implementation": {
+    "server/context/compaction.js": "3dc4da9964c8a6b8a9025df9f4ceedb6917b89d4e5fed04ab469e990eaca67da",
+    "server/context/jev.js": "7c1ea43b93d529c2ffa5328cddaa09340ec53a9f0b0602a72890b110313c9c80",
+    "server/context/repeat-evidence.js": "59177050e0bb2965b966bcfdd9708a8993222998e512e91f4ed8e03345dbc70d",
+    "scripts/benchmark-context-evolving.mjs": "887ec81dba10283d8993f2e176bb6b1a276e64064c6ee927d1166c31fa7e3025",
+    "scripts/fixtures/evolving-context.mjs": "b5d09f082fdf1afe379b54fa110965a2fe12b83186044cf222087ecf3dbb00d0"
+  }
+}
