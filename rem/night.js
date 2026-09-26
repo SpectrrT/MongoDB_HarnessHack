@@ -393,6 +393,15 @@ export function renderBrief(b) {
       `held-out ${f.baseline.heldOut.passed}/${f.baseline.heldOut.tasks} → ${f.fitness.heldOut.passed}/${f.fitness.heldOut.tasks}, ` +
       `collateral ${f.baseline.all.collateral} → ${f.fitness.all.collateral}, cost $${f.baseline.all.cost.toFixed(3)} → $${f.fitness.all.cost.toFixed(3)}`,
   );
+  if (b.verified) {
+    const v = b.verified;
+    const usd = (x) => (x == null ? "n/a" : `$${x.toFixed(4)}`);
+    lines.push(
+      `Cost per verified success: gym ${usd(v.gymBefore.costPerVerifiedSuccess)} → ${usd(v.gymAfter.costPerVerifiedSuccess)} ` +
+        `(${v.gymBefore.tokensPerVerifiedSuccess ?? "n/a"} → ${v.gymAfter.tokensPerVerifiedSuccess ?? "n/a"} tokens); ` +
+        `day ${usd(v.day.costPerVerifiedSuccess)} over ${v.day.verified}/${v.day.runs} verified runs`,
+    );
+  }
   for (const a of b.asks) lines.push(`${a.status === "auto-approved" ? "Auto-approved" : "Ask"}: ${a.text}`);
   return lines.join("\n");
 }
@@ -401,14 +410,45 @@ const fmtDelta = (d) =>
     d.costDelta >= 0 ? "+" : ""
   }${Math.round(d.costDelta * 100)}% cost`;
 
+// Cost and tokens per verified success: verified = checker-passing gym tasks, or day runs whose
+// completion gate cleared (plain "done" when the gate is off).
+const perVerified = (cost, tokens, verified) => ({
+  verified,
+  cost: round(cost, 6),
+  tokens,
+  costPerVerifiedSuccess: verified ? round(cost / verified, 6) : null,
+  tokensPerVerifiedSuccess: verified ? Math.round(tokens / verified) : null,
+});
+
+async function verifiedOf(ctx, { day, evolved }) {
+  const runs = await ctx.db.collection("checkpoints").find({ day, split: null }).toArray();
+  const ok = runs.filter((r) => (r.completion ? r.completion.passed : r.status === "done"));
+  const tokens = (r) => (r.usage?.inputTokens || 0) + (r.usage?.outputTokens || 0);
+  const gym = (f) => perVerified(f.all.cost, f.all.tokens || 0, f.all.passed);
+  return {
+    day: { runs: runs.length, ...perVerified(sum(runs, (r) => r.usage?.cost || 0), sum(runs, tokens), ok.length) },
+    gymBefore: gym(evolved.baseline),
+    gymAfter: gym(evolved.fitness),
+  };
+}
+
 export async function runNight(ctx, { day, proposer }) {
   const { db, clock } = ctx;
   const night = day;
-  const replayed = await replay(ctx, { day });
-  const merged = await merge(ctx, { night });
-  const distilled = await distill(ctx, { night });
-  const evolved = await evolve(ctx, { night, proposer });
-  const asks = await queueAsks(ctx, { night });
+  const timeline = [];
+  const phase = async (name, fn) => {
+    const t0 = performance.now();
+    const startedAt = new Date().toISOString();
+    const out = await fn();
+    timeline.push({ phase: name, startedAt, simAt: new Date(clock.now()).toISOString(), wallMs: Math.round(performance.now() - t0) });
+    return out;
+  };
+  const replayed = await phase("replay", () => replay(ctx, { day }));
+  const merged = await phase("merge", () => merge(ctx, { night }));
+  const distilled = await phase("distill", () => distill(ctx, { night }));
+  const evolved = await phase("evolve", () => evolve(ctx, { night, proposer }));
+  const asks = await phase("asks", () => queueAsks(ctx, { night }));
+  const verified = await verifiedOf(ctx, { day, evolved });
   await db
     .collection("episodes")
     .updateMany(
@@ -443,6 +483,8 @@ export async function runNight(ctx, { day, proposer }) {
       })),
     },
     asks,
+    verified,
+    timeline,
   };
   brief.text = renderBrief(brief);
   await db.collection("briefs").insertOne(brief);

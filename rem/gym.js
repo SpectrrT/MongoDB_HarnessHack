@@ -183,6 +183,28 @@ const W = {
   }),
 };
 
+// The ops review only covers its own week; `truth` also carries the blocker that only memory holds.
+const withRememberedBlocker = (ws, week, title, owner) =>
+  deepFreeze({
+    ...ws,
+    truth: { ...ws.truth, weeks: { ...ws.truth.weeks, [week]: { ...ws.truth.weeks[week], open: [...ws.truth.weeks[week].open, { title, owner }] } } },
+  });
+W.longRelease = withRememberedBlocker(
+  buildWorkspace({ name: "gym-train-long-release", customers: trainCustomers, weeks: [{ week: "W33", opened: [["Checkout latency regression", "Jin"]] }] }),
+  "W33",
+  "SEC-7 signing key rotation",
+  "Ravi",
+);
+W.heldLongRelease = withRememberedBlocker(
+  buildWorkspace({ name: "gym-heldout-long-release", customers: heldOutCustomers, weeks: [{ week: "W42", opened: [["Search index backfill", "Maya"]] }] }),
+  "W42",
+  "SEC-12 audit log retention",
+  "Sam",
+);
+
+// Gym memories are strings, or { text, ageDays } when their age matters to recall.
+export const memoryText = (m) => (typeof m === "string" ? m : m.text);
+
 const task = (id, split, kind, week, workspace, extra = {}) => {
   const params = taskParams(kind, week);
   return {
@@ -219,6 +241,13 @@ export const GYM = deepFreeze({
       ],
       connections: { drive: { expiresAfterCalls: 1 } },
     }),
+    task("T9", "train", "release-readiness", "W33", W.longRelease, {
+      memories: [
+        { text: "Unresolved blocker since W28: SEC-7 signing key rotation (owner: Ravi)", ageDays: 35 },
+        { text: "Decision: Release day → Tuesday (as of W32)", ageDays: 6 },
+        { text: teamList, ageDays: 2 },
+      ],
+    }),
   ],
   heldOut: [
     task("H1", "heldOut", "weekly-brief", "W42", W.heldBrief, {
@@ -230,6 +259,12 @@ export const GYM = deepFreeze({
       memories: ["Open blockers as of W40: Search reindex slow (owner: Ravi)", teamList],
       connections: { drive: { expiresAfterCalls: 1 }, gmail: { expiresAfterCalls: 0 } },
     }),
+    task("H5", "heldOut", "release-readiness", "W42", W.heldLongRelease, {
+      memories: [
+        { text: "Unresolved blocker since W36: SEC-12 audit log retention (owner: Sam)", ageDays: 45 },
+        { text: "Decision: Standup time → 10:00 (as of W42)", ageDays: 1 },
+      ],
+    }),
   ],
 });
 
@@ -238,14 +273,21 @@ export const GYM_EPOCH = Date.parse("2026-09-01T13:00:00Z");
 
 function tagsFor(t, run, verdict, genome) {
   const tags = [...verdict.collateral];
-  if (!verdict.endState && !verdict.collateral.length)
+  const texts = t.memories.map(memoryText);
+  // A missed item that memory holds is a recall failure, not a generic incomplete run.
+  const missedRemembered = verdict.failures.some((f) => {
+    const title = /^missing blocker: (.+)$/.exec(f)?.[1];
+    return title && texts.some((m) => m.includes(title));
+  });
+  if (missedRemembered) tags.push("stale-recall");
+  else if (!verdict.endState && !verdict.collateral.length)
     tags.push(
       run.transcript.some((x) => /tool scopes/.test(x.error || "")) || /scope/.test(run.final || "")
         ? "missing-scope"
         : "incomplete",
     );
   if (run.interventions > 0) tags.push("auth-interrupt");
-  const covered = t.params.prevWeek && t.memories.some((m) => m.includes(`as of ${t.params.prevWeek}`));
+  const covered = t.params.prevWeek && texts.some((m) => m.includes(`as of ${t.params.prevWeek}`));
   if (covered && run.transcript.some((x) => x.call.args?.week === t.params.prevWeek)) tags.push("redundant-reads");
   if (run.context?.executorTier === "large" || genome.routing.planner === "large") tags.push("expensive-model");
   if (run.context?.skillCandidate) tags.push("unused-skill");
@@ -258,9 +300,16 @@ export async function runGymTask(t, genome, { model, embedder, skills = [] }) {
   const clock = createClock(GYM_EPOCH);
   await seedConnections(db, { now: clock.now(), overrides: t.connections });
   if (t.memories.length) {
-    const vectors = await embedder.embed(t.memories);
+    const texts = t.memories.map(memoryText);
+    const vectors = await embedder.embed(texts);
     await db.collection("memories").insertMany(
-      t.memories.map((text, i) => ({ text, active: true, confidence: 0.9, embedding: vectors[i] })),
+      t.memories.map((m, i) => ({
+        text: texts[i],
+        active: true,
+        confidence: 0.9,
+        embedding: vectors[i],
+        ...(typeof m === "object" && m.ageDays != null ? { recency: new Date(GYM_EPOCH - m.ageDays * 86400000) } : {}),
+      })),
     );
   }
   if (skills.length) {
@@ -304,6 +353,7 @@ export async function runGymTask(t, genome, { model, embedder, skills = [] }) {
     errors: run.transcript.filter((x) => x.error).map((x) => x.error),
     modelCalls: run.usage.calls,
     inputTokens: run.usage.inputTokens,
+    tokens: run.usage.inputTokens + run.usage.outputTokens,
     costByTier: run.usage.byTier,
   };
 }
@@ -326,6 +376,7 @@ export function aggregate(results) {
     steps: sum(results, (r) => r.steps),
     interventions: sum(results, (r) => r.interventions),
     latencyMs: sum(results, (r) => r.latencyMs),
+    tokens: sum(results, (r) => r.tokens || 0),
   };
 }
 
