@@ -35,9 +35,10 @@ export async function checkArtifacts(task, directory) {
 }
 
 export async function sleepExecutionTick(store, executor, { worker = randomUUID(), root, signal,
+  taskId, workspace,
   callTimeoutMs = 60000, maxOutputTokens = 2000, heartbeatMs = Math.min(1000, store.leaseMs / 3),
   tool = executeLocalTool } = {}) {
-  const task = await store.claim(worker);
+  const task = await store.claim(worker, { id: taskId, workspace });
   if (!task) return null;
   const controller = new AbortController();
   const abort = () => controller.abort(signal?.reason || Error('Worker stopped.'));

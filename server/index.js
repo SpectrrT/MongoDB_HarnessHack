@@ -135,6 +135,7 @@ export function createApp({
   sleepTasks = null,
   sleepTaskRoot = path.join(dataDir, 'sleep-artifacts'),
   sleepTaskWorkerEnabled = false,
+  idleExecution = null,
   atlas = null,
   activity = null,
   chatCompactor = null,
@@ -273,7 +274,7 @@ export function createApp({
       if (queues.get(key) === task) queues.delete(key);
     }
   }
-  mountModel(app,{dataDir,activity,compactor:chatCompactor});
+  mountModel(app,{dataDir,activity,compactor:chatCompactor,idleExecution});
   app.get("/api/state", async (req, res, next) => {
     try {
       res.json(await access(req, (s) => s));
@@ -349,6 +350,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const dataDir = process.env.OFFLOAD_DATA_DIR || path.join(here, '../.data');
   const sleepTaskRoot = path.resolve(process.env.SLEEP_TASK_ROOT || path.join(dataDir, 'sleep-artifacts'));
   const sleepTaskWorkerEnabled = process.env.SLEEP_EXECUTION_ENABLED === 'true';
+  let idleExecution = null;
+  if (sleepTasks) {
+    const { createIdleExecution } = await import('./sleep/idle-execution.js');
+    const { sleepOpenRouterExecutor } = await import('./sleep/execution-provider.js');
+    const { deriveIdleDraft } = await import('./suggestions/idle-candidates.js');
+    idleExecution = createIdleExecution({ store: sleepTasks, executor: sleepOpenRouterExecutor({ dataDir }), root: sleepTaskRoot, derive: deriveIdleDraft });
+  }
   if (sleepTasks && sleepTaskWorkerEnabled) {
     const { sleepOpenRouterExecutor } = await import('./sleep/execution-provider.js');
     const { startSleepExecutionWorker } = await import('./sleep/execution-worker.js');
@@ -357,7 +365,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   }
   const suggestions = connection ? await (await import('./suggestions/service.js')).createPersonalSuggestions({
     db: connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon') }) : null;
-  createApp({ harnessStore: connection?.store, atlas, activity, sleepTasks, sleepTaskRoot, sleepTaskWorkerEnabled, chatCompactor, suggestions }).listen(port, "127.0.0.1", () =>
+  createApp({ harnessStore: connection?.store, atlas, activity, sleepTasks, sleepTaskRoot, sleepTaskWorkerEnabled, idleExecution, chatCompactor, suggestions }).listen(port, "127.0.0.1", () =>
 
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );

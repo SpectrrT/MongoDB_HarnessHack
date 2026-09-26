@@ -19,12 +19,13 @@ export class SleepExecutionStore {
     await this.tasks.createIndex({ workspace: 1, requestKey: 1 }, { unique: true });
     await this.tasks.createIndex({ status: 1, leaseUntil: 1, createdAt: 1 });
   }
-  async enqueue(workspace, requestKey, value) {
+  async enqueue(workspace, requestKey, value, metadata = {}) {
     const input = executionInput.parse(value), now = this.clock();
     if (input.deadline <= now || input.deadline > now + 31 * 86400000) throw new RunConflict('Choose a future deadline within 31 days.');
     if (input.writeFiles.some(p => !input.checks.some(c => c.path === p))) throw new RunConflict('Write permission must match a checked output file.');
     const fingerprint = createHash('sha256').update(JSON.stringify(input)).digest('hex');
     const task = { _id: randomUUID(), workspace, requestKey, fingerprint, input, status: 'queued',
+      origin: metadata.origin === 'idle' ? 'idle' : 'assigned', ...(metadata.origin === 'idle' ? { idle: metadata.idle } : {}),
       runner: 'sleep-file-worker', tokensUsed: 0, tokensReserved: 0, usageUnknown: 0, cost: 0,
       calls: 0, repairs: 0, stalledAttempts: 0, checkpoint: 0, leaseUntil: new Date(0), createdAt: new Date(now), updatedAt: new Date(now),
       grants: input.writeFiles, events: [], artifacts: [], checkResults: [] };
@@ -38,9 +39,11 @@ export class SleepExecutionStore {
   }
   get(workspace, id) { return this.tasks.findOne({ _id: id, workspace }); }
   list(workspace) { return this.tasks.find({ workspace }).sort({ createdAt: -1 }).limit(100).toArray(); }
-  async claim(worker) {
+  async claim(worker, { id, workspace } = {}) {
     const now = this.clock();
-    return this.tasks.findOneAndUpdate({ status: { $in: ['queued', 'running'] }, leaseUntil: { $lte: new Date(now) } }, {
+    if ((id && !workspace) || (workspace && !id)) throw new RunConflict('A scoped claim needs both task and owner.');
+    const scope = id ? { _id: id, workspace } : { origin: { $ne: 'idle' } };
+    return this.tasks.findOneAndUpdate({ ...scope, status: { $in: ['queued', 'running'] }, leaseUntil: { $lte: new Date(now) } }, {
       $set: { status: 'running', worker, leaseToken: randomUUID(), leaseUntil: new Date(now + this.leaseMs), updatedAt: new Date(now) },
     }, { sort: { createdAt: 1 }, returnDocument: 'after', includeResultMetadata: false });
   }
