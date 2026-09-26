@@ -255,6 +255,12 @@ function EditsList({ edits }) {
             )}
             {!!e.heldOutRegressedTitles?.length && <p className="muted">Regressed: {e.heldOutRegressedTitles.join(", ")}</p>}
             {e.outcome?.predictionError != null && <p className="muted">Prediction error: {e.outcome.predictionError}</p>}
+            {e.outcome?.challenge && (
+              <p className="muted">
+                Adversarial challenge: held {e.outcome.challenge.held} of {e.outcome.challenge.attacks}
+                {e.outcome.challenge.failed?.length ? `, failed ${e.outcome.challenge.failed.map((f) => `${f.taskId} ${f.attack}`).join(", ")}` : ""}.
+              </p>
+            )}
             <p className="rem-gate">
               {status === "accepted" || status === "auto-approved"
                 ? "No-regression gate: passed, net-positive."
@@ -324,23 +330,30 @@ function AsksList({ asks, onDecide, busy }) {
 }
 
 function RunExtras({ run }) {
-  const p = run?.p ?? run?.terminationProbability;
-  const lessons = run?.lessons || run?.context?.lessons;
-  if (p == null && !lessons?.length) return null;
+  const gate = run?.completion;
+  const inj = run?.injected;
+  if (!gate && !inj) return null;
   return (
     <div className="rem-run-extras">
-      {p != null && <p>Termination probability p: {typeof p === "number" ? p.toFixed(3) : String(p)}</p>}
-      {!!lessons?.length && (
+      {gate && gate.p != null && (
+        <p>
+          P(goal satisfied | evidence) = {Number(gate.p).toFixed(2)} vs threshold {gate.threshold}:{" "}
+          {gate.passed ? "done" : "keep working"}
+          {gate.source ? ` (${gate.source}${gate.attempts > 1 ? `, ${gate.attempts} checks` : ""})` : ""}
+        </p>
+      )}
+      {inj && (
         <div>
           <span className="rem-eyebrow">Lessons injected</span>
-          <ul>
-            {lessons.map((l, i) => (
-              <li key={l.id || i}>
-                {l.text}
-                {l.id ? ` (memory ${String(l.id).slice(0, 8)})` : ""}
-              </li>
-            ))}
-          </ul>
+          <p className="muted">
+            Recall {inj.recall?.mode || "default"}
+            {inj.recall?.k != null ? `, top ${inj.recall.k}` : ""}
+            {inj.recall?.recencyHalfLifeDays != null ? `, half-life ${inj.recall.recencyHalfLifeDays} d` : ""}
+            {inj.chars != null ? `, ${inj.chars}/${inj.budgetChars} chars` : ""}
+            {inj.dropped ? `, ${inj.dropped} dropped for budget` : ""}
+          </p>
+          {!!inj.memoryIds?.length && <p>Memories: {inj.memoryIds.map((id) => String(id).slice(-8)).join(", ")}</p>}
+          {!!inj.ruleIds?.length && <p>Rules: {inj.ruleIds.join(", ")}</p>}
         </div>
       )}
     </div>
@@ -743,11 +756,13 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
           <ol className="rem-timeline">
             {(brief.timeline || PHASES).map((p, i) => {
               const name = typeof p === "string" ? p : p.phase;
-              const at = typeof p === "object" ? p.at || p.ts : null;
+              const at = typeof p === "object" ? p.simAt || p.startedAt || p.at : null;
+              const ms = typeof p === "object" ? p.wallMs : null;
               return (
                 <li key={i}>
                   {name}
                   {at && <time>{new Date(at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>}
+                  {ms != null && <span className="muted"> {ms} ms</span>}
                 </li>
               );
             })}
@@ -756,6 +771,26 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
             <h3>Before / after on the gym</h3>
           </div>
           <FitnessTable title="Whole gym" before={brief.evolve.baseline} after={brief.evolve.fitness} />
+          {brief.verified && (
+            <table className="rem-table">
+              <thead><tr><th>Verified work</th><th>Verified</th><th>Cost</th><th>Cost per verified success</th><th>Tokens per verified success</th></tr></thead>
+              <tbody>
+                {["gymBefore", "gymAfter", "day"].filter((k) => brief.verified[k]).map((k) => {
+                  const v = brief.verified[k];
+                  const label = { gymBefore: "Gym, before", gymAfter: "Gym, after", day: "Day runs" }[k];
+                  return (
+                    <tr key={k}>
+                      <td>{label}</td>
+                      <td>{v.verified}</td>
+                      <td>{v.cost != null ? `$${Number(v.cost).toFixed(4)}` : "n/a"}</td>
+                      <td>{v.costPerVerifiedSuccess != null ? `$${Number(v.costPerVerifiedSuccess).toFixed(4)}` : "n/a"}</td>
+                      <td>{v.tokensPerVerifiedSuccess != null ? Math.round(v.tokensPerVerifiedSuccess) : "n/a"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </>
       )}
       <div className="section-line">
