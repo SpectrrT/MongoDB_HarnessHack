@@ -88,7 +88,7 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
     lowest. `rem/completion.js` belongs to `ryan/jev-context` right now, so that change goes there.
 - LangSmith: `rem/trace.js` traces day runs, night phases, recall, effects and model calls when `LANGSMITH_API_KEY` is
   set, and does nothing without it. `npm run rem:langsmith` runs the gym as two LangSmith experiments side by side.
-- Tests: `npm test` runs 132 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
+- Tests: `npm test` runs 137 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
   `OFFLOAD_SKIP_ENV=1` (point `PW_BASE_URL` at it). Floyd's 1:12 PM redesign lands onboarding on the Overview and drops
   the in-app recording checkbox (the browser's permission prompt remains); the e2e suite follows both.
 - The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). `/api/rem/reset`, `/api/rem/simulate` and
