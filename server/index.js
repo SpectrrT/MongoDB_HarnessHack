@@ -18,7 +18,6 @@ import {
 } from "../shared/workspace.js";
 import { connectStore, RunConflict } from './harness/store.js';
 import { inputSchema } from './harness/workflow.js';
-import { sleepRoutes } from './sleep/routes.js';
 import { activityRoutes } from './activity/routes.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const types = [
@@ -131,7 +130,6 @@ export function createApp({
   dataDir = process.env.OFFLOAD_DATA_DIR || path.join(here, "../.data"),
   serveStatic = true,
   harnessStore = null,
-  sleep = null,
   atlas = null,
   activity = null,
 } = {}) {
@@ -233,7 +231,6 @@ export function createApp({
       res.json(visible);
     } catch (error) { next(error); }
   });
-  sleepRoutes(app, { sleep, harnessStore });
   activityRoutes(app, { activity });
   async function access(req, fn) {
     const key = req.workspaceKey;
@@ -325,8 +322,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   loadLocalEnv();
   const port = Number(process.env.PORT || 5194);
   const connection = process.env.MONGODB_URI ? await connectStore() : null;
-  const sleep = connection && process.env.VOYAGE_API_KEY
-    ? await (await import('./sleep/index.js')).createSleep(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon')) : null;
   const atlas=process.env.MONGODB_URI?createAtlasStore():null;
   if(atlas)await atlas.ping();
   const activity = connection
@@ -334,7 +329,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         .createActivity(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon'), { log: console.warn })
         .catch((error) => (console.warn('Computer history is off:', error.message), null))
     : null;
-  createApp({ harnessStore: connection?.store, sleep, atlas, activity }).listen(port, "127.0.0.1", () =>
+  createApp({ harnessStore: connection?.store, atlas, activity }).listen(port, "127.0.0.1", () =>
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
 }
