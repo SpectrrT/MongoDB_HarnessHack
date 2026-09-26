@@ -48,7 +48,9 @@ const report = {
     gapMeaning: audit?.gapAuditNotForModels?.interpretation ?? packet.source?.gapMeaning,
     cutoffAt: audit?.cutoff?.timestamp ?? packet.source?.cutoffAt,
     curatedSourceCounts: audit?.counts, curatedAssistantSourceLines: audit?.assistantLines,
-    historyRecords: units.length, authoredTextChars: packet.history.reduce((n, record) => n + record.text.length, 0), serializedHistoryChars: rawChars},
+    historyRecords: units.length, authoredTextChars: packet.history.reduce((n, record) => n + record.text.length, 0),
+    authoredTextCodePoints: packet.history.reduce((n, record) => n + [...record.text].length, 0),
+    characterMeasurement: 'Chars and selector budgets use JavaScript UTF-16 code units. Code points are reported separately.', serializedHistoryChars: rawChars},
   policy: {budgetChars: 16000, recentCount: 2, threshold: 0.25, maxAttempts: 3, tokenBudget: 100000,
     maxOutputTokens: packet.limits?.maxOutputTokens || 1800, tools: [], storage: 'Fresh temporary local MongoDB, real driver'},
   disclosure: [...(packet.disclosure || []),
@@ -210,7 +212,12 @@ try {
       elapsedMs: rows.reduce((n, row) => n + row.elapsedMs, 0)};
   };
   const baseline = aggregate('baseline'), compacted = aggregate('compacted');
+  const identicalRequests = report.pairs.every(pair => pair.baseline.calls.length === pair.compacted.calls.length && pair.baseline.calls.every((call, i) => call.requestSha256 === pair.compacted.calls[i].requestSha256));
+  const noContextChange = report.pairs.every(pair => pair.compacted.selection?.beforeChars === pair.compacted.selection?.afterChars && pair.compacted.selection?.decisionCalls === 0);
   report.summary = {baseline, compacted, compactionOnlyRegressions: report.pairs.filter(pair => pair.compactionOnlyRegression).length,
+    comparison: identicalRequests && noContextChange ? 'identical-input generation variation' : 'paired full-context and selected-context requests',
+    savingsAttribution: identicalRequests && noContextChange ? 'No compaction occurred. Token and check differences cannot be attributed to compaction.' : 'Observed paired result only, not a general causal guarantee.',
+    compactionChangedInputs: !noContextChange,
     tokenSavingsPercent: baseline.totalTokens > 0 && compacted.totalTokens !== null ? Number((100 * (1 - compacted.totalTokens / baseline.totalTokens)).toFixed(2)) : null};
   await save(); console.log(JSON.stringify(report.summary));
   if (baseline.passed !== trials || compacted.passed !== trials || baseline.totalTokens === null || compacted.totalTokens === null) process.exitCode = 1;

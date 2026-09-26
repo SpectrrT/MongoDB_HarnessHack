@@ -38,7 +38,8 @@
     ],
     "historyRecords": 43,
     "authoredTextChars": 10649,
-    "serializedHistoryChars": 13549
+    "serializedHistoryChars": 13549,
+    "characterMeasurement": "Chars and selector budgets use JavaScript UTF-16 code units. No text normalization was performed."
   },
   "policy": {
     "budgetChars": 16000,
@@ -410,6 +411,9 @@
       "elapsedMs": 9976
     },
     "compactionOnlyRegressions": 0,
-    "tokenSavingsPercent": 0.13
+    "tokenSavingsPercent": 0.13,
+    "comparison": "identical-input generation variation",
+    "savingsAttribution": "No compaction occurred. Token and check differences cannot be attributed to compaction.",
+    "compactionChangedInputs": false
   }
 }

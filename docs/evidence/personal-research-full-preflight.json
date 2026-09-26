@@ -1,0 +1,56 @@
+{
+  "createdAt": "2026-09-26T18:51:18.407Z",
+  "mode": "Protection and reservation preflight. No decision or answer model calls.",
+  "packetSha256": "a74427a14485e5d8a5f96f62f487b6468bd103823cd3f2d136a5d9ec0c6dbd7e",
+  "model": "openai/gpt-4.1-mini",
+  "modelMetadataSource": "https://openrouter.ai/api/v1/models",
+  "contextLength": 1047576,
+  "modelMaxOutput": 32768,
+  "records": 264,
+  "roles": {
+    "user": 82,
+    "assistant": 182
+  },
+  "authoredTextChars": 82492,
+  "serializedUnitChars": 100966,
+  "maximumUnitChars": 6542,
+  "budgetChars": 16000,
+  "protectedRecords": 99,
+  "protectedChars": 20129,
+  "protection": {
+    "historical_user_instruction": {
+      "records": 82,
+      "chars": 11501
+    },
+    "constraint_or_open_loop": {
+      "records": 15,
+      "chars": 7887
+    },
+    "recent": {
+      "records": 2,
+      "chars": 741
+    }
+  },
+  "currentBriefChars": 3239,
+  "fullPromptUtf8Bytes": 121409,
+  "conservativeReservation": 123721,
+  "tokenBudget": 100000,
+  "maxOutputTokens": 1800,
+  "scoringCalls": 0,
+  "scoringTokens": 0,
+  "modelCalls": 0,
+  "note": "The byte-based reservation is a conservative admission bound, not measured model tokens. Fitting the protected floor does not guarantee scored context fits.",
+  "implementation": {
+    "server/context/compaction.js": "d8d68e37c59ffed88921b58a5411597dca992a7f5ab652f5127dc099f701f9b1",
+    "server/sleep/execution.js": "33a9c35c0c659f9f20af77fc0ffdaaeb855fc677c9fdc1fe8dcda1b3c42bb4b2",
+    "scripts/lib/replay-packet.mjs": "e31902efe154a78a7c5e49dd567544fdb8dcb9f615750fda6f9587a724119c57",
+    "scripts/preflight-real-context.mjs": "13529af569fd79195b32fb162c29d6c6fb55268597905b8f4881814c963a798e"
+  },
+  "admitted": false,
+  "boundaries": [
+    "Protected records alone exceed the unchanged context budget.",
+    "The conservative full-context reservation exceeds the configured task budget."
+  ],
+  "authoredTextCodePoints": 82492,
+  "characterMeasurement": "Chars and selector budgets use JavaScript UTF-16 code units. Code points are reported separately."
+}

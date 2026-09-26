@@ -24,7 +24,8 @@
     "cutoffAt": "2026-09-24T01:08:19.528Z",
     "historyRecords": 83,
     "authoredTextChars": 6238,
-    "serializedHistoryChars": 11575
+    "serializedHistoryChars": 11575,
+    "characterMeasurement": "Chars and selector budgets use JavaScript UTF-16 code units. No text normalization was performed."
   },
   "policy": {
     "budgetChars": 16000,
@@ -414,6 +415,9 @@
       "elapsedMs": 6380
     },
     "compactionOnlyRegressions": 0,
-    "tokenSavingsPercent": 0.03
+    "tokenSavingsPercent": 0.03,
+    "comparison": "identical-input generation variation",
+    "savingsAttribution": "No compaction occurred. Token and check differences cannot be attributed to compaction.",
+    "compactionChangedInputs": false
   }
 }

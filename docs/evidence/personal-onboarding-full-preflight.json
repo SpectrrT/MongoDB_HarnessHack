@@ -47,5 +47,8 @@
   ],
   "modelMetadataSource": "https://openrouter.ai/api/v1/models",
   "admitted": false,
-  "reason": "Protected context alone exceeds the unchanged selector budget. No scoring can make it fit."
+  "reason": "Protected context alone exceeds the unchanged selector budget. No scoring can make it fit.",
+  "authoredTextCodePoints": 56627,
+  "authoredTextUtf8Bytes": 56707,
+  "characterMeasurement": "authoredTextChars 56637 and selector budgets use JavaScript UTF-16 code units. The same unchanged text contains 56627 Unicode code points."
 }
