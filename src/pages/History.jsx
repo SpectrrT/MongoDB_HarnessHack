@@ -3,6 +3,7 @@ import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play, Search, X, C
 import { ConnectionLogo } from "../components/ConnectionLogo";
 import HistoryNextActions from "../components/HistoryNextActions";
 import { Modal } from "../components/Modal";
+import { ThinkingOrb } from "../components/ScreenTransition";
 import "../history.css";
 
 // Computer history, built September 26. A window onto the activity engine: the collector samples the
@@ -394,7 +395,7 @@ export default function History() {
   const deviceLine = !configured
     ? ""
     : !lastSample
-      ? "No samples from this computer yet."
+      ? ""
       : `Last sample ${dayOf(lastSample) === today ? clock(lastSample) : `${shortDate(lastSample)}, ${clock(lastSample)}`} · ${latestDevice?.device || "this computer"}`;
 
   const togglePause = async () => {
@@ -477,14 +478,11 @@ export default function History() {
       <div className="page-title">
         <div>
           <h1>Computer history</h1>
-          <p>
-            What you worked on, from app and window names. No screenshots, no keystrokes. Stored in your MongoDB
-            Atlas project.
-          </p>
         </div>
         <div className="hx-status">
           <div className="hx-status-row">
             <span className={`hx-pill is-${state}`} role="status">
+              {["checking", "starting", "recording"].includes(state) && <ThinkingOrb state={state === "recording" ? "listening" : "connecting"} size={20} aria-hidden="true" />}
               {STATE_LABEL[state]}
             </span>
             {configured && (collector?.supported || (!collector && ["recording", "paused"].includes(state))) && (
@@ -500,8 +498,6 @@ export default function History() {
               </button>
             )}
           </div>
-          {deviceLine && <p className="hx-device">{deviceLine}</p>}
-          {collector?.supported && <p className="hx-device hx-capture-scope">Records {captureScope}.</p>}
           {collector?.permissions?.windowTitles === 'unavailable' && <p className="hx-device">Window-title access is unavailable. App names can still be recorded.</p>}
           {collector?.error && <p className="hx-device hx-error" role="alert">{collector.error}</p>}
         </div>
@@ -511,20 +507,10 @@ export default function History() {
           {headerError}
         </p>
       )}
-      {!status && <p className="muted">Checking Computer history…</p>}
       {status && !configured && <Setup error={status.error} />}
       {configured && (
         <>
-          <SearchPanel status={status} onShow={showInDay} refreshKey={searchKey} />
-          <HistoryNextActions refreshKey={status?.fetchedAt} />
-          <Routines
-            routines={routines}
-            error={routineError}
-            note={routineNote}
-            busyId={routineBusy}
-            onDecide={decide}
-            headingRef={routinesHeading}
-          />
+          <SearchPanel onShow={showInDay} refreshKey={searchKey} />
           <Day
             sectionRef={daySection}
             day={day}
@@ -539,6 +525,21 @@ export default function History() {
             now={now}
             state={state}
           />
+        </>
+      )}
+      {status && <HistoryNextActions refreshKey={status.fetchedAt} />}
+      {configured && (
+        <>
+          {routineError && <p className="hx-error" role="alert">{routineError}</p>}
+          <details className="hx-disclosure">
+            <summary>Repeated work</summary>
+            <Routines routines={routines} error={routineError} note={routineNote} busyId={routineBusy} onDecide={decide} headingRef={routinesHeading} />
+          </details>
+          {settingsError && <p className="hx-error" role="alert">{settingsError}</p>}
+          <details className="hx-disclosure">
+            <summary>Recording settings</summary>
+            {deviceLine && <p className="hx-note">{deviceLine}</p>}
+            {collector?.supported && <p className="hx-note">Records {captureScope}. No screenshots or keystrokes.</p>}
           <Privacy
             settings={settings}
             error={settingsError}
@@ -548,6 +549,7 @@ export default function History() {
             retentionDays={status.retentionDays}
             workspace={status.workspace}
           />
+          </details>
         </>
       )}
     </div>
@@ -561,19 +563,11 @@ function Setup({ error }) {
       <p>
         {error ? `${error} ` : ""}The local history service needs a MongoDB connection. Once connected, you can start recording here.
       </p>
-      <p>
-        Recording saves app names and permitted window titles. Browser URLs are optional. It never takes screenshots or reads keystrokes.
-      </p>
     </section>
   );
 }
 
-const MODE = {
-  "atlas-hybrid": "Atlas hybrid search: vector and keyword, fused with $rankFusion",
-  local: "Local search, ranked in the app",
-};
-
-function SearchPanel({ status, onShow, refreshKey }) {
+function SearchPanel({ onShow, refreshKey }) {
   const [query, setQuery] = useState("");
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -600,7 +594,6 @@ function SearchPanel({ status, onShow, refreshKey }) {
   useEffect(() => {
     if (refreshKey && lastQuery.current) run(lastQuery.current);
   }, [refreshKey, run]);
-  const engine = `${MODE[status.search] || "Search"}${status.embedder ? ` · embeddings: ${status.embedder}` : ""}`;
 
   return (
     <section aria-label="Search your computer history">
@@ -616,7 +609,7 @@ function SearchPanel({ status, onShow, refreshKey }) {
         <input
           type="search"
           aria-label="Search your computer history"
-          placeholder="When did I investigate the slow aggregation?"
+          placeholder="Search history"
           value={query}
           maxLength={200}
           onChange={(e) => {
@@ -634,13 +627,7 @@ function SearchPanel({ status, onShow, refreshKey }) {
           {busy ? "Searching…" : "Search"}
         </button>
       </form>
-      <p className="hx-engine" role="status">
-        {busy
-          ? "Searching…"
-          : result
-            ? `${plural(result.results.length, "result")} · ${MODE[result.mode] || "Search"}`
-            : engine}
-      </p>
+      {busy ? <HistoryLoading label="Searching…" /> : result && <p className="hx-note" role="status">{plural(result.results.length, "result")}</p>}
       {error && (
         <p className="hx-error" role="alert">
           {error}
@@ -707,10 +694,7 @@ function Routines({ routines, error, note, busyId, onDecide, headingRef }) {
         </h2>
         {list.length > 0 && <span>{waiting ? `${waiting} to review` : "All reviewed"}</span>}
       </div>
-      <p className="hx-intro">
-        Apps and sites you use in the same order on different days, found by an aggregation over your sessions in
-        Atlas. Hand one off and Offload saves it as a routine for next time. It asks before it acts.
-      </p>
+      <p className="hx-intro">Recurring patterns from your history. Review them before saving a routine.</p>
       {error && (
         <p className="hx-error" role="alert">
           {error}
@@ -721,14 +705,11 @@ function Routines({ routines, error, note, busyId, onDecide, headingRef }) {
           {note}
         </p>
       )}
-      {!routines && !error && <p className="muted">Looking for repeated work…</p>}
+      {!routines && !error && <HistoryLoading label="Loading repeated work…" />}
       {routines && !list.length && (
         <div className="hx-empty">
           <h3>Nothing repeats yet.</h3>
-          <p>
-            When the same apps and sites show up in the same order on several days, Offload asks here whether to
-            hand them off. To try it now, load demo history with <code>npm run activity:seed -- --engineering</code>.
-          </p>
+          <p>Patterns appear as similar work repeats across days.</p>
         </div>
       )}
       {list.length > 0 && (
@@ -847,26 +828,26 @@ function Day({ sectionRef, day, today, data, error, onDay, live, liveNote, lande
           </button>
         </div>
       </div>
-      {landed === day && !isToday && (
-        <p className="hx-note">Nothing recorded yet today, so this opens on the latest day with history.</p>
-      )}
       {error && (
         <p className="hx-error" role="alert">
           {error}
         </p>
       )}
       {!data ? (
-        !error && <p className="muted">Loading the day…</p>
+        !error && <HistoryLoading label="Loading history…" />
       ) : stale && (error || !view) ? (
-        !error && <p className="muted">Loading the day…</p>
+        !error && <HistoryLoading label="Loading history…" />
       ) : (
         <div className={stale ? "hx-stale" : undefined}>
           {view ? (
             <>
               <Timeline view={view} isToday={!stale && isToday} now={now} focus={focus} />
-              <Stats stats={data.stats} />
-              <Apps byApp={data.stats?.byApp} sessions={sessions} />
-              <SessionList items={view.items} hideSampleTags={allSample} />
+              <details className="hx-disclosure hx-day-details">
+                <summary>Day details <span>{plural(sessions.length, "session")}</span></summary>
+                <Stats stats={data.stats} />
+                <Apps byApp={data.stats?.byApp} sessions={sessions} />
+                <SessionList items={view.items} hideSampleTags={allSample} />
+              </details>
             </>
           ) : (
             <EmptyDay isToday={isToday} state={state} />
@@ -880,6 +861,10 @@ function Day({ sectionRef, day, today, data, error, onDay, live, liveNote, lande
       )}
     </section>
   );
+}
+
+function HistoryLoading({ label }) {
+  return <div className="hx-loading" role="status"><ThinkingOrb state="connecting" size={20} aria-hidden="true" /><span>{label}</span></div>;
 }
 
 function EmptyDay({ isToday, state }) {
@@ -1169,7 +1154,7 @@ function Privacy({ settings, error, onSave, onForget, forgetNote, retentionDays,
         </p>
       )}
       {!settings ? (
-        !error && <p className="muted">Loading your settings…</p>
+        !error && <HistoryLoading label="Loading settings…" />
       ) : (
         <>
           <label className="setting-row">

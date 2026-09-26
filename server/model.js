@@ -97,9 +97,10 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
   });
   app.post('/api/model/tasks/:id',async(req,res)=>{
     if(!z.string().uuid().safeParse(req.params.id).success)return res.status(400).json({error:'Choose a task.'});
-    const action=req.body.action;if(!['activate','pause'].includes(action))return res.status(400).json({error:'Choose a task action.'});
+    const action=req.body.action;if(!['activate','pause','reschedule'].includes(action))return res.status(400).json({error:'Choose a task action.'});
     let context;
     if(action==='activate'){const parsed=input.safeParse({...req.body.context,requestId:crypto.randomUUID(),images:[]});if(!parsed.success)return res.status(400).json({error:'The task plan is incomplete.'});context=parsed.data;}
+    if(action==='reschedule'){const parsed=z.object({nextAt:z.number().finite().min(Date.now()-60000),repeat:z.enum(['once','daily','weekly','monthly'])}).safeParse({nextAt:req.body.nextAt,repeat:req.body.repeat});if(!parsed.success)return res.status(400).json({error:'Choose a future start time and repeat schedule.'});context=parsed.data;}
     try{res.json(await recurring.update(req.workspaceKey,req.params.id,action,context));}catch(e){res.status(400).json({error:e.message});}
   });
   app.post('/api/model/sleep/reset',async(req,res)=>{await idle.reset(req.workspaceKey);res.json({ok:true});});

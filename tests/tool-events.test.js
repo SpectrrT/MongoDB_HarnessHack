@@ -1,4 +1,11 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {toolPresentation,activityGroups} from '../shared/tool-events.js';
+test('compaction labels distinguish real Jev calls, cached work, native compaction and no-op checks',()=>{
+ assert.equal(toolPresentation({type:'contextCompaction',status:'running',source:'typesafe:jev-1.13',decisionCalls:1}).label,'Using Jev for compaction');
+ assert.equal(toolPresentation({type:'contextCompaction',status:'failed',source:'typesafe:jev-1.13',decisionCalls:1}).status,'Failed');
+ assert.equal(toolPresentation({type:'contextCompaction',status:'completed',source:'typesafe:jev-1.13',decisionCalls:0,cacheHits:2}).label,'Apply cached compaction decisions');
+ assert.equal(toolPresentation({type:'contextCompaction',status:'completed',detail:JSON.stringify({type:'contextCompaction'})}).label,'Compact conversation');
+ assert.equal(activityGroups([{type:'contextCompaction',status:'under_budget',detail:JSON.stringify({decisionCalls:0})}]).length,0);
+});
 test('tool activity names the actual source and never turns a failure into success',()=>{
  assert.equal(toolPresentation({type:'mcpToolCall',label:'gmail.search_emails',status:'inProgress'}).label,'Search email');
  assert.equal(toolPresentation({type:'mcpToolCall',label:'gmail.read_email',status:'failed'}).status,'Failed');

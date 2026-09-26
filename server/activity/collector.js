@@ -14,7 +14,7 @@ const time = (d = new Date()) => d.toLocaleTimeString([], { hour: '2-digit', min
 
 // Managed by the local app. Construction never records; resume requires saved, explicit consent.
 export function createActivityCollector({activity,workspace=workspaceId(),device=deviceId(),sampleFn=sample,permissionStatus=captureStatus,platform=process.platform,intervalMs=SAMPLE_MS,flushMs=FLUSH_MS,now=Date.now}={}){
-  let settings=null,running=false,timer=null,inFlight=null,generation=0,buffer=[],lastSampleAt=null,lastSavedAt=null,lastFlush=0,error=null,unwatch=null,closed=false;
+  let settings=null,running=false,timer=null,inFlight=null,generation=0,buffer=[],lastSampleAt=null,lastSavedAt=null,lastFlush=0,error=null,unwatch=null,closed=false,shutdown=null;
   const supported=platform==='darwin',canStart=supported&&!!activity;
   const status=()=>({supported,canStart,enabled:!!settings?.collectorEnabled,running,state:!supported?'unsupported':running?(error?'error':lastSampleAt?'recording':'starting'):settings?.paused?'paused':'stopped',lastSampleAt,lastSavedAt,error,permissions:permissionStatus(),scope:{appNames:true,windowTitles:settings?.captureTitles??true,browserUrls:settings?.collectorEnabled?!!settings.captureUrls:false},device});
   const halt=()=>{running=false;generation++;clearTimeout(timer);timer=null;buffer=[];};
@@ -69,7 +69,21 @@ export function createActivityCollector({activity,workspace=workspaceId(),device
     },
     async pause(){halt();if(activity)settings=await activity.updateSettings(workspace,{paused:true});error=null;return status();},
     refresh,
-    async stop(){closed=true;halt();if(unwatch){await unwatch();unwatch=null;}await inFlight;},
+    stop(){return shutdown||=(async()=>{
+      const captured=buffer,wasRecording=running;
+      closed=true;halt();const version=generation;
+      if(unwatch){await unwatch();unwatch=null;}
+      await inFlight; // Late capture results are discarded by the generation check above.
+      if(!activity||!wasRecording||generation!==version)return;
+      settings=await activity.settings(workspace);
+      if(settings.paused||!settings.collectorEnabled||generation!==version)return;
+      if(captured.length){
+        const result=await activity.ingest(workspace,device,captured);
+        if(result.paused||generation!==version)return;
+        if(result.inserted>0)lastSavedAt=new Date(now()).toISOString();
+      }
+      await activity.sessionize(workspace,device);
+    })();},
   };
 }
 

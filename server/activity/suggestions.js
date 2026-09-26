@@ -63,7 +63,7 @@ export function deriveActivitySuggestions({ sessions = [], workSessions = [], me
       [{ id: String(s._id), timestamp: stamp(s.start), source: 'Computer history — window metadata', text: `${s.app}: ${safeText(s.title) || 'Call window'}. Window last seen at ${date}. This does not prove a meeting took place.` }],
       'Ask whether this was a meeting and invite me to add its notes. Once I supply notes, extract decisions and next steps. Do not invent a transcript or follow-up recipient.', true);
   }
-  return out.slice(0, 12);
+  return out;
 }
 
 export function activitySuggestionRoutes(app, { activity, dataDir, getState, clock = () => new Date() }) {
@@ -92,13 +92,25 @@ export function activitySuggestionRoutes(app, { activity, dataDir, getState, clo
       try { sessions = await activity.sessions.find({ workspace: workspaceId(), source: { $ne: 'seed' }, private: { $ne: true }, idle: false, start: { $gte: new Date(+now - 21 * DAY) } }, { projection: { vectors: 0, text: 0 } }).sort({ start: -1 }).limit(3000).toArray(); }
       catch { historyError = 'Computer history is temporarily unavailable. Saved notes still work.'; }
     }
-    const all = deriveActivitySuggestions({ sessions, workSessions: state.sessions || [], meetings: ledger.meetings || [], now });
+    const all = deriveActivitySuggestions({ sessions, workSessions: ledger.syncedWorkSessions ?? state.sessions ?? [], meetings: ledger.meetings || [], now });
     return { all, historyError, now };
   }
   const route = fn => async (req, res, next) => { try { await fn(req,res); } catch (error) { if (error instanceof z.ZodError) return res.status(400).json({ error: 'Check the suggestion request.' }); next(error); } };
+  app.post('/api/activity/next-actions/session-notes', route(async (req,res) => {
+    const {sessions} = z.object({sessions:z.array(z.object({
+      id:z.string().regex(/^[a-zA-Z0-9_.:-]{1,120}$/),name:z.string().max(160),
+      endedAt:z.iso.datetime({offset:true}),notes:z.array(z.string().max(4000)).max(8),
+    }).strict()).max(50)}).strict().parse(req.body);
+    const now=+clock();
+    if(new Set(sessions.map(s=>s.id)).size!==sessions.length)return res.status(400).json({error:'Session identifiers must be unique.'});
+    const eligible=sessions.filter(s=>+new Date(s.endedAt)<=now&&now-+new Date(s.endedAt)<=7*DAY&&s.notes.some(n=>n.trim()))
+      .filter(s=>!credential.test(s.name)&&!s.notes.some(n=>credential.test(n)))
+      .map(s=>({...s,status:'ended',source:'user-session-notes'}));
+    res.json(await withLedger(req.workspaceKey,async ledger=>{ledger.syncedWorkSessions=eligible;return {synced:eligible.length};}));
+  }));
   app.get('/api/activity/next-actions', route(async (req,res) => res.json(await withLedger(req.workspaceKey, async ledger => {
     const { all, historyError, now } = await candidates(req, ledger);
-    return { actions: all.filter(s => { const prior = ledger.decisions[s.id]; const cooldown = Object.values(ledger.decisions).some(d => d.cooldownKey === s.cooldownKey && (d.decision === 'snooze' ? +new Date(d.until) > +now : +now - +new Date(d.at) < DAY)); return !cooldown && (!prior || prior.decision === 'snooze' && +new Date(prior.until) <= +now); }), configured: !!activity, historyError, meetings: ledger.meetings || [] };
+    return { actions: all.filter(s => { const prior = ledger.decisions[s.id]; const cooldown = Object.values(ledger.decisions).some(d => d.decision !== 'prepare' && d.cooldownKey === s.cooldownKey && (d.decision === 'snooze' ? +new Date(d.until) > +now : +now - +new Date(d.at) < DAY)); return !cooldown && (!prior || prior.decision === 'prepare' || prior.decision === 'snooze' && +new Date(prior.until) <= +now); }).slice(0, 12), configured: !!activity, historyError, meetings: ledger.meetings || [] };
   }))));
   app.post('/api/activity/next-actions/meetings', route(async (req,res) => {
     const meeting = z.object({ title: z.string().trim().min(1).max(160), startsAt: z.iso.datetime({ offset: true }), notes: z.string().max(1800).default('') }).strict().parse(req.body);
@@ -111,9 +123,9 @@ export function activitySuggestionRoutes(app, { activity, dataDir, getState, clo
       const { all, now } = await candidates(req,ledger), item = all.find(s => s.id === req.params.id);
       if (!item) return null;
       const prior = ledger.decisions[item.id];
-      if (prior && !(prior.decision === 'snooze' && +new Date(prior.until) <= +now)) return { suggestion: item, title: item.title, alreadyDecided: true, prompt: null };
-      if (Object.values(ledger.decisions).some(d => d.cooldownKey === item.cooldownKey && +now - +new Date(d.at) < DAY)) return { suggestion: item, title: item.title, alreadyDecided: true, prompt: null };
-      ledger.decisions[item.id] = { decision, cooldownKey: item.cooldownKey, at: now.toISOString(), ...(decision === 'snooze' ? { until: new Date(+now + DAY).toISOString() } : {}) };
+      if (prior && prior.decision !== 'prepare' && !(prior.decision === 'snooze' && +new Date(prior.until) <= +now)) return { suggestion: item, title: item.title, alreadyDecided: true, prompt: null };
+      if (Object.values(ledger.decisions).some(d => d.decision !== 'prepare' && d.cooldownKey === item.cooldownKey && +now - +new Date(d.at) < DAY)) return { suggestion: item, title: item.title, alreadyDecided: true, prompt: null };
+      if (decision !== 'prepare') ledger.decisions[item.id] = { decision, cooldownKey: item.cooldownKey, at: now.toISOString(), ...(decision === 'snooze' ? { until: new Date(+now + DAY).toISOString() } : {}) };
       return { suggestion: item, title: item.title, prompt: decision === 'prepare' ? item.prompt : null };
     });
     if (!result) return res.status(409).json({ error:'The source changed or was removed. Refresh suggestions.' });

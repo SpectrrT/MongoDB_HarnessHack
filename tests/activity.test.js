@@ -10,6 +10,7 @@ import { createApp } from '../server/index.js';
 import express from 'express';
 import { mountModel } from '../server/model.js';
 import { historyContext } from '../server/activity/context.js';
+import { findFriction, planWorkflow, describe } from '../server/activity/insights.js';
 
 const embedder = {
   key: 'local256',
@@ -145,7 +146,7 @@ test('computer history on MongoDB', async (t) => {
       assert.equal(found.results[0].source, 'seed');
       assert.equal(found.results[0].vectors, undefined);
       const day = await s.sessions.findOne({ device: SAMPLE_DEVICE }, { sort: { start: 1 } });
-      const from = new Date(+day.start - 60e3), to = new Date(+day.start + 12 * 3600e3);
+      const from = new Date(+day.start - 60e3), to = new Date(+day.start + 16 * 3600e3);
       const gone = await s.forget('me', { from, to });
       assert.ok(gone.deletedSessions > 10 && gone.deletedEvents > 1000);
       assert.equal(await s.sessions.countDocuments({ day: day.day }), 0);
@@ -207,6 +208,30 @@ test('computer history on MongoDB', async (t) => {
       for (let i = 0; i < 100 && !prompt; i++) await new Promise((r) => setTimeout(r, 20));
       assert.match(prompt, /Computer history \(sample week\)/);
       assert.match(prompt, /Weekly brief/);
+    });
+    await t.test('workflow from history: the busiest back-and-forth hour becomes a plan that asks before sending', async () => {
+      const s = await make({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+      const me = process.env.ACTIVITY_WORKSPACE || (await import('node:os')).userInfo().username;
+      assert.equal(await findFriction(s, me), null, 'no history, no finding');
+      await seedSampleWeek(s, { workspace: me });
+      const finding = await findFriction(s, me);
+      assert.equal(finding.hour, 23);
+      assert.equal(finding.days, 5);
+      assert.deepEqual(finding.apps.map((a) => a.name).sort(), ['Codex', 'Gmail', 'Google Calendar']);
+      assert.match(finding.topTitle, /Scheduling: Atlas Vector Search sync/);
+      assert.ok(finding.titleMentions.times.includes('12:00 AM'));
+      assert.deepEqual(finding.meetingTimes, [], 'window titles do not establish a scheduled meeting');
+      assert.equal(finding.sample, true);
+      assert.match(describe(finding), /5 dates/);
+      const plan = planWorkflow(finding);
+      assert.equal(plan.kind, 'scheduling');
+      assert.ok(plan.steps.some((step) => step.ask), 'the plan asks once before sending');
+      assert.match(plan.problem, /confirm the task/);
+      const api = createApp({ serveStatic: false, activity: s });
+      const body = (await request(api).post('/api/activity/workflow').send({}).expect(200)).body;
+      assert.equal(body.workflow.title, plan.title);
+      assert.equal((await request(api).post('/api/activity/workflows').send(body.workflow).expect(201)).body.status, 'saved');
+      assert.equal(await s.db.collection('activity_workflows').countDocuments(), 1);
     });
   } finally {
     await client.close();

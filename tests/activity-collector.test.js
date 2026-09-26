@@ -58,6 +58,32 @@ test('failed session aggregation does not reinsert already-saved samples',async 
  assert.equal(new Set(data.saved.map(item=>item.title)).size,data.saved.length);
 });
 
+test('normal shutdown flushes captured history while pause discards the same buffered interval',async()=>{
+ for(const pauseFirst of [false,true]){
+  const data=fixture();let samples=0;
+  const collector=createActivityCollector({activity:data.activity,platform:'darwin',intervalMs:15,flushMs:60000,sampleFn:async()=>({...record(),title:String(++samples)})});
+  try{
+   await collector.start();await until(()=>samples>=2);await delay(1);
+   assert.equal(data.saved.length,1,'the next interval remains buffered before shutdown');
+   if(pauseFirst)await collector.pause();
+   await collector.stop();await collector.stop();
+   assert.equal(data.saved.some(item=>item.title==='2'),!pauseFirst);
+   assert.equal(new Set(data.saved.map(item=>item.title)).size,data.saved.length,'shutdown is idempotent');
+   assert.equal(data.settings.paused,pauseFirst);
+  }finally{await collector.stop();}
+ }
+});
+
+test('shutdown discards a late sample and checks current consent before flushing captured history',async()=>{
+ const data=fixture();let samples=0,release;
+ const collector=createActivityCollector({activity:data.activity,platform:'darwin',intervalMs:10,flushMs:60000,sampleFn:async()=>{
+  samples++;if(samples===3)return new Promise(resolve=>{release=resolve;});return {...record(),title:String(samples)};
+ }});
+ await collector.start();await until(()=>!!release);
+ const stopped=collector.stop();await data.activity.updateSettings('owner',{paused:true});release({...record(),title:'late'});await stopped;
+ assert.deepEqual(data.saved.map(item=>item.title),['1']);
+});
+
 test('unsupported platforms and unconfigured stores never start capture',async()=>{
  let captured=false;const collector=createActivityCollector({activity:fixture().activity,platform:'linux',sampleFn:async()=>{captured=true;}});
  await assert.rejects(collector.start(),/macOS/);assert.equal(captured,false);assert.equal(collector.status().canStart,false);await collector.stop();
@@ -71,6 +97,14 @@ test('capture respects excluded apps and title-only scope without querying URLs'
  const excluded=await sample({titles:true,urls:true,excludedApps:['Google Chrome']},readers);assert.equal(excluded.title,null);assert.equal(excluded.url,null);assert.equal(browserReads,1);assert.equal(titleReads,0);
  const privateSample=await sample({titles:false,urls:true},{...readers,browserTab:async()=>({private:true,title:'Private browsing',url:null})});
  const normalized=normalizeSample(privateSample,{captureTitles:false,captureUrls:true,excludedApps:[]});assert.equal(normalized.private,true);assert.equal(normalized.title,null);assert.equal(normalized.url,null);
+});
+
+test('a foreground app switch drops metadata instead of attaching it to the previous app',async()=>{
+ for(const changed of [{app:'Other App',bundleId:'other.app'},null]){
+  let reads=0;
+  const result=await sample({titles:true,urls:false},{frontmostApp:async()=>++reads===1?{app:'Editor',bundleId:'test.editor'}:changed,idleSeconds:async()=>0,browserTab:async()=>null,windowTitle:async()=>'New foreground window'});
+  assert.equal(result,null);assert.equal(reads,2);
+ }
 });
 
 test('collector API requires explicit local app requests and preserves the store workspace boundary',async()=>{

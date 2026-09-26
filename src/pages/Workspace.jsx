@@ -86,7 +86,7 @@ export default function Workspace() {
   useEffect(()=>{const narrow=matchMedia('(max-width: 900px)');const resize=()=>{if(narrow.matches){setSidebar(false);setSuggestions(false);}};narrow.addEventListener('change',resize);return()=>narrow.removeEventListener('change',resize);},[]);
   const [systemDark,setSystemDark] = useState(matchMedia("(prefers-color-scheme: dark)").matches);
   useEffect(()=>{const media=matchMedia("(prefers-color-scheme: dark)");const update=()=>setSystemDark(media.matches);media.addEventListener("change",update);return()=>media.removeEventListener("change",update);},[]);
-  const palette=resolveTheme(state.settings.theme,systemDark,state.settings.themeCustom);
+  const palette=resolveTheme(state?.settings?.theme,systemDark,state?.settings?.themeCustom);
   useLayoutEffect(()=>{
     const root=document.documentElement;
     const previous=root.style.getPropertyValue('--workspace-canvas');

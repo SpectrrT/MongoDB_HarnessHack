@@ -59,7 +59,12 @@ export function toolPresentation(event){
  const tool=String(item.tool||event.tool||event.label||''),args=item.arguments||supplied,text=JSON.stringify(args);
  let label,service;
  const demo=queryDemoPresentation(event,item,args,tool);
- if(demo){({label,service}=demo);}
+ if(event.type==='contextCompaction'){
+  const calls=event.decisionCalls??item.decisionCalls??item.call??0;
+  const source=String(event.source||item.source||'');
+  label=calls>0?(/jev/i.test(source)?'Using Jev for compaction':'Score context for compaction'):(event.cacheHits??item.cacheHits??0)>0?'Apply cached compaction decisions':'Compact conversation';
+ }
+ else if(demo){({label,service}=demo);}
  else if(/gmail[._]/i.test(tool)){service='gmail';label=/search/i.test(tool)?'Search email':/read/i.test(tool)?'Read email':'Use Gmail';}
  else if(/calendar[._]/i.test(tool)){service='calendar';label='Check calendar';}
  else if(/google_drive[._]/i.test(tool)){service='drive';label='Check Google Drive';}
@@ -78,7 +83,7 @@ export function toolPresentation(event){
 
 export function activityGroups(events){
  const groups=[];
- for(const event of events.filter(e=>e.type!=='session')){
+ for(const event of events.filter(e=>e.type!=='session'&&!(e.type==='contextCompaction'&&e.status==='under_budget'))){
   const view=toolPresentation(event),last=groups.at(-1);
   if(last&&last.view.label===view.label&&last.view.service===view.service&&last.view.status===view.status){last.events.push(event);}
   else groups.push({view,events:[event]});
@@ -90,6 +95,13 @@ export function activityDetail(event){
  let item={},args={};try{item=JSON.parse(event.detail||'{}');}catch{}
  try{args=item.arguments||JSON.parse(event.arguments||'{}');}catch{}
  const lines=[];
+ if(event.type==='contextCompaction'){
+  if(Number.isFinite(item.decisionCalls)&&item.decisionCalls>0)lines.push(`${item.decisionCalls} scoring call${item.decisionCalls===1?'':'s'}`);
+  if(Number.isFinite(item.cacheHits)&&item.cacheHits>0)lines.push(`${item.cacheHits} cached decision${item.cacheHits===1?'':'s'}`);
+  if(Number.isFinite(item.archived))lines.push(`${item.archived} exchanges archived; exact sources remain recoverable`);
+  if(item.status==='needs_review')lines.push('Context remains over budget; review required');
+  if(item.errors?.length)lines.push(...item.errors.map(String));
+ }
  if(args.query)lines.push('Search: '+String(args.query).slice(0,250));
  if(args.path)lines.push('File: '+String(args.path).slice(0,250));
  if(args.title)lines.push(String(args.title).slice(0,250));

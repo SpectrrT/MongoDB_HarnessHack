@@ -3,14 +3,14 @@ import ToolChips from '../vendor/beautiful/ToolChips';
 import ApprovalCard from '../vendor/beautiful/ApprovalCard';
 import {modelRequest} from '../model-api';
 import {activityGroups,activityDetail,toolPresentation} from '../../shared/tool-events';
-import {FolderSearch,FileText,FilePenLine,Terminal,Globe,Image,Plug} from 'lucide-react';
+import {BrainCircuit,FolderSearch,FileText,FilePenLine,Terminal,Globe,Image,Plug} from 'lucide-react';
 import {ConnectionLogo} from './ConnectionLogo';
 import {fetchArtifactBlob} from './artifact-fetch';
 export function AgentActivity({events=[]}){
  const groups=activityGroups(events);if(!groups.length)return null;
  return <div className="beautiful-ui agent-activity"><ToolChips live diffs={[]} diffLines={{}} labels={{header:groups.some(g=>g.view.working)?'Working':'Activity'}} steps={groups.map(({view,events:group},i)=>{
   const event=group[0],kind=view.detail;
-  const Icon=/list_files/.test(kind)?FolderSearch:/write|fileChange/.test(kind+event.type)?FilePenLine:/command|run_command/.test(kind+event.type)?Terminal:/image/i.test(kind+event.type)?Image:/Chrome|web|CourseWorks|Gradescope/.test(view.label)?Globe:/read_file/.test(kind)?FileText:Plug;
+  const Icon=event.type==='contextCompaction'?BrainCircuit:/list_files/.test(kind)?FolderSearch:/write|fileChange/.test(kind+event.type)?FilePenLine:/command|run_command/.test(kind+event.type)?Terminal:/image/i.test(kind+event.type)?Image:/Chrome|web|CourseWorks|Gradescope/.test(view.label)?Globe:/read_file/.test(kind)?FileText:Plug;
   return {id:event.id||`activity-${i}`,icon:'read',iconNode:view.service?<ConnectionLogo id={view.service} size={24}/>:<Icon size={22} strokeWidth={1.7}/>,label:view.label+(group.length>1?` · ${group.length} calls`:''),chip:view.status,working:view.working,mono:false,detailMono:true,detail:group.flatMap((entry,index)=>[{text:`Call ${index+1}`},...activityDetail(entry).map(text=>({text}))])};
  })}/></div>;
 }

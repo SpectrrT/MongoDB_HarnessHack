@@ -94,11 +94,17 @@ export async function sample({ titles = true, urls = true, excludedApps = [] } =
   if (titles || urls) {
     const tab = await readTab(front.app,{urls});
     if (tab) {
-      if(tab.private)return {...s,title:'Private browsing'};
-      if (urls) s.url = tab.url;
-      if (titles) s.title = tab.title;
+      if(tab.private)s.title='Private browsing';
+      else {
+        if (urls) s.url = tab.url;
+        if (titles) s.title = tab.title;
+      }
     }
   }
   if (titles && !s.title) s.title = await readTitle();
+  if(s.title||s.url){
+    const after=await readFront();
+    if(!after||after.app!==front.app||(after.bundleId||null)!==(front.bundleId||null))return null;
+  }
   return s;
 }

@@ -2,6 +2,7 @@
 // loopback only, so the workspace is this computer's user (ACTIVITY_WORKSPACE overrides it).
 import { z } from 'zod';
 import { workspaceId } from './store.js';
+import { describe, findFriction, planWorkflow } from './insights.js';
 
 const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const MAX_STREAMS = 8;
@@ -57,6 +58,27 @@ export function activityRoutes(app, { activity, collector = null }) {
       const routine = await activity.decide(workspace, String(req.params.id).slice(0, 400), decision);
       if (!routine) return res.status(404).json({ error: 'Routine not found.' });
       res.json({ routine: { ...routine, status: routine.status || 'candidate' } });
+    }),
+  );
+  // Read the history, find where the back-and-forth is, and plan a workflow for it. Computed on every call.
+  app.post(
+    '/api/activity/workflow',
+    route(async (req, res) => {
+      const finding = await findFriction(activity, workspace);
+      if (!finding) return res.json({ finding: null });
+      res.json({ finding, summary: describe(finding), workflow: planWorkflow(finding), source: 'planner' });
+    }),
+  );
+  app.post(
+    '/api/activity/workflows',
+    route(async (req, res) => {
+      const body = z
+        .object({ title: z.string().min(1).max(120), kind: z.string().max(40), steps: z.array(z.object({ label: z.string().max(120), app: z.string().max(60) }).passthrough()).max(12) })
+        .passthrough()
+        .parse(req.body);
+      const doc = { ...body, workspace, status: 'saved', createdAt: new Date() };
+      const { insertedId } = await activity.db.collection('activity_workflows').insertOne(doc);
+      res.status(201).json({ id: String(insertedId), status: doc.status });
     }),
   );
   app.get('/api/activity/settings', route(async (req, res) => res.json(await activity.settings(workspace))));

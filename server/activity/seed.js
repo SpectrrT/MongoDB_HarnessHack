@@ -18,6 +18,7 @@ const BUNDLES = {
   Terminal: 'com.apple.Terminal',
   Figma: 'com.figma.Desktop',
   Notion: 'notion.id',
+  Codex: 'com.openai.codex',
 };
 
 const isoWeek = (date) => {
@@ -30,6 +31,12 @@ const isoWeek = (date) => {
 const gmail = { app: 'Google Chrome', url: 'https://mail.google.com/mail/u/0/', title: 'Inbox - Gmail', active: 0.45 };
 const slack = { app: 'Slack', title: 'team (Channel) - Offload - Slack', active: 0.6 };
 const linear = { app: 'Google Chrome', url: 'https://linear.app/offload/team/OFF/active', title: 'Active issues · Offload · Linear', active: 0.5 };
+// Late at night: scheduling with the Sydney and Dublin teams by hand, bouncing between the same thread,
+// Calendar's "Find a time" and Codex drafts until the only overlap left is midnight.
+const thread = { app: 'Google Chrome', url: 'https://mail.google.com/mail/u/0/#inbox/scheduling', title: 'Re: Scheduling: Atlas Vector Search sync (Sydney + Dublin) - Gmail', active: 0.55 };
+const findTime = { app: 'Google Chrome', url: 'https://calendar.google.com/calendar/u/0/r/week', title: 'Find a time · Sydney, Dublin, New York - Google Calendar', active: 0.5 };
+const draft = { app: 'Codex', title: 'Draft a reply proposing times that work in AEST, IST and ET', active: 0.75 };
+const booked = { app: 'Google Chrome', url: 'https://calendar.google.com/calendar/u/0/r/eventedit', title: 'Atlas Vector Search sync · 12:00 AM – 12:30 AM - Google Calendar', active: 0.6 };
 
 // One workday. `at` is a local start time; other blocks follow the previous one. `interrupt` inserts
 // short Slack checks, which split long blocks the way real days do.
@@ -50,6 +57,16 @@ const dayPlan = (week) => [
   { at: [17, 5], minutes: 7, ...linear },
   { minutes: 5, ...slack },
   { minutes: 6, ...gmail },
+  { at: [23, 8], minutes: 3, ...thread },
+  { minutes: 2, ...findTime },
+  { minutes: 3, ...draft },
+  { minutes: 1.6, ...thread },
+  { minutes: 1.8, ...findTime },
+  { minutes: 2.2, ...draft },
+  { minutes: 1.4, ...thread },
+  { minutes: 1.5, ...findTime },
+  { minutes: 2, ...booked },
+  { minutes: 1.6, ...thread },
 ];
 
 // A separate, additive demo device keeps engineering examples distinct from captured history.
