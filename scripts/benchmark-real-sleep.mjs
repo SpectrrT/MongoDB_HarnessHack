@@ -9,6 +9,7 @@ import {sleepExecutionTick, taskDirectory} from '../server/sleep/execution.js';
 import {sleepOpenRouterExecutor} from '../server/sleep/execution-provider.js';
 import {createContextCompactor} from '../server/context/compaction.js';
 import {createJevScorer} from '../server/context/jev.js';
+import {normalizeReplayEvaluation} from './lib/real-replay-evaluation.mjs';
 
 const args = process.argv.slice(2);
 const value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : null;
@@ -63,7 +64,7 @@ const report = {
     'Source session duration and observed idle gaps do not establish historical background execution or elapsed-time speedup.'],
   implementation: {}, pairs: [],
 };
-for (const file of ['server/context/compaction.js', 'server/context/jev.js', 'server/context/repeat-evidence.js', 'server/sleep/execution.js', 'server/sleep/execution-store.js', 'server/sleep/execution-provider.js', 'scripts/benchmark-real-sleep.mjs']) report.implementation[file] = hash(await fs.readFile(new URL('../' + file, import.meta.url)));
+for (const file of ['server/context/compaction.js', 'server/context/jev.js', 'server/context/repeat-evidence.js', 'server/sleep/execution.js', 'server/sleep/execution-store.js', 'server/sleep/execution-provider.js', 'scripts/benchmark-real-sleep.mjs', 'scripts/lib/real-replay-evaluation.mjs']) report.implementation[file] = hash(await fs.readFile(new URL('../' + file, import.meta.url)));
 await fs.mkdir(privateRoot, {recursive: true, mode: 0o700});
 await fs.mkdir(path.dirname(publicOutput), {recursive: true});
 async function save() {await fs.writeFile(publicOutput, JSON.stringify(report, null, 2) + '\n');}
@@ -129,7 +130,7 @@ async function runArm(pair, arm) {
         await fs.writeFile(path.join(artifactRoot, `response-${receipt.attempt}.private.json`), JSON.stringify(body, null, 2) + '\n', {mode: 0o600});
         try {
           const plan = JSON.parse(body.choices?.[0]?.message?.content || '');
-          receipt.outputShape = {outerKeys: Object.keys(plan), fileContentTypes: Array.isArray(plan.files) ? plan.files.map(file => typeof file.content) : null};
+          receipt.outputShape = {hasSummary: Object.hasOwn(plan, 'summary'), hasFiles: Object.hasOwn(plan, 'files'), fileContentTypes: Array.isArray(plan.files) ? plan.files.map(file => typeof file.content) : null};
         } catch {receipt.outputShape = {invalidJson: true};}
       }
       return response;
@@ -190,10 +191,7 @@ try {
       if (file) {
         const evaluated = spawnSync(evaluatorCommand, [evaluatorPath, file], {encoding: 'utf8', timeout: 10000});
         if ([0, 1].includes(evaluated.status)) {
-          try {const checked = JSON.parse(evaluated.stdout); row.evaluation = evaluatorPath.endsWith('.py') ? {
-            passed: checked.allPassed === true, checksPassed: checked.passed, checksTotal: checked.total,
-            failures: Object.entries(checked.checks || {}).filter(([, pass]) => !pass).map(([name]) => name),
-          } : {passed: checked.passed, checksPassed: checked.checksPassed, checksTotal: checked.checksTotal, failures: checked.failures};}
+          try {row.evaluation = normalizeReplayEvaluation(JSON.parse(evaluated.stdout), evaluatorPath.endsWith('.py'));}
           catch {row.evaluation = {passed: false, error: 'Evaluator returned invalid JSON'};}
         } else row.evaluation = {passed: false, error: 'Frozen evaluator did not complete'};
       } else row.evaluation = {passed: false, error: 'No generated artifact'};
