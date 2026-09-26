@@ -184,7 +184,7 @@ test("the morning brief reports cost per verified success and a timeline of the 
   const rem = await createRem();
   await rem.runDay();
   const brief = await rem.sleep();
-  assert.deepEqual(brief.timeline.map((t) => t.phase), ["replay", "merge", "distill", "evolve", "asks"]);
+  assert.deepEqual(brief.timeline.map((t) => t.phase), ["replay", "merge", "distill", "evolve", "calibrate", "asks"]);
   assert.ok(brief.timeline.every((t) => typeof t.wallMs === "number" && t.startedAt));
   const { gymBefore, gymAfter, day } = brief.verified;
   assert.ok(gymAfter.verified > gymBefore.verified);

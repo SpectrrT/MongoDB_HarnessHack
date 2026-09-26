@@ -2,6 +2,7 @@
 import { createMemoryDb, ensureIndexes } from "./db/index.js";
 import { createAgent, seedConnections } from "./agent.js";
 import { cosine } from "./embed.js";
+import { calibrate, renderCalibration } from "./calibrate.js";
 import { evolve } from "./evolve.js";
 import { NOISE_THRESHOLD, factsOf } from "./facts.js";
 import { BUILTIN_TOOLS, currentHarness, renderDiff } from "./harness.js";
@@ -403,6 +404,7 @@ export function renderBrief(b) {
         `day ${usd(v.day.costPerVerifiedSuccess)} over ${v.day.verified}/${v.day.runs} verified runs`,
     );
   }
+  if (b.calibration) lines.push(...renderCalibration(b.calibration));
   for (const a of b.asks) lines.push(`${a.status === "auto-approved" ? "Auto-approved" : "Ask"}: ${a.text}`);
   return lines.join("\n");
 }
@@ -454,6 +456,7 @@ async function runNightImpl(ctx, { day, proposer }) {
   const merged = await phase("merge", () => merge(ctx, { night }));
   const distilled = await phase("distill", () => distill(ctx, { night }));
   const evolved = await phase("evolve", () => evolve(ctx, { night, proposer }));
+  const calibrated = await phase("calibrate", () => calibrate(ctx, { night }));
   const asks = await phase("asks", () => queueAsks(ctx, { night }));
   const verified = await verifiedOf(ctx, { day, evolved });
   await db
@@ -468,8 +471,11 @@ async function runNightImpl(ctx, { day, proposer }) {
     createdAt: new Date(clock.now()),
     harness: {
       from: evolved.baseVersion,
-      to: evolved.committed?.version ?? evolved.baseVersion,
-      diffText: evolved.committed ? renderDiff(evolved.committed.diff) : [],
+      to: calibrated.committed?.version ?? evolved.committed?.version ?? evolved.baseVersion,
+      diffText: [
+        ...(evolved.committed ? renderDiff(evolved.committed.diff) : []),
+        ...(calibrated.committed ? renderDiff(calibrated.committed.diff) : []),
+      ],
     },
     replay: replayed,
     merge: merged,
@@ -489,6 +495,7 @@ async function runNightImpl(ctx, { day, proposer }) {
         heldOutRegressedTitles,
       })),
     },
+    calibration: calibrated,
     asks,
     verified,
     timeline,
