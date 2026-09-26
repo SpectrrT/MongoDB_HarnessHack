@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { HarnessStore } from '../harness/store.js';
-import { PolicyStore } from '../sleep/policy.js';
+import { PolicyStore } from '../harness/policy.js';
 import { tick } from '../harness/worker.js';
 import { digest, normalizeEvent } from './history.js';
 import { suggestionSettings, eligibleOpportunity } from '../../shared/suggestion-policy.js';
