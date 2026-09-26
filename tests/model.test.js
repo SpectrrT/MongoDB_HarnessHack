@@ -18,12 +18,13 @@ test('model requests require local host, valid origin and explicit client header
  await post(app,'/api/model/jobs',payload).set('Origin','https://evil.example').expect(403);
  await post(app,'/api/model/jobs',{...payload,model:'not-listed'}).expect(400);
 });
-test('jobs deduplicate, isolate owners and stop the active model',async()=>{
- let started=0,aborted=false;
- const app=appWith(({signal})=>new Promise((resolve,reject)=>{started++;signal.addEventListener('abort',()=>{aborted=true;reject(Error('Stopped'));});}));
+test('jobs deduplicate, isolate owners and stop the active model',{timeout:5000},async()=>{
+ let started=0,aborted=false,notifyStarted;
+ const didStart=new Promise(resolve=>{notifyStarted=resolve;});
+ const app=appWith(({signal})=>new Promise((resolve,reject)=>{started++;notifyStarted();signal.addEventListener('abort',()=>{aborted=true;reject(Error('Stopped'));});}));
  const a=await post(app,'/api/model/jobs',payload).expect(202);
  await post(app,'/api/model/jobs',payload).expect(200);
- await new Promise(resolve=>setTimeout(resolve,40));assert.equal(started,1);
+ await didStart;assert.equal(started,1);
  await post(app,'/api/model/jobs/'+a.body.id+'/stop',{},'other').expect(404);
  await post(app,'/api/model/jobs/'+a.body.id+'/stop',{}).expect(200);
  assert.equal(aborted,true);

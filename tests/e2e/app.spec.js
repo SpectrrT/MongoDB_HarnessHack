@@ -29,7 +29,7 @@ test("landing, onboarding, suggestions and memory persist", async ({
   await page.getByRole("button", { name: "View all" }).click();
   await expect(page).toHaveURL(/\/app\/chat$/);
   await expect(
-    page.getByRole("heading", { name: "Hello Alex What can I help you with?" }),
+    page.getByRole("heading", { name: "Your workspace, at a glance." }),
   ).toBeVisible();
   await page.goto("/app/memory");
   await page
@@ -70,6 +70,12 @@ test("connection setup and overnight tasks persist", async ({ page }) => {
 });
 test("capture modes and chat requires account setup", async ({ page }, info) => {
   await onboard(page);
+  await page.addInitScript(() => {
+    window.__captureCalls = 0;
+    const deny = async () => { window.__captureCalls++; throw new DOMException('Denied in test', 'NotAllowedError'); };
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getDisplayMedia: deny, getUserMedia: deny } });
+  });
+  await page.reload();
   await page.getByRole('button', { name: 'Start a session', exact: true }).click();
   // Session modes have no in-app consent checkbox (HANDOFF.md); the browser's media permission prompt is the gate.
   await expect(page.getByRole('checkbox', { name: 'Everyone involved agrees to this recording.' })).toHaveCount(0);

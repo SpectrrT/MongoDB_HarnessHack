@@ -132,7 +132,7 @@ test("adversarial challenge: six truth-preserving attacks; the recall edit holds
   assert.ok(bad.failed.every((f) => f.failures.includes("missing blocker: SEC-7 signing key rotation")));
 });
 
-test("probabilistic termination: a run below threshold keeps working once, then finishes with the record", async () => {
+test("probabilistic termination: a run below threshold attempts repair, then stops incomplete", async () => {
   const t = task("T4");
   const make = async (failures) => {
     const db = createMemoryDb({ name: `gate-${failures.length}` });
@@ -153,10 +153,12 @@ test("probabilistic termination: a run below threshold keeps working once, then 
     return agent.startRun({ ...t, runId: "gate" });
   };
   const ok = await make([]);
+  assert.equal(ok.status, "done");
   assert.equal(ok.completion.passed, true);
   assert.equal(ok.completion.attempts, 1);
   assert.equal(ok.completion.source, "stub");
   const bad = await make(["missing blocker: SEC-7 signing key rotation"]);
+  assert.equal(bad.status, "incomplete");
   assert.equal(bad.completion.passed, false);
   assert.equal(bad.completion.attempts, 2, "one extra executor turn before finishing");
   assert.ok(bad.completion.p < bad.completion.threshold);

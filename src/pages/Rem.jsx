@@ -337,10 +337,10 @@ function RunExtras({ run }) {
   return (
     <div className="rem-run-extras">
       {compact && <p>Sleep context: {compact.beforeChars} to {compact.afterChars} characters, {compact.archived} exchanges archived, {compact.decisionCalls} new decision calls. {compact.status === "needs_review" ? "Protected context exceeds budget." : ""}</p>}
-      {gate && gate.p != null && (
+      {gate && (
         <p>
-          P(goal satisfied | evidence) = {Number(gate.p).toFixed(2)} vs threshold {gate.threshold}:{" "}
-          {gate.passed ? "done" : "keep working"}
+          P(goal satisfied | evidence) = {gate.p == null ? "unavailable" : Number(gate.p).toFixed(2)} vs threshold {gate.threshold}:{" "}
+          {gate.passed ? "verified" : run.status === "running" ? "checking remaining work" : "incomplete: completion checks did not pass"}
           {gate.source ? ` (${gate.source}${gate.attempts > 1 ? `, ${gate.attempts} checks` : ""})` : ""}
         </p>
       )}
@@ -364,7 +364,7 @@ function RunExtras({ run }) {
 
 function RunLog({ events }) {
   const rows = events.filter(
-    (e) => e.collection === "episodes" || e.collection === "effects" || (e.collection === "checkpoints" && ["paused_for_auth", "done", "failed"].includes(e.status)),
+    (e) => e.collection === "episodes" || e.collection === "effects" || (e.collection === "checkpoints" && ["paused_for_auth", "done", "incomplete", "failed"].includes(e.status)),
   );
   if (!rows.length) return <p className="muted">No live steps recorded for this run in this session.</p>;
   return (

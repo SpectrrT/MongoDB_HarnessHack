@@ -8,9 +8,10 @@ import { searchCollection } from "./search.js";
 import { annotate, genomeSummary, traceable } from "./trace.js";
 import { randomUUID } from "node:crypto";
 import { ContextBudgetError } from "../server/context/compaction.js";
+import { completionRecord } from "./completion-record.js";
 
 export const TOOL_LATENCY_MS = 250;
-// A run whose completion check fails gets this many extra executor turns before it finishes anyway.
+// A failed completion check gets a bounded repair attempt, then stops explicitly incomplete.
 export const COMPLETION_RETRIES = 1;
 // A worker drives a run under a lease (real time). Another worker may take a running run over only
 // after the lease lapses; a paused run can be resumed by any worker. Found on the shared Atlas
@@ -295,7 +296,7 @@ export function createAgent({
       ? [
           {
             role: "user",
-            content: `Completion check: P(goal satisfied | evidence) = ${cp.completion.p.toFixed(2)}, below ${cp.completion.threshold}. ${
+            content: `Completion check: P(goal satisfied | evidence) = ${cp.completion.p == null ? "unavailable" : cp.completion.p.toFixed(2)}; required threshold ${cp.completion.threshold}. ${
               cp.completion.reasons?.length ? `Open: ${cp.completion.reasons.join("; ")}. ` : ""
             }Keep working until the goal is met, or say what blocks it.`,
           },
@@ -507,21 +508,21 @@ export function createAgent({
       const spent = account(reply.usage, modelId, tier);
       if (!reply.toolCall) {
         if (!completion) return finish(cp, "done", reply.final ?? "", spent);
-        // Probabilistic termination: finish only when P(goal satisfied | evidence) clears the genome's
-        // threshold, or after COMPLETION_RETRIES extra turns (the record says it did not clear).
+        // Success requires a valid probability and no failed deterministic checks.
+        // Exhausting the repair allowance ends incomplete, never successfully.
         const final = reply.final ?? "";
         const found = evidence ? await evidence(cp, final) : null;
         const verdict = await completion.check({ cp, final, genome: h.genome, evidence: found });
         const threshold = completionThresholdOf(h.genome);
         const attempts = (cp.completion?.attempts || 0) + 1;
-        const gate = { p: verdict.p, threshold, passed: verdict.p >= threshold, attempts, source: verdict.source, reasons: verdict.reasons || [], tokens: verdict.tokens ?? 0, at: now() };
+        const gate = completionRecord({ verdict, evidence: found, threshold, attempts, at: now() });
         onEvent({ type: "completion", runId, ...gate });
         if (!gate.passed && attempts <= COMPLETION_RETRIES && cp.turns + 1 < h.genome.contextPolicy.stepBudget) {
           await checkpoints.updateOne({ runId }, { $set: { completion: gate, updatedAt: now() }, $inc: { turns: 1, ...spent } });
           cp = await checkpoints.findOne({ runId });
           continue;
         }
-        return finish(cp, "done", final, spent, gate);
+        return finish(cp, gate.passed ? "done" : "incomplete", final, spent, gate);
       }
       const call = { name: reply.toolCall.name, args: reply.toolCall.args || {} };
       const entry = { step: cp.step + 1, call, at: now() };
