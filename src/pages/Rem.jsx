@@ -20,6 +20,7 @@ const TASKS = [
 ];
 
 const PHASE_BY_COLLECTION = {
+  rehearsals: "Rehearse",
   memories: "Merge",
   episodes: "Merge",
   skills: "Distill",
@@ -28,7 +29,7 @@ const PHASE_BY_COLLECTION = {
   asks: "Asks",
   briefs: "Brief",
 };
-const PHASES = ["Replay", "Merge", "Distill", "Evolve", "Asks", "Brief"];
+const PHASES = ["Replay", "Merge", "Distill", "Rehearse", "Evolve", "Calibrate", "Asks", "Brief"];
 const METRIC_ORDER = ["tasks", "passed", "passRate", "collateral", "cost", "steps", "interventions", "latencyMs"];
 const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", failed: "is-cancelled" };
 

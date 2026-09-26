@@ -3,7 +3,11 @@ import { createMemoryDb, ensureIndexes } from "./db/index.js";
 import { createAgent, seedConnections } from "./agent.js";
 import { cosine } from "./embed.js";
 import { calibrate, renderCalibration } from "./calibrate.js";
-import { evolve } from "./evolve.js";
+import { rehearse, renderRehearsal } from "./rehearse.js";
+import { createOpenRouterModel } from "./model.js";
+import { modelFor } from "./models.js";
+import { createLlmProposer } from "./proposer.js";
+import { evolve, gymSkills } from "./evolve.js";
 import { NOISE_THRESHOLD, factsOf } from "./facts.js";
 import { BUILTIN_TOOLS, currentHarness, renderDiff } from "./harness.js";
 import { queueAsks } from "./asks.js";
@@ -404,6 +408,7 @@ export function renderBrief(b) {
         `day ${usd(v.day.costPerVerifiedSuccess)} over ${v.day.verified}/${v.day.runs} verified runs`,
     );
   }
+  if (b.rehearse) lines.push(...renderRehearsal(b.rehearse));
   if (b.calibration) lines.push(...renderCalibration(b.calibration));
   for (const a of b.asks) lines.push(`${a.status === "auto-approved" ? "Auto-approved" : "Ask"}: ${a.text}`);
   return lines.join("\n");
@@ -435,6 +440,13 @@ async function verifiedOf(ctx, { day, evolved }) {
   };
 }
 
+// REM_PROPOSER=llm: a model on OpenRouter imagines edits beyond the catalog (bounded to the catalog's edit types, and
+// validated like any other); any failure falls back to the catalog proposer.
+const imaginative = (fallback) =>
+  process.env.REM_PROPOSER === "llm" && process.env.OPENROUTER_API_KEY
+    ? createLlmProposer({ model: createOpenRouterModel(), modelId: modelFor(process.env.REM_PROPOSER_TIER || "medium"), fallback })
+    : fallback;
+
 async function runNightImpl(ctx, { day, proposer }) {
   const { db, clock } = ctx;
   const night = day;
@@ -455,7 +467,8 @@ async function runNightImpl(ctx, { day, proposer }) {
   const replayed = await phase("replay", () => replay(ctx, { day }));
   const merged = await phase("merge", () => merge(ctx, { night }));
   const distilled = await phase("distill", () => distill(ctx, { night }));
-  const evolved = await phase("evolve", () => evolve(ctx, { night, proposer }));
+  const rehearsed = await phase("rehearse", async () => rehearse(ctx, { night, skills: await gymSkills(db) }));
+  const evolved = await phase("evolve", () => evolve(ctx, { night, proposer: imaginative(proposer) }));
   const calibrated = await phase("calibrate", () => calibrate(ctx, { night }));
   const asks = await phase("asks", () => queueAsks(ctx, { night }));
   const verified = await verifiedOf(ctx, { day, evolved });
@@ -495,6 +508,7 @@ async function runNightImpl(ctx, { day, proposer }) {
         heldOutRegressedTitles,
       })),
     },
+    rehearse: rehearsed,
     calibration: calibrated,
     asks,
     verified,

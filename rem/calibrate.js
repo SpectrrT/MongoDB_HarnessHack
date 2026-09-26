@@ -58,6 +58,8 @@ export async function calibrate(ctx, { night, gate = ctx.completion ?? createCom
     checked: gateErrors(results, from, "checked"),
     blind: report(from),
     threshold: { from, to: from, status: "kept", reason: "the current threshold already has the fewest blind errors on train" },
+    // Train tasks this harness passes: tomorrow's rehearsals start from these.
+    passing: train.filter((r) => r.pass).map((r) => r.taskId),
     committed: null,
   };
   if (best === from) return out;

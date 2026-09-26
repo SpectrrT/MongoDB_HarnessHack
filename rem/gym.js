@@ -370,7 +370,7 @@ async function gradeRun(gate, run, genome, verdict) {
   return { source: blind.source, checked: checked.p, blind: blind.p };
 }
 
-// `extra`: more tasks to run after the gym's own (Dream's kept variants, which are train tasks).
+// `extra`: more tasks to run after the gym's own (Rehearse's kept variants, which are train tasks).
 export async function runGym(genome, { model, embedder, skills = [], split = "all", grade = null, extra = [] }) {
   const tasks = split === "train" ? GYM.train : split === "heldOut" ? GYM.heldOut : [...GYM.train, ...GYM.heldOut];
   const results = [];

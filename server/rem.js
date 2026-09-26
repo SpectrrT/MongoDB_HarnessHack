@@ -211,3 +211,6 @@ export function mountRem(app) {
     }
   });
 }
+
+// A REM operation outside a request (idle rehearsal, the rehearsals view), queued behind the API's own work.
+export const withRem = (fn) => exclusive(async () => fn(await getRem()));
