@@ -1,0 +1,36 @@
+/* Computer history to workflow: the launcher above the chat box and the card it opens. Theme variables only. */
+.history-workflow-launch { margin: 0 0 10px; }
+.history-workflow-launch button { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border: 1px solid var(--off-line); border-radius: 999px; background: var(--off-surface); color: var(--off-ink); font: inherit; font-size: 13px; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+.history-workflow-launch button:hover { background: var(--off-hover); }
+.history-workflow-launch button small { color: var(--off-muted); font-size: 12px; }
+.history-workflow-launch p { margin: 8px 2px 0; font-size: 12.5px; color: var(--off-muted); }
+
+.history-workflow { margin: 0 0 14px; padding: 16px 18px; border: 1px solid var(--off-line); border-radius: 16px; background: var(--off-surface); color: var(--off-ink); animation: history-workflow-in .28s ease-out; }
+@keyframes history-workflow-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .history-workflow { animation: none; } }
+.history-workflow.is-loading { display: flex; align-items: center; gap: 14px; }
+.history-workflow.is-loading p { margin: 0; font-size: 13px; color: var(--off-muted); }
+.history-workflow header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.history-workflow .eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--off-muted); }
+.history-workflow .eyebrow em { font-style: normal; padding: 1px 7px; border: 1px solid var(--off-line); border-radius: 999px; font-size: 11px; }
+.history-workflow .icon { display: inline-flex; background: none; border: 0; color: var(--off-muted); cursor: pointer; padding: 4px; border-radius: 6px; }
+.history-workflow .icon:hover { background: var(--off-hover); }
+.history-workflow h3 { margin: 0 0 10px; font-size: 15.5px; font-weight: 600; line-height: 1.45; letter-spacing: -.2px; }
+.history-workflow-apps { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.history-workflow .app-chip, .history-workflow .stat-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border: 1px solid var(--off-line); border-radius: 999px; font-size: 12px; background: var(--off-inset); }
+.history-workflow .app-chip small { color: var(--off-muted); font-size: 11.5px; }
+.history-workflow .stat-chip { color: var(--off-muted); }
+.history-workflow-strip { display: flex; gap: 2px; height: 8px; margin: 4px 0 14px; }
+.history-workflow-strip span { min-width: 4px; border-radius: 3px; background: var(--off-ink); opacity: .85; }
+.history-workflow-strip span[data-shade="1"] { opacity: .5; }
+.history-workflow-strip span[data-shade="2"] { opacity: .25; }
+.history-workflow-plan { border-top: 1px solid var(--off-line); padding-top: 12px; }
+.history-workflow .kicker { margin: 0 0 2px; font-size: 12px; color: var(--off-muted); }
+.history-workflow h4 { margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+.history-workflow .problem, .history-workflow .trigger, .history-workflow .needs { margin: 0 0 8px; font-size: 13px; line-height: 1.5; color: var(--off-muted); }
+.history-workflow .trigger strong { color: var(--off-ink); font-weight: 600; margin-right: 4px; }
+.history-workflow-proactive { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.history-workflow-proactive li { display: flex; align-items: center; gap: 6px; }
+.history-workflow footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.history-workflow .saved { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; }
+.history-workflow .source { margin: 10px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--off-muted); }

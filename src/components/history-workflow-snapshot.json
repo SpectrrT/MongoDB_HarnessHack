@@ -1,0 +1,168 @@
+{
+ "finding": {
+  "hour": 23,
+  "window": "11:17 PM",
+  "days": 5,
+  "minutesPerDay": 21,
+  "switchesPerDay": 8,
+  "apps": [
+   {
+    "label": "mail.google.com",
+    "name": "Gmail",
+    "logo": "gmail",
+    "visitsPerDay": 4,
+    "minutesPerDay": 8
+   },
+   {
+    "label": "calendar.google.com",
+    "name": "Google Calendar",
+    "logo": "calendar",
+    "visitsPerDay": 4,
+    "minutesPerDay": 8
+   },
+   {
+    "label": "Codex",
+    "name": "Codex",
+    "logo": "openai",
+    "visitsPerDay": 2,
+    "minutesPerDay": 5
+   }
+  ],
+  "topTitle": "Re: Scheduling: Atlas Vector Search sync (Sydney + Dublin)",
+  "topTitleVisitsPerDay": 4,
+  "meetingTimes": [
+   "12:00 AM",
+   "12:30 AM"
+  ],
+  "places": [
+   "Sydney",
+   "Dublin",
+   "New York"
+  ],
+  "timeline": [
+   {
+    "label": "mail.google.com",
+    "name": "Gmail",
+    "minutes": 1
+   },
+   {
+    "label": "calendar.google.com",
+    "name": "Google Calendar",
+    "minutes": 2
+   },
+   {
+    "label": "calendar.google.com",
+    "name": "Google Calendar",
+    "minutes": 2
+   },
+   {
+    "label": "mail.google.com",
+    "name": "Gmail",
+    "minutes": 2
+   },
+   {
+    "label": "mail.google.com",
+    "name": "Gmail",
+    "minutes": 3
+   },
+   {
+    "label": "calendar.google.com",
+    "name": "Google Calendar",
+    "minutes": 2
+   },
+   {
+    "label": "Codex",
+    "name": "Codex",
+    "minutes": 4
+   },
+   {
+    "label": "mail.google.com",
+    "name": "Gmail",
+    "minutes": 2
+   },
+   {
+    "label": "calendar.google.com",
+    "name": "Google Calendar",
+    "minutes": 2
+   },
+   {
+    "label": "Codex",
+    "name": "Codex",
+    "minutes": 2
+   },
+   {
+    "label": "mail.google.com",
+    "name": "Gmail",
+    "minutes": 2
+   },
+   {
+    "label": "calendar.google.com",
+    "name": "Google Calendar",
+    "minutes": 2
+   },
+   {
+    "label": "calendar.google.com",
+    "name": "Google Calendar",
+    "minutes": 2
+   },
+   {
+    "label": "mail.google.com",
+    "name": "Gmail",
+    "minutes": 2
+   }
+  ],
+  "sample": true,
+  "sessions": 50
+ },
+ "summary": "On 5 nights in the last two weeks, around 11:17 PM, you spent about 21 minutes bouncing between Gmail, Google Calendar and Codex, switching 8 times each night.",
+ "workflow": {
+  "kind": "scheduling",
+  "title": "Schedule across time zones for you",
+  "problem": "Scheduling by hand with Sydney, Dublin and New York, and the meeting still lands at 12:00 AM.",
+  "trigger": "A scheduling thread arrives in Gmail, like \"Re: Scheduling: Atlas Vector Search sync (Sydney + Dublin)\"",
+  "steps": [
+   {
+    "app": "Gmail",
+    "logo": "gmail",
+    "label": "Read the thread",
+    "detail": "Pull out who needs to meet, how long, and the times already proposed"
+   },
+   {
+    "app": "Google Calendar",
+    "logo": "calendar",
+    "label": "Find the overlap",
+    "detail": "Check free and busy time for Sydney, Dublin and New York, inside working hours"
+   },
+   {
+    "app": "Codex",
+    "logo": "openai",
+    "label": "Draft the reply",
+    "detail": "Offer three slots in each person’s time zone, in your voice"
+   },
+   {
+    "app": "You",
+    "logo": null,
+    "label": "Ask you once",
+    "detail": "Show the draft and the slots before anything is sent",
+    "ask": true
+   },
+   {
+    "app": "Google Calendar",
+    "logo": "calendar",
+    "label": "Book and confirm",
+    "detail": "Send the invite, and flag it when 12:00 AM is the only overlap"
+   }
+  ],
+  "proactive": [
+   "Stop booking you at 12:00 AM: propose the next morning’s overlap instead",
+   "Keep a standing slot that works for every time zone",
+   "Answer “does this time work?” threads while you sleep"
+  ],
+  "needs": [
+   "Gmail: read and send",
+   "Google Calendar: read and write"
+  ],
+  "saves": "about 21 minutes and 8 app switches a night"
+ },
+ "source": "snapshot"
+}
