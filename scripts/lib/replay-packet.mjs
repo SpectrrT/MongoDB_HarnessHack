@@ -11,9 +11,10 @@ export function normalizeReplayPacket(source) {
   };
 }
 
-export function replayUnits(packet) {
+export function replayUnits(packet, {typedConversation = false} = {}) {
   return packet.history.map(record => ({id: record.id, text: JSON.stringify({role: record.role, timestamp: record.timestamp, text: record.text}),
-    pinned: ['user', 'system'].includes(record.role) ? 'historical_user_instruction' : null}));
+    pinned: ['user', 'system', 'developer'].includes(record.role) ? 'historical_user_instruction' : null,
+    ...(typedConversation ? {conversation: {schemaVersion: 1, role: record.role}} : {})}));
 }
 
 export function attachReplayContext(prompt, currentTask, units) {

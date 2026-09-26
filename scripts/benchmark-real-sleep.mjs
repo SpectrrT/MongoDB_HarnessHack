@@ -33,7 +33,8 @@ const audit = value('--audit-manifest') ? JSON.parse(await fs.readFile(value('--
 const auditedSpan = audit ? (Date.parse(audit.sourceLastTimestamp) - Date.parse(audit.sourceFirstTimestamp)) / 3600000 : null;
 const brief = JSON.stringify({goal: packet.goal, input: packet.input || {}});
 if (brief.length > 4000) throw Error('Packet current task exceeds the production Sleep brief limit.');
-const units = replayUnits(packet);
+const conversationHistory = args.includes('--typed-conversation') ? {schemaVersion: 1, instructionsComplete: true} : null;
+const units = replayUnits(packet, {typedConversation: Boolean(conversationHistory)});
 const rawChars = units.reduce((n, record) => n + record.text.length, 0);
 const report = {
   schema: 2, createdAt: new Date().toISOString(), id: packet.id, title: packet.title,
@@ -51,7 +52,7 @@ const report = {
     historyRecords: units.length, authoredTextChars: packet.history.reduce((n, record) => n + record.text.length, 0),
     authoredTextCodePoints: packet.history.reduce((n, record) => n + [...record.text].length, 0),
     characterMeasurement: 'Chars and selector budgets use JavaScript UTF-16 code units. Code points are reported separately.', serializedHistoryChars: rawChars},
-  policy: {budgetChars: 16000, recentCount: 2, threshold: 0.25, maxAttempts: 3, tokenBudget: 100000,
+  policy: {budgetChars: 16000, recentCount: 2, threshold: 0.25, conversationHistory, maxAttempts: 3, tokenBudget: 100000,
     maxOutputTokens: packet.limits?.maxOutputTokens || 1800, tools: [], storage: 'Fresh temporary local MongoDB, real driver'},
   disclosure: [...(packet.disclosure || []),
     'User and system instructions are pinned. The production 16000-character selection budget is unchanged; no artificial context pressure.',
@@ -88,7 +89,7 @@ async function runArm(pair, arm) {
   if (arm === 'compacted') {
     const selectionStarted = performance.now();
     try {
-      const selected = await compactor.select({runId: `real-${randomUUID()}`, goal: packet.goal, units});
+      const selected = await compactor.select({runId: `real-${randomUUID()}`, goal: packet.goal, units, conversationHistory});
       kept = selected.units; row.selection = selected.metrics;
     } catch (error) {
       row.selection = error.metrics; row.status = 'context-needs-review'; row.error = 'Context selection did not fit its unchanged production policy.';
