@@ -24,4 +24,4 @@ export function createApp({dataDir=process.env.OFFLOAD_DATA_DIR||path.join(here,
  app.use((err,req,res,next)=>{console.error('Request failed:',err.message);res.status(err.status||500).json({error:err.status===413?'Request too large.':'The local service could not save this change.'});});
  return app;
 }
-if(process.argv[1]===fileURLToPath(import.meta.url)){const port=Number(process.env.PORT||4318);createApp().listen(port,'127.0.0.1',()=>console.log(`Offload local service: http://127.0.0.1:${port}`));}
+if(process.argv[1]===fileURLToPath(import.meta.url)){const port=Number(process.env.PORT||5194);createApp().listen(port,'127.0.0.1',()=>console.log(`Offload local service: http://127.0.0.1:${port}`));}
