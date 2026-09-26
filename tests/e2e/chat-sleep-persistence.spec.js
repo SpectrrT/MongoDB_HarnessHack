@@ -145,13 +145,13 @@ test('Skipped Sleep pass does not invent a review or fetch a nonexistent job', a
 test('Sleep example prepares context without enabling Sleep or starting a model', async ({ page }) => {
   await prepare(page);
   await page.addInitScript(() => { const state = JSON.parse(localStorage.getItem('offload.workspace.v1')); state.settings.modelProvider = 'openrouter'; delete state.settings.openrouterModel; localStorage.setItem('offload.workspace.v1', JSON.stringify(state)); });
-  let mutations = 0, enabledContext;
+  let mutations = 0, enabledContext, enabled = false;
   await page.route('**/api/model/**', route => {
-    if (route.request().method() === 'POST') { mutations++; enabledContext = route.request().postDataJSON().context; return route.fulfill({ json: { enabled: true, state: 'waiting' } }); }
+    if (route.request().method() === 'POST') { mutations++; enabled = true; enabledContext = route.request().postDataJSON().context; return route.fulfill({ json: { enabled: true, state: 'waiting' } }); }
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/model/status') return route.fulfill({ json: { connected: false, models: [] } });
     if (path === '/api/model/openrouter/status') return route.fulfill({ json: { connected: false, models: [] } });
-    return route.fulfill({ json: { enabled: false, state: 'off' } });
+    return route.fulfill({ json: { enabled, state: enabled ? 'waiting' : 'off' } });
   });
   await page.goto('/app/sleep?view=conversations');
   await page.getByRole('button', { name: 'Try Sleep example', exact: true }).click();
