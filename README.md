@@ -1,27 +1,220 @@
 # Offload
 
-A local workflow companion with a monochrome website and a React JavaScript app.
+**An agent harness that sleeps, and wakes up with a better harness.**
 
-## Run
+Offload learns the work you repeat, so next time you can hand it over. Its engine, **REM** (Replay · Evolve · Merge),
+runs the harness on a day/night cycle:
 
-Requires Node 22.12+ or 24 and npm.
+- **Day.** The agent works long-horizon tasks through connected accounts, durably. Every step writes a checkpoint. Every
+  side effect is claimed in an effects ledger before it runs, so a crash or an expired login never loses progress or
+  sends the same email twice.
+- **Night.** It replays the day, merges duplicate memories and forgets noise, distills repeated work into a tested skill,
+  and evolves its own harness (rules, guardrails, tool scopes, context policy, model routing) against a gym with a
+  held-out split. Every edit carries a falsifiable prediction, and a no-regression gate decides what ships.
+- **Morning.** It asks once for any new authority it wants, such as letting a skill that sends email run on its own,
+  then runs the same task again, measurably better.
+
+Built for the MongoDB × Cerebral Valley **Harness Engineering & Model Wrangling** hackathon (NYC, September 26, 2026) for
+both problem statements: recursive harnessing (the harness edits its own rules, guardrails, tool access and routing) and
+long-horizon engineering (durable execution, plus memory that gets smaller and more precise as it grows, judged by hard
+metrics).
+
+## See the cycle in one minute
+
+Requires Node 22.12+ or 24.
 
 ```sh
 npm ci
-npm run dev
+npm run rem:demo
 ```
 
-Open http://127.0.0.1:5193 . The default browser demo stores each workspace in localStorage. It does not contact external accounts. To use the real local REST service instead, copy `.env.example` to `.env`, set `VITE_STORAGE_MODE=api`, and restart. API data lives in `.data/`, which is ignored by Git.
+This runs day one, the night, the morning and five simulated days in about a second, and rewrites
+[docs/DEMO-NUMBERS.md](docs/DEMO-NUMBERS.md). The run is deterministic and ignores `.env`: an in-memory MongoDB
+stand-in, a scripted model, a fixture Google workspace and a simulated reviewer (see [What is real](#what-is-real)).
+Numbers from the current run:
+
+| Metric | Day 1 | Day 5 |
+| --- | --- | --- |
+| Tasks passed | 2/4 | 4/4 |
+| Collateral damage | 3 | 0 |
+| Estimated cost for the day | $0.0861 | $0.0069 |
+| Human interventions (corrections and reconnects) | 4 | 0 |
+| Memories with sleep (raw items without) | 15 (30) | 32 (118) |
+| Retrieval precision@k with sleep (without) | 1 (0.9) | 1 (0.4) |
+
+Day one revokes the Drive token mid-run; days 2 to 5 inject a crash after the send instead. Costs count tokens as
+characters/4 at placeholder prices.
+
+- **Durability.** Day one's Drive token is revoked after step 3. The run parks as `paused_for_auth`, asks once, and a
+  change stream on `connections` resumes it from its checkpoint after the reconnect. Over five days, 10 effects
+  committed, 10 executed and 0 duplicated, and all 4 injected crashes were reconciled from the ledger.
+- **Evolution.** Night one accepted two edits (a "never include customer names" rule and an internal-recipients-only
+  guardrail) and rejected routing every executor call to the small model: it cut cost 82% but broke held-out task H2.
+  The held-out split went from 1/4 at gen 0 to 3/4 after night one and 4/4 after night two. Train went from 3/8 to 8/8
+  by harness v4. The proposer never sees held-out tasks; the gate does, so the split works as a validation set.
+- **Morning.** Approving the ask ("Want me to send the brief myself next time?") makes the distilled weekly-brief skill
+  autonomous. The same brief then takes 6 steps instead of 9 and $0.0321 instead of $0.0424, with no corrections. Day
+  one's run also included the revoke and reconnect.
+
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph DAY["Day: durable execution"]
+    direction TB
+    task["task"] --> agent["agent loop<br/>genome → prompt"]
+    agent -->|"each effect"| ledger[("effects<br/>claimed before it runs")]
+    agent --> cp[("checkpoints")]
+    agent --> ep[("episodes")]
+    conn[("connections")] -.->|"change stream resumes<br/>paused_for_auth"| agent
+  end
+  subgraph NIGHT["Night: offline and gated"]
+    direction TB
+    replay["Replay"] --> merge["Merge"] --> distill["Distill"] --> evolve["Evolve"]
+    evolve --> gym{{"gym: 8 train + 4 held-out<br/>no-regression gate"}}
+  end
+  ep --> replay
+  merge --> mem[("memories")]
+  distill --> skills[("skills")]
+  gym -->|"accepted edits"| harness[("harnesses<br/>versioned genome")]
+  evolve -->|"new authority"| asks[("asks<br/>answered in the morning")]
+  harness --> agent
+  mem --> agent
+  skills --> agent
+```
+
+**Day** (`rem/agent.js`, `rem/ledger.js`). The harness is data: a versioned genome of rules, guardrails, tool scopes, a
+context policy and model routing. The agent builds its prompt from the genome plus retrieved memories and skills.
+Guardrails are declarative predicates checked before every tool call. Each effect gets a key,
+`sha256(runId, step, tool and arguments)`, inserted as `pending` under a unique index before the effect runs. A retry
+that hits the key either returns the committed result or reconciles against the world without re-executing. The ledger
+commit and the checkpoint update share one transaction. If the harness changed overnight, a resumed run re-plans its
+remaining steps under the new version and keeps its committed effects.
+
+**Night** (`rem/night.js`, `rem/evolve.js`, `rem/proposer.js`).
+**Replay** re-reads the day's episodes.
+**Merge** folds duplicate facts into memories with provenance, resolves contradictions by recency and confidence, drops
+noise and sets consolidated episodes to expire through a TTL index.
+**Distill** mines repeated tool-call sequences from runs and demonstrations into a parameterized skill and practices it
+in a sandbox.
+**Evolve** mines failure patterns on the train set, skips edits it has already tried, proposes up to three bounded
+edits with predictions, validates each on train plus held-out, and commits only net-positive edits that break no
+passing task. Prediction versus outcome is aggregated by edit type into a track record that calibrates the next
+night's proposals. The proposer never sees held-out tasks, and the gym's fixtures and checkers are frozen.
+
+**Morning** (`rem/asks.js`). Anything that needs new authority becomes an ask instead of passing the gate: a skill that
+sends or deletes, a new tool scope, a loosened guardrail. Decisions are stored and shape later asks. After one read-only
+approval, read-only skills are approved automatically; sends always ask.
+
+The full design is in [docs/rem-engine.md](docs/rem-engine.md). The vocabulary is in [CONTEXT.md](CONTEXT.md).
+
+## MongoDB
+
+| Collection | Holds | MongoDB feature |
+| --- | --- | --- |
+| `effects` | effects ledger | unique `effectKey`: a retry hits error 11000 instead of a second send |
+| `checkpoints` | per-run state | unique `runId`, one transaction with `effects` |
+| `connections` | token state, granted scopes | change stream resumes paused runs |
+| `episodes` | raw tool calls, observations, corrections, demonstrations | TTL on `expireAt` (forgetting); vector and text search on `summary` |
+| `memories` | consolidated facts with provenance and contradiction links | vector + text, fused with `$rankFusion` or in the app |
+| `skills` | procedures with a test, required scopes and approval status | unique `name`; vector + text |
+| `harnesses` | immutable genome versions with parent, diff and fitness | lineage |
+| `edits` | proposals, predictions, outcomes | hybrid search over past edits; the track record is an aggregation |
+| `asks` | permission requests and decisions | unique `dedupeKey`, so a run asks once |
+| `metrics` | per-day metrics | time-series collection |
+
+`rem/db/schema.js` defines the indexes and the Atlas Vector Search and Atlas Search definitions (`autoEmbed` with
+voyage-4). Change streams also feed `GET /api/rem/stream` over Server-Sent Events.
+
+Two more MongoDB-backed services live under `server/`:
+
+- **Durable harness** (`server/harness/`): a job queue with idempotent enqueue, atomic claims, renewable leases and
+  fencing tokens, so a stale worker can't overwrite a newer one. Each run saves four checkpoints and receipts. It
+  produces internal artifacts only; it sends nothing external.
+- **Sleep v2** (`server/sleep/`): memories in Atlas Vector Search with Voyage embeddings, versioned harness policies,
+  promotion only on held-out improvement with no regression, and a guarded rollback. Promotion is one compare-and-swap
+  on the policy head. Tool-access requests are never promoted automatically.
+
+## What is real
+
+REM runs end to end without credentials, and the test suite covers REM, the durable harness and Sleep v2 without them.
+Environment variables switch on the external services:
+
+| Piece | Without credentials | With `.env` |
+| --- | --- | --- |
+| REM database | in-memory store with the Node driver's call shapes: unique indexes, TTL sweep, change streams, transactions | `MONGODB_URI` (Atlas Sandbox), optional `REM_DB_NAME` (default `rem`); gym and practice runs still use in-memory scratch databases |
+| REM model | `ScriptedModel`: deterministic, follows the rules, guardrails, memories and skills in its prompt | `REM_MODEL=openrouter`, `OPENROUTER_API_KEY` |
+| REM embeddings and search | local hashing embedder; app-side BM25 and cosine fused by reciprocal rank | `REM_EMBEDDINGS=voyage`, `VOYAGE_API_KEY`; `REM_ATLAS_SEARCH=1` for `$rankFusion` (MongoDB 8.1+) |
+| REM proposer | a fixed catalog of 12 bounded edits, with predictions calibrated by the track record | an LLM proposer exists in `rem/proposer.js` but is not wired to an env switch |
+| REM consolidator | a deterministic fact extractor over the fixture notes | not yet model-backed |
+| Accounts and reviewer | a fixture Drive, Gmail and Calendar workspace with a deterministic revoke; day-one corrections come from the gym's checkers | no real OAuth yet |
+| Durable harness | integration tests against a disposable local `mongod` | `MONGODB_URI`, `OPENROUTER_API_KEY`, `OFFLOAD_MODEL` |
+| Sleep v2 | integration tests against a local `mongod`, with exact cosine in process instead of `$vectorSearch` | the harness variables plus `VOYAGE_API_KEY` |
+
+Limits, stated plainly:
+
+- The numbers above come from the scripted model, which responds to the catalog's rules by design, so the improvements
+  are expected rather than discovered. The loop around it (mining, predictions, validation, the gate, the ledger) is
+  real code. Running a real model through OpenRouter is what tests whether the edits help.
+- Live runs against Atlas, OpenRouter and Voyage are not yet verified. `npm run rem:demo` always runs in memory; REM
+  reaches Atlas only through the server and `/api/rem/*`.
+- REM has no panel in the app yet. Its demo is the terminal story and the API.
+- The Offload workspace in the app still runs on a deterministic mock engine (`shared/workspace.js`) in browser
+  storage. The **Durable handoff** (`/app/harness`) and **Harness sleep** (`/app/adapt`) pages use the MongoDB-backed
+  services.
+
+## Run the app
 
 ```sh
-npm test
-npm run build
-npm start
+npm run dev      # web on http://127.0.0.1:5193, API on 5194
 ```
 
-The built site and app are served at http://127.0.0.1:5194 . `npm run test:e2e` runs desktop and mobile Chrome checks against the development server.
+`npm run dev` does not read `.env` for the API, so it always uses the in-memory REM engine and the mock workspace. For
+the MongoDB-backed services, copy `.env.example` to `.env`, fill in the event Atlas Sandbox connection string and keys,
+then:
 
-## Desktop
+```sh
+npm run build
+npm run harness:server   # site and API on http://127.0.0.1:5194
+npm run harness:worker   # second terminal
+npm run sleep:worker     # third terminal
+```
+
+Open http://127.0.0.1:5194/app/harness to create a durable handoff and http://127.0.0.1:5194/app/adapt to add
+corrections and run a sleep review. With Sleep v2 configured, the server creates the `memory_vector` Atlas Vector Search
+index on first start; wait until it is READY.
+
+### REM API
+
+| Route | Does |
+| --- | --- |
+| `GET /api/rem/state` | harness and lineage, edits, metrics, open asks, memory stats, skills, runs, effects ledger, latest brief |
+| `POST /api/rem/run` | run a task (`{ taskId, week? }`) |
+| `POST /api/rem/connection` | expire or restore a connection (`{ provider, state }`); restoring resumes paused runs |
+| `POST /api/rem/sleep` | run one night and return the morning brief |
+| `POST /api/rem/asks/:id` | approve or deny an ask |
+| `POST /api/rem/simulate` | run simulated days (`{ days }`) |
+| `POST /api/rem/reset` | start a fresh instance; on Atlas this drops the REM database |
+| `GET /api/rem/stream` | Server-Sent Events from change streams |
+
+The API is one shared demo instance with no authentication. The server listens on 127.0.0.1 only. Add authentication
+before exposing it anywhere.
+
+## Tests
+
+```sh
+npm test          # 53 unit and integration tests
+npm run test:e2e  # Playwright in Google Chrome, desktop and mobile; start npm run dev first
+npm run build
+```
+
+`npm test` covers REM durability under seeded chaos (40 seeds × 4 tasks, crashes before and after each effect and
+inside the commit, plus random auth expiries: every effect runs exactly once and every task finishes), the gym's
+read-only boundary, the no-regression gate, Merge and Distill, asks and risk tolerance, and the durable harness and
+Sleep v2 against a disposable local `mongod` (concurrent claims, stale-worker fencing, crash recovery, concurrent
+promotions, rollback).
+
+## Desktop and deployment
 
 ```sh
 npm run desktop:setup
@@ -29,40 +222,36 @@ npm run desktop
 npm run desktop:package
 ```
 
-The desktop wrapper uses Electron with Node integration disabled, context isolation, a sandbox, explicit capture permissions, and no remote page access. Build packaging is unsigned until your team configures Apple signing. Alternatively install the site from Chrome as a web app. Do not enable recording without participants' agreement.
+The Electron wrapper disables Node integration and remote pages, and enables context isolation and the sandbox.
+Packaging is unsigned. `npm run build` produces `dist/`, which deploys to Vercel as a static site with `vercel.json`;
+keep `VITE_STORAGE_MODE=browser` for a public demo, since the static site does not include the API.
 
-## What works now
+## Layout
 
-- Landing site with actual Vanta NET, black and white, and Instrument Serif.
-- Onboarding, collapsible navigation, and a persistent searchable suggestions panel.
-- Saved conversations, memory, notes sessions, routine review and approval, drafts, exports, and settings.
-- Deterministic mock tasks with checkpoints. Reconnect a sample account and resume without duplicate receipts.
-- Local microphone/screen recordings that start only after permission. Recordings can be downloaded. Closing the session window ends capture.
-- Scheduled local sleep reviews while the app is open.
-- Original Beautiful UI components, Thinking Orbs, and Evil Charts. See THIRD_PARTY.md.
+| Path | What |
+| --- | --- |
+| `rem/` | REM engine: day loop, ledger, night, evolution, gym, asks, database adapters |
+| `server/index.js` | Express API: workspace, durable harness, Sleep v2, and REM (`server/rem.js`) |
+| `server/harness/`, `server/sleep/` | durable harness and Sleep v2 |
+| `src/` | React 19 + Vite app and landing site |
+| `shared/workspace.js` | the mock engine behind the Offload workspace |
+| `scripts/rem-demo.mjs` | the terminal demo |
+| `desktop/` | Electron wrapper |
+| `.mcp.json`, `scripts/mongodb-mcp.mjs` | a MongoDB MCP server for Claude Code sessions, read-only on the same `MONGODB_URI` |
+| `tests/` | `node:test` suites and Playwright specs |
+| `docs/` | concept, engine design, demo numbers, build plan |
 
-## Deliberately mocked
+More: [docs/03-rem-concept.md](docs/03-rem-concept.md) (the concept),
+[HARNESS_HANDOFF.md](HARNESS_HANDOFF.md) and [SLEEP_HANDOFF.md](SLEEP_HANDOFF.md) (the MongoDB services),
+[THIRD_PARTY.md](THIRD_PARTY.md) (component provenance and licenses).
 
-Account authorization, model replies, workflow detection, and routine generation use sample data and a deterministic script. Sleep uses local keyword-based grouping and evidence checks on saved notes, not model-generated routines or task-quality evaluations. No actual email is read or sent. No MongoDB connection, live LLM, audio transcription, autonomous desktop control, cloud scheduler, multi-user authentication, or cross-device sync is enabled. The interface labels these boundaries. This is a runnable prototype prepared for backend integration, not a production autonomous agent.
+## Prior art
 
-## Upload online
+REM stands on Letta's sleep-time compute (agents reorganize memory while idle), Self-Harness and Agentic Harness
+Engineering (weakness mining, proposals with predictions, held-out validation), and durable execution from Temporal
+and Restate. What REM adds is one cycle in which consolidation, skill distillation and harness evolution are validated
+against hard metrics, and in which a paused task resumes under the new harness version without repeating an effect.
 
-`npm run build` produces `dist/`. Deploy the static output to Vercel using `vercel.json`. Keep the default `VITE_STORAGE_MODE=browser` for a public isolated demo. Never expose the local API as a multi-user production service without replacing demo sessions with authentication, adding a database and production limits, and reviewing security.
+## Team
 
-## MongoDB handoff
-
-`shared/workspace.js` owns the mock transitions. `src/store.jsx` is the client adapter. `server/index.js` exposes `GET /api/state`, `POST /api/action`, and `POST /api/reset`. Replace file persistence with Atlas collections for workspaces, observations, skills, runs and action receipts. Preserve the API shape and use a durable job runner. Keep credentials out of model context and store only grant metadata in routine records. Add OAuth, an actual model provider, evaluation fixtures and consented transcription behind server interfaces.
-
-## Team workflow
-
-Use separate feature branches and pull main first. Recommended ownership: `src/` interface; `server/` + `shared/` data/runner; `desktop/` capture/integrations. Coordinate changes to the shared state contract. The repository is private; review event submission requirements before changing visibility.
-
-See HANDOFF.md for the latest verified checkpoint and remaining work.
-
-## Sleep reviews
-
-Sleep reviews take a snapshot of saved memories, consolidate exact duplicates, and propose draft-only routines when at least two distinct notes support a weekly update, follow-up, release handoff or meeting. The page includes cancellation, progress, supporting notes, checks, approval filters, version history and daily local scheduling. New notes wait for the next review; deleted notes are excluded when the review completes.
-
-Unchanged candidates retain their version and approval. Changed evidence or instructions create a new version that requires approval again. Approval records a preference only; it does not launch execution. Review history records created, updated and unchanged candidates, including reviews with no candidates. Existing workspaces remain compatible.
-
-This is a deterministic local implementation. Keyword matches do not establish actual repeated behavior, checks do not measure agent performance, and scheduled reviews require the app to remain open. MongoDB persistence, a model-backed discovery provider, held-out task evaluation and a durable background scheduler remain integration work.
+Tensae Laki (lead), Floyd Korzan (app and design), Ryan (durable harness and Sleep v2).

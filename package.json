@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Offload local-first workflow companion",
+  "description": "Offload: an agent harness that sleeps, and wakes up with a better harness",
   "main": "desktop/main.cjs",
   "scripts": {
     "dev": "concurrently -k \"node --watch server/index.js\" \"vite --host 127.0.0.1\"",
