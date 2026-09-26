@@ -113,10 +113,11 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
       // Archive commits precede omission. A partial write is retried by id after restart.
       await writeBatch(archive, archiveWrites.filter(op => !knownParts.has(op.updateOne.filter._id)));
       const candidates = scored.filter(s => !s.protectedReason && !s.duplicateOf && !s.cached);
+      const batchUnits = Number.isInteger(scorer.maxBatchUnits) && scorer.maxBatchUnits > 0 ? Math.min(16, scorer.maxBatchUnits) : 8;
       // Bound work per selection. Unscored records are retained, never implicitly discarded.
       for (let offset = 0, calls = 0; offset < candidates.length && calls < maxDecisionCalls; calls++) {
         const batch = []; let chars = 0;
-        while (offset < candidates.length && batch.length < 8 && chars + candidates[offset].unit.text.length <= 10000) {
+        while (offset < candidates.length && batch.length < batchUnits && chars + candidates[offset].unit.text.length <= 10000) {
           const candidate = candidates[offset++]; batch.push(candidate); chars += candidate.unit.text.length;
         }
         signal?.throwIfAborted();

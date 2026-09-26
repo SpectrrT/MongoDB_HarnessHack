@@ -110,7 +110,7 @@ test('Jev rejects oversized request contexts before a paid call and forwards cur
     return Response.json({answers: {keep_0: {noul: 0.9}}, usage: {input_tokens: 10, output_tokens: 0, cost: -1}});
   }});
   await assert.rejects(j.score({goal: 'g', revision: 'x'.repeat(4001), units: [noise[0]]}), /bounded request/);
-  await assert.rejects(j.score({goal: 'g', units: noise}), /bounded request/);
+  await assert.rejects(j.score({goal: 'g', units: Array.from({length: 17}, (_, i) => ({id: String(i), text: 'brief record'}))}), /bounded request/);
   assert.equal(calls, 0);
   const currentEvidence = {records: [{id: 'new', text: 'The active migration follows plan J17.'}], partial: true};
   const result = await j.score({goal: 'g', units: [noise[0]], currentEvidence});
