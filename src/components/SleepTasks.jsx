@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Moon, Plus, Pause, Play, X, ArrowUpRight } from 'lucide-react';
 import { useWorkspace } from '../store';
 import { Modal } from './Modal';
@@ -13,8 +14,11 @@ async function api(url, value) {
 const labels = { queued: 'Queued', running: 'Working', approval: 'Approval needed', paused: 'Paused', completed: 'Checks passed', incomplete: 'Incomplete', cancelled: 'Cancelled' };
 export default function SleepTasks() {
   const { state, act } = useWorkspace();
+  const queuedDraft = useLocation().state?.queuedDraft;
   const [tasks, setTasks] = useState([]), [status, setStatus] = useState(null), [draft, setDraft] = useState(null);
   const [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const handedOffTask = tasks.find(task => task.id === queuedDraft?.id);
+  const awaitingWorker = queuedDraft && (handedOffTask?.status ?? queuedDraft.status) === 'queued';
   const [loadError, setLoadError] = useState(''), [checking, setChecking] = useState(false);
   const refresh = async () => {
     const config = await api('/api/sleep/tasks/status'); setStatus(config);
@@ -38,6 +42,7 @@ export default function SleepTasks() {
   };
   return <div className="standard-page slow-page">
     <div className="slow-heading"><div><span className="slow-label"><Moon size={14}/> SLEEP</span><h1>Overnight tasks</h1><p>Assign a local draft with a deadline, token budget and checks.</p></div><button className="button" onClick={() => open()}><Plus size={16}/> Add a task</button></div>
+    {queuedDraft && <p className="suggestion-notice" role="status">Draft task saved: {queuedDraft.title}. {awaitingWorker && ((status?.enabled ?? queuedDraft.workerEnabled) ? 'Queued for the local Sleep worker.' : 'Waiting for the local Sleep worker to be enabled.')} The original action remains open.</p>}
     {loadError && <SleepServiceNotice message={loadError} onRetry={retry} busy={checking} />}
     {error && <p role="alert">{error}</p>}
     <div className="overnight-heading"><h2>Overnight queue</h2><span>{status ? `${tasks.filter(t => t.status !== 'cancelled').length} tasks` : 'Waiting for service'}</span></div>

@@ -32,3 +32,9 @@
 .meeting-note-form p { font-size:12px; line-height:1.7; color:var(--off-muted); }
 .meeting-note-times { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 @media(max-width:600px) { .meeting-note-times { grid-template-columns:1fr; gap:0; } .suggestion-source-actions { gap:18px; } .suggestion-source-actions .button { width:100%; justify-content:center; } .suggestion-project label { width:100%; } }
+
+.suggestion-action-items { margin-top:22px; }
+.suggestion-action-items h4 { font-size:13px; font-weight:500; }
+.suggestion-action-items ul { list-style:none; padding:0; }
+.suggestion-action-items li { border-top:1px solid var(--off-line); padding:16px 0; }
+.suggestion-action-items blockquote,.suggestion-action-quote { margin:0 0 14px; border-left:2px solid var(--off-line); padding-left:12px; font-size:14px; line-height:1.6; }

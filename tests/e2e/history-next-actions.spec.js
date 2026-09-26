@@ -101,3 +101,70 @@ test('Floyd Memory links resolve into the unified Sleep views', async ({ page })
   await expect(page).toHaveURL(/\/app\/sleep\?view=rem$/);
   await expect(page.getByRole('heading', { name: 'REM', exact: true })).toBeVisible();
 });
+
+test('An action needs explicit budget and deadline before it becomes a Sleep draft task', async ({ page }, info) => {
+  await prepare(page);
+  let submissions = [], reject = true, task = null;
+  const text = 'Action: Casey to draft the launch brief by Friday.';
+  await page.route('**/api/suggestions**', route => {
+    const request = route.request(), path = new URL(request.url()).pathname;
+    if (path.endsWith('/actions/0/draft')) {
+      submissions.push(request.postDataJSON());
+      if (reject) return route.fulfill({ status: 409, json: { error: 'The meeting source changed. Review the newest notes.' } });
+      task = { id: 'sleep-draft-fixture', title: 'Draft the launch brief', brief: text, status: 'queued', deadline: submissions.at(-1).deadline, budget: submissions.at(-1).budget, tokensUsed: 0, calls: 0 };
+      return route.fulfill({ status: 202, json: { task, workerEnabled: false, completionMeaning: 'Local draft only; original action not completed' } });
+    }
+    return route.fulfill({ json: { projects: [], suggestions: [], policy: null, runs: [{ _id: 'meeting-run', status: 'completed', input: { title: 'Launch follow-up', kind: 'meeting-followup' }, outputs: { artifact: { filename: 'meeting-followup.md' }, draft: { actionItems: [
+      { text, sourceId: 'note1', status: 'not_started', draftSupported: true },
+      { text: 'Action: Casey to send the contract.', sourceId: 'note1', status: 'not_started', draftSupported: false },
+    ] } } }] } });
+  });
+  await page.route('**/api/sleep/tasks**', route => new URL(route.request().url()).pathname.endsWith('/status')
+    ? route.fulfill({ json: { configured: true, enabled: false } }) : route.fulfill({ json: task ? [task] : [] }));
+  await page.goto('/app/sleep?view=suggestions');
+  await expect(page.getByText('Recorded action items', { exact: true })).toBeVisible();
+  expect(submissions).toHaveLength(0);
+  await expect(page.getByRole('button', { name: /^Draft this:/ })).toHaveCount(1);
+  await page.getByRole('button', { name: `Draft this: ${text}` }).click();
+  const dialog = page.getByRole('dialog', { name: 'Draft an action item' });
+  await expect(dialog.getByText(text, { exact: true })).toBeVisible();
+  const ready = new Date(Date.now() + 2 * 86400000); ready.setMinutes(0, 0, 0);
+  const localReady = new Date(+ready - ready.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  await dialog.getByLabel('Ready by').fill(localReady);
+  await dialog.getByLabel('Total token budget').fill('8000');
+  await dialog.getByLabel('Maximum attempts').selectOption('2');
+  expect(submissions).toHaveLength(0);
+  const audit = await new AxeBuilder({ page }).include('dialog').withTags(['wcag2a', 'wcag2aa']).analyze();
+  expect(audit.violations).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+  await page.screenshot({ path: `test-results/action-handoff-${info.project.name}.png` });
+  await dialog.getByRole('button', { name: 'Queue draft task' }).click();
+  await expect(dialog.getByRole('alert')).toHaveText('The meeting source changed. Review the newest notes.');
+  await expect(page).toHaveURL(/view=suggestions/);
+  expect(submissions[0]).toEqual({ deadline: +ready, budget: 8000, maxAttempts: 2 });
+  reject = false;
+  await dialog.getByRole('button', { name: 'Queue draft task' }).click();
+  await expect(page).toHaveURL(/view=tasks/);
+  await expect(page.getByText('Waiting for the local Sleep worker to be enabled.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Draft the launch brief', exact: true })).toBeVisible();
+  await expect(page.getByText('0 / 8,000 tokens')).toBeVisible();
+  expect(submissions).toHaveLength(2);
+});
+
+test('A repeated action handoff shows its existing completed task without claiming it was queued again', async ({ page }) => {
+  await prepare(page);
+  const task = { id: 'existing-draft', title: 'Existing launch draft', brief: 'Draft the brief.', status: 'completed', deadline: Date.now() + 3600000, budget: 10000, tokensUsed: 1200, calls: 1 };
+  await page.route('**/api/suggestions**', route => new URL(route.request().url()).pathname.endsWith('/draft')
+    ? route.fulfill({ status: 202, json: { task, workerEnabled: false } })
+    : route.fulfill({ json: { projects: [], suggestions: [], runs: [{ _id: 'existing-run', input: { kind: 'meeting-followup', title: 'Saved meeting' }, status: 'completed', outputs: { draft: { actionItems: [{ text: 'Action: Draft the brief.', sourceId: 'note', draftSupported: true }] } } }], policy: null } }));
+  await page.route('**/api/sleep/tasks**', route => new URL(route.request().url()).pathname.endsWith('/status')
+    ? route.fulfill({ json: { configured: true, enabled: false } }) : route.fulfill({ json: [task] }));
+  await page.goto('/app/sleep?view=suggestions');
+  await page.getByRole('button', { name: /^Draft this:/ }).click();
+  await page.getByRole('button', { name: 'Queue draft task' }).click();
+  await expect(page).toHaveURL(/view=tasks/);
+  await expect(page.getByRole('heading', { name: 'Existing launch draft' })).toBeVisible();
+  await expect(page.getByText('Checks passed', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status')).not.toContainText('Waiting for');
+  await expect(page.getByRole('status')).not.toContainText('Queued for');
+});
