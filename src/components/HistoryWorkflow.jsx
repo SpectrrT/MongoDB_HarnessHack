@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Check, Clock3, Sparkles, X } from 'lucide-react';
+import { AppWindow, Check, Clock3, Maximize2, Minimize2, Sparkles, SquareTerminal, UserRound, X } from 'lucide-react';
 import TaskRows from '../vendor/beautiful/TaskRows';
 import { ConnectionLogo } from './ConnectionLogo';
 import { OrbLoading } from './ScreenTransition';
@@ -20,18 +20,26 @@ const post = async (url, body = {}, signal = AbortSignal.timeout(12000)) => {
 const provenanceOf = finding => finding.provenance || (finding.sample ? 'seed' : 'unknown');
 const provenanceLabel = finding => ({seed:'Sample activity',captured:'Captured activity',mixed:'Sample and captured activity',unknown:'Activity source not verified'})[provenanceOf(finding)];
 
-function refinePrompt({ summary, finding, workflow }) {
+function refinePrompt({ summary, finding, workflow }, instruction = '') {
   const steps = workflow.steps.map((s, i) => `${i + 1}. ${s.label} (${s.app}): ${s.detail}`).join('\n');
   return [
     `Source: ${provenanceLabel(finding)}. This is a workflow proposal, not completed work. ${summary}`,
     finding.topTitle ? `Repeated window title: "${finding.topTitle}" (${finding.topTitleVisitsPerDay} visits per recorded day).` : '',
     finding.meetingTimes.length ? `Times found in saved window titles: ${finding.meetingTimes.join(', ')}. These do not prove a meeting was booked.` : '',
     `Draft workflow, "${workflow.title}":\n${steps}`,
+    instruction ? `What I want changed: ${instruction}` : '',
     'Improve this proposed workflow using only the supplied evidence. Preserve sample-data labels. Do not claim task completion or authorize sends, bookings, database writes or other external actions. Describe a local draft and the permissions still needed.',
   ]
     .filter(Boolean)
     .join('\n\n');
 }
+
+const ICONS = { You: UserRound, Offload: Sparkles, Terminal: SquareTerminal };
+const Logo = ({ logo, app, size = 15 }) => {
+  if (logo) return <ConnectionLogo id={logo} size={size} />;
+  const Icon = ICONS[app] || AppWindow;
+  return <Icon size={size} aria-hidden="true" />;
+};
 
 export default function HistoryWorkflow({ ready, modelName, onRefine }) {
   const [phase, setPhase] = useState('idle');
@@ -40,6 +48,8 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
   const [note, setNote] = useState('');
   const [saving,setSaving]=useState(false);
   const [saveError,setSaveError]=useState('');
+  const [expanded, setExpanded] = useState(false);
+  const [instruction, setInstruction] = useState('');
   const pending = useRef(null);
   useEffect(() => () => pending.current?.abort(), []);
   const cancel = () => {
@@ -55,6 +65,8 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
     const deadline = setTimeout(() => controller.abort(new DOMException('History request timed out.', 'TimeoutError')), 12000);
     setPhase('loading');
     setSaved(false);
+    setExpanded(false);
+    setInstruction('');
     setNote('');setSaveError('');
     try {
       const value = await post('/api/activity/workflow', {}, controller.signal);
@@ -81,6 +93,11 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
     } catch(error) {setSaveError(error.message);}
     finally {setSaving(false);}
   };
+  const refine = (event) => {
+    event?.preventDefault();
+    if (!ready) return;
+    onRefine(refinePrompt(result, instruction.trim()), `Refine “${result.workflow.title}”`);
+  };
 
   if (phase === 'idle' || phase === 'empty')
     return (
@@ -104,44 +121,74 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
     );
 
   const { finding, summary, workflow } = result;
-  const total = finding.timeline.reduce((sum, s) => sum + s.minutes, 0) || 1;
-  const shade = (label) => Math.max(0, finding.apps.findIndex((a) => a.label === label));
+  const night = finding.night || { date: '', sessions: [] };
+  const rows = expanded ? night.sessions : night.sessions.slice(0, 6);
   return (
     <section className="history-workflow" aria-labelledby="history-workflow-title">
       <header>
         <span className="eyebrow">
           <Clock3 size={13} aria-hidden="true" /> {provenanceLabel(finding)}
         </span>
-        <button type="button" className="icon" aria-label="Close" onClick={() => setPhase('idle')}>
-          <X size={15} />
-        </button>
+        <span className="header-actions">
+          <button type="button" className="text-button" aria-expanded={expanded} onClick={() => setExpanded((x) => !x)}>
+            {expanded ? <Minimize2 size={13} aria-hidden="true" /> : <Maximize2 size={13} aria-hidden="true" />}
+            {expanded ? 'Less' : 'Expanded view'}
+          </button>
+          <button type="button" className="icon" aria-label="Close" onClick={() => setPhase('idle')}>
+            <X size={15} />
+          </button>
+        </span>
       </header>
       <h3 id="history-workflow-title">{summary}</h3>
-      <div className="history-workflow-apps">
-        {finding.apps.map((a) => (
-          <span key={a.label} className="app-chip">
-            {a.logo ? <ConnectionLogo id={a.logo} size={16} /> : null}
-            {a.name}
-            <small>{a.visitsPerDay}× per recorded day</small>
-          </span>
-        ))}
-        {finding.topTitle && (
-          <span className="stat-chip">
-            Reopened “{finding.topTitle}” {finding.topTitleVisitsPerDay}× per recorded day
-          </span>
-        )}
-        {finding.meetingTimes[0] && <span className="stat-chip">Time shown in a saved title: {finding.meetingTimes[0]}</span>}
-      </div>
-      <div className="history-workflow-strip" aria-hidden="true">
-        {finding.timeline.map((s, i) => (
-          <span key={i} data-shade={shade(s.label)} style={{ flexGrow: s.minutes / total }} title={`${s.name} · ${s.minutes} min`} />
-        ))}
-      </div>
+
+      {night.sessions.length > 0 && (
+        <div className="history-agenda">
+          <p className="agenda-date">{night.date}</p>
+          <ol>
+            {rows.map((s, i) => (
+              <li key={i}>
+                <time>{s.time}</time>
+                <span className="app-chip">
+                  <Logo logo={s.logo} app={s.name} /> {s.name}
+                </span>
+                <span className="agenda-title">{s.title || ''}</span>
+              </li>
+            ))}
+          </ol>
+          {!expanded && night.sessions.length > rows.length && (
+            <button type="button" className="text-button more" onClick={() => setExpanded(true)}>
+              {night.sessions.length - rows.length} more that night
+            </button>
+          )}
+        </div>
+      )}
+
+      {expanded && (
+        <div className="history-more">
+          {finding.nights?.length > 1 && (
+            <>
+              <p className="agenda-date">Every night it happened</p>
+              <ul className="history-nights">
+                {finding.nights.map((n) => (
+                  <li key={n.day}>
+                    <span>{n.date}</span>
+                    <span>{n.start}</span>
+                    <span>{n.minutes} min</span>
+                    <span>{n.switches} switches</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {finding.topTitle && <p>Reopened “{finding.topTitle}” {finding.topTitleVisitsPerDay}× per recorded day.</p>}
+          {finding.meetingTimes[0] && <p>Time shown in a saved title: {finding.meetingTimes[0]}.</p>}
+          {workflow.proactive?.map((p) => <p key={p}>{p}</p>)}
+          {workflow.needs?.length > 0 && <p>Needs {workflow.needs.join(' · ')}.</p>}
+        </div>
+      )}
 
       <div className="history-workflow-plan">
-        <p className="kicker">Proposed workflow</p>
         <h4>{workflow.title}</h4>
-        <p className="problem">{workflow.problem}</p>
         <p className="trigger">
           <strong>When</strong> {workflow.trigger}
         </p>
@@ -151,7 +198,11 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
             labels={{ completed: 'Done', paused: 'Asks you' }}
             rows={workflow.steps.map((s, i) => ({
               key: String(i),
-              label: s.label,
+              label: (
+                <span className="step-label">
+                  <Logo logo={s.logo} app={s.app} size={16} /> {s.label}
+                </span>
+              ),
               amount: s.ask ? 'Asks you' : s.app,
               status: 'idle',
               step: i + 1,
@@ -159,16 +210,6 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
             }))}
           />
         </div>
-        <ul className="history-workflow-proactive">
-          {workflow.proactive.map((p) => (
-            <li key={p}>
-              <ArrowRight size={13} aria-hidden="true" /> {p}
-            </li>
-          ))}
-        </ul>
-        <p className="needs">
-          Needs {workflow.needs.join(' · ')}. {workflow.observation || 'Time savings have not been measured.'}
-        </p>
       </div>
 
       <footer>
@@ -179,10 +220,10 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
         ) : (
           <>
             <button type="button" className="button small" disabled={saving} onClick={handOff}>
-              {saving ? 'Saving…' : 'Save proposal'}
+              {saving ? 'Saving…' : 'Hand it off'}
             </button>
             {ready && (
-              <button type="button" className="button small secondary" onClick={() => onRefine(refinePrompt(result), `Refine “${workflow.title}”`)}>
+              <button type="button" className="button small secondary" onClick={refine}>
                 Refine with {modelName}
               </button>
             )}
@@ -192,9 +233,24 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
           </>
         )}
       </footer>
-      {saveError&&<p role="alert">{saveError}</p>}
+      {saveError && <p className="history-error" role="alert">{saveError}</p>}
+      {!saved && (
+        <form className="history-reprompt" onSubmit={refine}>
+          <input
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            maxLength={300}
+            disabled={!ready}
+            aria-label="Tell Offload what to change in this workflow"
+            placeholder={ready ? 'Tell Offload what to change, e.g. “only on weekdays”' : 'Connect a model to change this workflow'}
+          />
+        </form>
+      )}
       {note && <button type="button" className="text-button" onClick={build}>Retry saved activity</button>}
-      <p className="source">{note || `Found with one aggregation over ${finding.sessions} saved sessions. This rule-based proposal has not executed any work.`}</p>
+      <p className="source">
+        {note || `Found with one aggregation over ${finding.sessions} saved sessions. This rule-based proposal has not executed any work.`}{' '}
+        {workflow.observation || 'Time savings have not been measured.'}
+      </p>
     </section>
   );
 }

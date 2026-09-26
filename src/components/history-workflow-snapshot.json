@@ -117,7 +117,68 @@
       }
     ],
     "sample": true,
-    "sessions": 12
+    "sessions": 12,
+    "night": {
+      "day": "2026-09-20",
+      "date": "Sun, Sep 20",
+      "sessions": [
+        {
+          "time": "11:00 AM",
+          "label": "cloud.mongodb.com",
+          "name": "MongoDB Atlas",
+          "logo": "mongodb",
+          "title": "Example: Atlas slow query review | orders service | p95 180 ms | timeouts 0.6%",
+          "minutes": 5
+        },
+        {
+          "time": "11:05 AM",
+          "label": "github.com",
+          "name": "GitHub",
+          "logo": "github",
+          "title": "Example: GitHub orders service | compare query shape and explain plan",
+          "minutes": 5
+        },
+        {
+          "time": "11:10 AM",
+          "label": "linear.app",
+          "name": "Linear",
+          "logo": "linear",
+          "title": "Example: Issue review | draft index rollout and rollback checklist",
+          "minutes": 5
+        },
+        {
+          "time": "11:15 AM",
+          "label": "Notion",
+          "name": "Notion",
+          "logo": "notion",
+          "title": "Example: Orders review notes | staging checks and human approval",
+          "minutes": 5
+        }
+      ]
+    },
+    "nights": [
+      {
+        "day": "2026-09-20",
+        "date": "Sun, Sep 20",
+        "start": "11:00 AM",
+        "minutes": 20,
+        "switches": 3
+      },
+      {
+        "day": "2026-09-13",
+        "date": "Sun, Sep 13",
+        "start": "11:00 AM",
+        "minutes": 20,
+        "switches": 3
+      },
+      {
+        "day": "2026-09-06",
+        "date": "Sun, Sep 6",
+        "start": "11:00 AM",
+        "minutes": 20,
+        "switches": 3
+      }
+    ]
   },
   "summary": "On 3 days in the last 28 days, around 11:05 AM, you spent about 20 minutes bouncing between MongoDB Atlas, GitHub and Linear, switching 3 times each day.",
   "workflow": {
@@ -129,12 +190,14 @@
       {
         "app": "MongoDB Atlas",
         "label": "Collect supplied evidence",
-        "detail": "Gather the supplied query shape, baseline metrics and existing issue notes. Mark missing inputs."
+        "detail": "Gather the supplied query shape, baseline metrics and existing issue notes. Mark missing inputs.",
+        "logo": "mongodb"
       },
       {
         "app": "GitHub",
         "label": "Compare staging plans",
-        "detail": "Review owner-provided explain plans against query code. Do not execute queries or create indexes."
+        "detail": "Review owner-provided explain plans against query code. Do not execute queries or create indexes.",
+        "logo": "github"
       },
       {
         "app": "Offload",

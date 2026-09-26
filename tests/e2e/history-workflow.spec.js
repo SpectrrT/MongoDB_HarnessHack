@@ -12,13 +12,13 @@ test('history proposal save failure stays actionable and successful save never c
  let saveWorks=false;
  await page.route('**/api/activity/workflows',route=>{posted=route.request().postDataJSON();return route.fulfill({status:saveWorks?201:503,json:saveWorks?{id:'saved-example',status:'saved-proposal'}:{error:'Storage unavailable. Try again.'}});});
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
- await expect(page.getByRole('button',{name:'Save proposal',exact:true})).toBeVisible();expect(header).toBe('local');
+ await expect(page.getByRole('button',{name:'Hand it off',exact:true})).toBeVisible();expect(header).toBe('local');
  await expect(page.locator('.history-workflow')).toContainText('Sample activity');
  await expect(page.locator('.history-workflow')).toContainText('Time savings have not been measured');
- await page.getByRole('button',{name:'Save proposal',exact:true}).click();
+ await page.getByRole('button',{name:'Hand it off',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('Storage unavailable');await expect(page.locator('.history-workflow')).not.toContainText('Proposal saved');
  expect(posted.provenance).toBe('seed');expect(posted.saves).toBeUndefined();
- saveWorks=true;await page.getByRole('button',{name:'Save proposal',exact:true}).click();
+ saveWorks=true;await page.getByRole('button',{name:'Hand it off',exact:true}).click();
  await expect(page.getByRole('status')).toContainText('Proposal saved. No task has started');
  await expect(page.locator('.history-workflow')).not.toContainText('Handed off');
 });
@@ -28,7 +28,7 @@ test('static-host fallback preserves sample provenance and cannot claim a saved 
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
  await expect(page.locator('.history-workflow')).toContainText('Sample activity');
  await expect(page.locator('.history-workflow')).toContainText('last saved analysis of the engineering example');
- await page.getByRole('button',{name:'Save proposal',exact:true}).click();
+ await page.getByRole('button',{name:'Hand it off',exact:true}).click();
  await expect(page.getByRole('alert')).toContainText('local computer history service is unavailable');
  await expect(page.locator('.history-workflow')).not.toContainText('Proposal saved');
 });
@@ -78,6 +78,6 @@ test('an empty saved history does not silently become a sample result',async({pa
  await page.route('**/api/activity/workflow',route=>route.fulfill({json:{finding:null}}));
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
  await expect(page.getByRole('status')).toContainText('No repeated workflow found');
- await expect(page.getByRole('button',{name:'Save proposal',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Hand it off',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:/Find work to hand off/})).toBeVisible();
 });
