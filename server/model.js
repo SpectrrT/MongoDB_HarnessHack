@@ -74,16 +74,17 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
   const cancel=async(owner,id)=>{await idleExecution?.pause(owner,id);const job=jobs.get(owner+':'+id);if(job?.status==='running'){job.status='cancelled';job.controller.abort();for(const approval of job.approvals.values())approval.reject(Error('Stopped.'));job.approvals.clear();await save(job);}};
   const launchIdle=async(owner,p)=>{if(!idleExecution)throw Error('Connect MongoDB and the bounded Sleep worker before enabling background drafts.');return idleExecution.launch(owner,p);};
   const idle=createIdleReviews({dataDir,launch:launchIdle,getJob,cancel,isBusy:()=>!enabled||[...jobs.values()].some(job=>job.status==='running'),...idleOptions});
+  const sleepConfiguration=async owner=>idleExecution?.configuration?idleExecution.configuration(owner):{configured:false,provider:'openrouter',model:null};
   app.post('/api/model/sleep/reset',async(req,res)=>{await idle.reset(req.workspaceKey);res.json({ok:true});});
   app.use('/api/model/sleep/:conversationId',(req,res,next)=>{if(!z.string().uuid().safeParse(req.params.conversationId).success)return res.status(400).json({error:'Choose a conversation.'});next();});
-  app.get('/api/model/sleep/:conversationId',async(req,res)=>res.json({...await idle.get(req.workspaceKey,req.params.conversationId),configured:!!idleExecution}));
+  app.get('/api/model/sleep/:conversationId',async(req,res)=>{const execution=await sleepConfiguration(req.workspaceKey);res.json({...await idle.get(req.workspaceKey,req.params.conversationId),configured:execution.configured,execution});});
   app.post('/api/model/sleep/:conversationId',async(req,res)=>{
-    const parsed=z.object({enabled:z.boolean(),consent:z.object({scope:z.literal('isolated-local-drafts'),budget:z.number().int().min(1000).max(20000),durationMs:z.number().int().min(1000).max(3600000)}).strict().optional(),context:z.unknown().optional()}).strict().safeParse(req.body);
+    const parsed=z.object({enabled:z.boolean(),consent:z.object({scope:z.literal('isolated-local-drafts'),budget:z.number().int().min(1000).max(20000),durationMs:z.number().int().min(1000).max(3600000),offlinePrototypeChecks:z.boolean().default(false)}).strict().optional(),context:z.unknown().optional()}).strict().safeParse(req.body);
     if(!parsed.success)return res.status(400).json({error:'Choose bounded local draft permission and limits.'});
-    const body=parsed.data;if(body.enabled&&!idleExecution)return res.status(503).json({error:'Connect MongoDB and the bounded Sleep worker before enabling background drafts.'});
+    const body=parsed.data,execution=await sleepConfiguration(req.workspaceKey);if(body.enabled&&!execution.configured)return res.status(503).json({error:'Sleep needs MongoDB and a configured OpenRouter key. It does not use the selected Codex chat account.'});
     const context=body.context?input.extend({messages:z.array(z.object({role:z.enum(['user','assistant']),text:z.string().max(20000)})).min(1).max(200)}).safeParse({...body.context,requestId:crypto.randomUUID(),conversationId:req.params.conversationId,images:[]}):null;
     if(context&&!context.success)return res.status(400).json({error:'The conversation context is invalid.'});
-    try{await idle.set(req.workspaceKey,req.params.conversationId,body.enabled,body.consent);if(context)await idle.observe(req.workspaceKey,context.data);res.json(await idle.get(req.workspaceKey,req.params.conversationId));}
+    try{await idle.set(req.workspaceKey,req.params.conversationId,body.enabled,body.consent);if(context)await idle.observe(req.workspaceKey,context.data);res.json({...await idle.get(req.workspaceKey,req.params.conversationId),configured:execution.configured,execution});}
     catch(e){res.status(400).json({error:e.message});}
   });
   app.post('/api/model/sleep/:conversationId/activity',async(req,res)=>res.json(await idle.touch(req.workspaceKey,req.params.conversationId)));

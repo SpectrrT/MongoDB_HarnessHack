@@ -37,7 +37,7 @@ export async function checkArtifacts(task, directory) {
 export async function sleepExecutionTick(store, executor, { worker = randomUUID(), root, signal,
   taskId, workspace,
   callTimeoutMs = 60000, maxOutputTokens = 2000, heartbeatMs = Math.min(1000, store.leaseMs / 3),
-  tool = executeLocalTool } = {}) {
+  tool = executeLocalTool, verifyPrototype } = {}) {
   const task = await store.claim(worker, { id: taskId, workspace });
   if (!task) return null;
   const controller = new AbortController();
@@ -97,6 +97,18 @@ export async function sleepExecutionTick(store, executor, { worker = randomUUID(
       artifacts.push({ path: file.path, directory: task.leaseToken, sha256: digest(file.content), bytes: Buffer.byteLength(file.content) });
     }
     const checkResults = await checkArtifacts(task, directory);
+    if (task.input.browserCheck) {
+      await fence();
+      if (checkResults.every(check => check.passed)) {
+        const verifier = verifyPrototype || (await import('./prototype-checks.js')).verifyPrototype;
+        const html = await fs.readFile(path.join(directory,'prototype.html'),'utf8');
+        const result = await verifier({ html, kind: task.input.browserCheck, requireReset: true,
+          signal: controller.signal, timeoutMs: Math.max(1,Math.min(8000,task.input.deadline-store.clock())) });
+        checkResults.push({ id:'browser:counter',path:'prototype.html',passed:result.passed===true,
+          failed:result.passed===true?[]:['Counter behavior did not pass the fixed browser checks.'],
+          verification:result });
+      } else checkResults.push({id:'browser:counter',path:'prototype.html',passed:false,failed:['Browser check skipped because file checks failed.']});
+    }
     await fence();
     if (checkResults.every(c => c.passed)) return await store.finish(task, 'completed', { artifacts, checkResults, reason: 'All required file checks passed.', pending: null });
     const failures = checkResults.reduce((sum, check) => sum + check.failed.length, 0);
@@ -104,8 +116,8 @@ export async function sleepExecutionTick(store, executor, { worker = randomUUID(
     const stalledAttempts = failures < best ? 0 : (task.stalledAttempts || 0) + 1;
     const nextPrompt = executionPrompt({ ...task, checkResults, lastDraft: plan });
     const continuation = assessContinuation({ objective: task.input.brief,
-      requiredCheckIds: task.input.checks.map((check, index) => `${index}:${check.path}`),
-      checks: checkResults.map((check, index) => ({ id: `${index}:${check.path}`, passed: check.passed })),
+      requiredCheckIds: [...task.input.checks.map((check, index) => `${index}:${check.path}`),...(task.input.browserCheck?['browser:counter']:[])],
+      checks: checkResults.map((check, index) => ({ id: check.id || `${index}:${check.path}`, passed: check.passed })),
       deadlineAt: task.input.deadline, attempts: task.calls, maxAttempts: task.input.maxAttempts,
       tokensUsed: task.tokensUsed, tokenBudget: task.input.budget,
       nextTokenReservation: Buffer.byteLength(nextPrompt) + 512 + 64,

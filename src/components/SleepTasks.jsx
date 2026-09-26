@@ -41,7 +41,7 @@ export default function SleepTasks() {
       <p>{task.brief}</p><div className="overnight-meta"><span>Due {new Date(task.deadline).toLocaleString()}</span><span>{task.tokensUsed.toLocaleString()} / {task.budget.toLocaleString()} tokens</span><span>{task.calls} model calls</span></div>
       {task.reason && <p>{task.reason}</p>}
       {task.usageUnknown > 0 && <p>Usage includes {task.usageUnknown} conservative reservations where billed usage was unavailable.</p>}
-      {task.checkResults?.map(check => <p key={check.path}>{check.path}: {check.passed ? 'checks passed' : check.failed.join(', ')}</p>)}
+      {task.checkResults?.map(check => <p key={check.id||check.path}>{check.path}: {check.passed ? 'checks passed' : check.failed.join(', ')}</p>)}
       {task.artifacts?.map(artifact => <p key={artifact.path}><a href={`/api/sleep/tasks/${task.id}/artifacts/${encodeURIComponent(artifact.path)}`}>Download {artifact.path}</a></p>)}
       {task.status === 'approval' && <><p>Approve only these exact local file changes. No shell commands or external actions are requested.</p>{task.pending?.files.map(file => <details key={file.path}><summary>{file.path}</summary><pre style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{file.content}</pre></details>)}<button className="button small" onClick={() => control(task, 'approve')}>Approve displayed files</button></>}
       {!['completed','incomplete','cancelled'].includes(task.status) && <div className="overnight-actions">

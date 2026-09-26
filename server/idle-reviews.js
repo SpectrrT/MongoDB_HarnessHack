@@ -3,7 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { IDLE_SCOPE } from './sleep/idle-execution.js';
 export const IDLE_MS = 30 * 60 * 1000;
-export const DEFAULT_IDLE_LIMITS = { scope: IDLE_SCOPE, budget: 10000, durationMs: 20 * 60 * 1000 };
+export const DEFAULT_IDLE_LIMITS = { scope: IDLE_SCOPE, budget: 10000, durationMs: 20 * 60 * 1000, offlinePrototypeChecks: false };
 
 export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now = Date.now, interval = 30000 }) {
   const rows = new Map(), writes = new Map(); let ticking = false;
@@ -90,6 +90,7 @@ export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now
           const last = await getJob(row.owner,row.latest.requestId);
           row.runPayload = { ...row.latest, requestId: row.jobId, images: [], notes: [], folder: '', background: true,
             scope: row.consent.scope, budget: row.consent.budget, deadline: now() + row.consent.durationMs,
+            offlinePrototypeChecks: row.consent.offlinePrototypeChecks === true,
             generation, messages: [...row.latest.messages,...(last?.result?.text ? [{role:'assistant',text:last.result.text.slice(0,16000)}] : [])] };
           await save(row);
         }

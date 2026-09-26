@@ -4,12 +4,16 @@ import path from 'node:path';
 // One generation per checkpoint. The provider never receives local tools or runs effects.
 export function sleepOpenRouterExecutor({ dataDir, model = process.env.OFFLOAD_MODEL || 'openai/gpt-4.1-mini',
   apiKey = process.env.OPENROUTER_API_KEY, fetcher = fetch } = {}) {
-  const executor = async ({ task, prompt, maxOutputTokens, signal }) => {
+  const keyFor=async owner=>{
     let key = apiKey;
     if (!key && dataDir) {
-      try { key = JSON.parse(await fs.readFile(path.join(dataDir, 'openrouter', task.workspace + '.json'), 'utf8')).key; }
+      try { key = JSON.parse(await fs.readFile(path.join(dataDir, 'openrouter', owner + '.json'), 'utf8')).key; }
       catch (e) { if (e.code !== 'ENOENT') throw e; }
     }
+    return key;
+  };
+  const executor = async ({ task, prompt, maxOutputTokens, signal }) => {
+    const key=await keyFor(task.workspace);
     if (!key) throw Error('Connect OpenRouter or configure the worker API key.');
     const response = await fetcher('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}`, 'X-OpenRouter-Title': 'Offload Sleep' },
@@ -25,5 +29,6 @@ export function sleepOpenRouterExecutor({ dataDir, model = process.env.OFFLOAD_M
     return { plan, usage, provider: 'openrouter', model: result.model || model };
   };
   executor.retrySafe = true;
+  executor.configuration=async owner=>({configured:!!await keyFor(owner),provider:'openrouter',model});
   return executor;
 }

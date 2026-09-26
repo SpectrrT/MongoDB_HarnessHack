@@ -9,6 +9,7 @@ export const executionInput = z.object({
   checks: z.array(z.object({ path: outputPath, contains: z.array(z.string().min(1).max(300)).max(20).default([]),
     minBytes: z.number().int().min(1).max(100000).default(1), json: z.boolean().default(false) }).strict()).min(1).max(8),
   writeFiles: z.array(outputPath).max(8).default([]), maxAttempts: z.number().int().min(1).max(8).default(3),
+  browserCheck: z.enum(['counter']).optional(),
 }).strict();
 
 export class SleepExecutionStore {
@@ -23,6 +24,7 @@ export class SleepExecutionStore {
     const input = executionInput.parse(value), now = this.clock();
     if (input.deadline <= now || input.deadline > now + 31 * 86400000) throw new RunConflict('Choose a future deadline within 31 days.');
     if (input.writeFiles.some(p => !input.checks.some(c => c.path === p))) throw new RunConflict('Write permission must match a checked output file.');
+    if (input.browserCheck && !input.checks.some(c => c.path === 'prototype.html')) throw new RunConflict('The counter check requires a checked prototype.html output.');
     const fingerprint = createHash('sha256').update(JSON.stringify(input)).digest('hex');
     const task = { _id: randomUUID(), workspace, requestKey, fingerprint, input, status: 'queued',
       origin: metadata.origin === 'idle' ? 'idle' : 'assigned', ...(metadata.origin === 'idle' ? { idle: metadata.idle } : {}),
