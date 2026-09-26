@@ -18,6 +18,7 @@ import {
 import { connectStore, RunConflict } from './harness/store.js';
 import { inputSchema } from './harness/workflow.js';
 import { sleepRoutes } from './sleep/routes.js';
+import { activityRoutes } from './activity/routes.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const types = [
   "request-connection",
@@ -131,6 +132,7 @@ export function createApp({
   harnessStore = null,
   sleep = null,
   atlas = null,
+  activity = null,
 } = {}) {
   const app = express(),
     queues = new Map(),
@@ -231,6 +233,7 @@ export function createApp({
     } catch (error) { next(error); }
   });
   sleepRoutes(app, { sleep, harnessStore });
+  activityRoutes(app, { activity });
   async function access(req, fn) {
     const key = req.workspaceKey;
     const previous = queues.get(key) || Promise.resolve();
@@ -263,7 +266,7 @@ export function createApp({
       if (queues.get(key) === task) queues.delete(key);
     }
   }
-  mountModel(app,{dataDir});
+  mountModel(app,{dataDir,activity});
   app.get("/api/state", async (req, res, next) => {
     try {
       res.json(await access(req, (s) => s));
@@ -324,7 +327,12 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     ? await (await import('./sleep/index.js')).createSleep(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon')) : null;
   const atlas=process.env.MONGODB_URI?createAtlasStore():null;
   if(atlas)await atlas.ping();
-  createApp({ harnessStore: connection?.store, sleep, atlas }).listen(port, "127.0.0.1", () =>
+  const activity = connection
+    ? await (await import('./activity/store.js'))
+        .createActivity(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon'), { log: console.warn })
+        .catch((error) => (console.warn('Computer history is off:', error.message), null))
+    : null;
+  createApp({ harnessStore: connection?.store, sleep, atlas, activity }).listen(port, "127.0.0.1", () =>
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
 }

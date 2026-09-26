@@ -3,6 +3,7 @@ import Session from "../components/Session";
 import Harness from "./Harness";
 import Adapt from "./Adapt";
 import Sleep from "./Sleep";
+import HistoryPage from "./History";
 import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -41,6 +42,7 @@ import {
   GitPullRequest,
   CalendarDays,
   TimerReset,
+  History as HistoryIcon,
 } from "lucide-react";
 import {
   ThinkingOrb,
@@ -70,6 +72,7 @@ const nav = [
   ["", "Overview", Home],
   ["tasks", "Tasks", ListTodo],
   ["memory", "Memory", Brain],
+  ["history", "Computer history", HistoryIcon],
   ["sleep", "Sleep", Moon],
   ["connections", "Connections", Plug],
 ];
@@ -226,6 +229,7 @@ export default function Workspace() {
           {page === "chat" && <LiveChat id={route[1]} onNew={newChat} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
           {page === "memory" && <Memory />}
+          {page === "history" && <HistoryPage />}
           {page === "sleep" && <SlowMode><Sleep /></SlowMode>}
           {page === "harness" && <Harness />}
           {page === "adapt" && <Adapt />}

@@ -9,10 +9,11 @@ import {collectArtifacts} from "./agent-artifacts.js";
 import { z } from 'zod';
 import { codexStatus, runCodex, clearCodexCache } from './codex.js';
 import { modelPrompt } from '../shared/retrieval.js';
+import { historyContext, historyNotes } from './activity/context.js';
 const localHost=host=>/^(127\.0\.0\.1|localhost):([1-9]\d{0,4})$/.test(host)||host==='offload.ai';
 const localOrigin=origin=>/^http:\/\/(127\.0\.0\.1|localhost):([1-9]\d{0,4})$/.test(origin)||origin==='https://offload.ai';
 const input=z.object({requestId:z.string().uuid(),conversationId:z.string().uuid().optional(),folder:z.string().max(1000).refine(p=>!p||path.isAbsolute(p)).optional(),images:z.array(z.object({name:z.string().max(120),data:z.string().max(4000000).regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/)})).max(3).default([]),provider:z.enum(["codex","openrouter"]).default("codex"),model:z.string().min(1).max(100),effort:z.enum(["low","medium","high","xhigh","max","ultra"]).default("low"),messages:z.array(z.object({role:z.enum(['user','assistant']),text:z.string().max(20000)})).min(1).max(20),notes:z.array(z.object({id:z.string().max(100),source:z.string().max(80),text:z.string().max(360)})).max(4)}).strict();
-export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.resolve(".data"),enabled=process.env.NODE_ENV !== 'production'}={}) {
+export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.resolve(".data"),enabled=process.env.NODE_ENV !== 'production',activity=null}={}) {
   const jobs=new Map(), router=createOpenRouter({dataDir});
   const jobFolder=(owner,id)=>path.join(dataDir,'agent-jobs',owner,id);
   const save=async job=>{const folder=jobFolder(job.owner,job.id);await fs.mkdir(folder,{recursive:true,mode:0o700});const temp=path.join(folder,'job-'+crypto.randomUUID()+'.tmp');await fs.writeFile(temp,JSON.stringify(publicJob(job)),{mode:0o600});await fs.rename(temp,path.join(folder,'job.json'));};
@@ -58,8 +59,10 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     });
     (async()=>{
       const folder=await sessionFolder(dataDir,job.owner,p.conversationId||p.requestId,p.folder);job.cwd=folder.cwd;await save(job);
-      const args={owner:job.owner,model:p.model,messages:p.messages,notes:p.notes,effort:p.effort,images:p.images,cwd:folder.cwd,onEvent,onRequest,signal:job.controller.signal};
-      const result=p.provider==='openrouter'?await router.run(args):await run({...args,...folder,prompt:modelPrompt(folder.threadId?p.messages.slice(-1):p.messages,p.notes)});
+      // Computer history that matches the request rides along as reference notes, for either provider.
+      const notes=[...p.notes,...historyNotes(await historyContext(activity,p.messages))];
+      const args={owner:job.owner,model:p.model,messages:p.messages,notes,effort:p.effort,images:p.images,cwd:folder.cwd,onEvent,onRequest,signal:job.controller.signal};
+      const result=p.provider==='openrouter'?await router.run(args):await run({...args,...folder,prompt:modelPrompt(folder.threadId?p.messages.slice(-1):p.messages,notes)});
       if(job.status!=='running')return;
       for(const item of result.items||[])if(item.type==='imageGeneration'&&item.status==='completed'&&/^[A-Za-z0-9+/=]+$/.test(item.result||'')&&item.result.length<28000000){await fs.writeFile(path.join(folder.cwd,'generated-'+crypto.randomUUID()+'.png'),Buffer.from(item.result,'base64'),{mode:0o600});}
       const artifacts=await collectArtifacts(folder.cwd,path.join(jobFolder(job.owner,job.id),'files'),job.createdAt);
