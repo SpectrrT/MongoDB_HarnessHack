@@ -1,47 +1,43 @@
-import { lazy, Suspense, useState } from 'react';
 import evidence from '../data/benchmark-evidence.json';
-const BenchmarkCharts = lazy(() => import('./BenchmarkCharts'));
+
+const number = value => value.toLocaleString('en-US');
+const comparisons = evidence.presentationComparisons || [
+  {...evidence, id: 'changing', label: 'Changing tasks'},
+  {...evidence.repeated, id: 'repeated', label: 'Repeated context'},
+];
+
+function Comparison({result, quality, maximum}) {
+  const rows = [
+    {name: result.baselineLabel || 'Without Offload', value: quality ? result.baselinePassed : result.baselineTokens},
+    {name: 'Offload', value: quality ? result.offloadPassed : result.offloadTokens, offload: true},
+  ];
+  const difference = 100 * (1 - result.offloadTokens / result.baselineTokens);
+  return <div className="benchmark-group">
+    <div className="benchmark-group-heading"><h4>{result.label}</h4>
+      {!quality && <strong>{Math.abs(difference).toFixed(1)}% {difference >= 0 ? 'fewer' : 'more'}</strong>}
+    </div>
+    {rows.map(row => <div key={row.name} className={`benchmark-bar-row${row.offload ? ' is-offload' : ''}`}>
+      <div className="benchmark-bar-label"><span>{row.name}</span><strong>{quality ? `${row.value} / ${result.stages}` : number(row.value)}</strong></div>
+      <div className="benchmark-bar-track" aria-hidden="true"><span style={{width: `${100 * row.value / (quality ? result.stages : maximum)}%`}}/></div>
+    </div>)}
+  </div>;
+}
 
 export default function BenchmarkEvidence() {
-  const [workload, setWorkload] = useState('evolving');
-  const result = workload === 'evolving' ? evidence : evidence[workload];
-  const number = value => Number.isFinite(value) ? value.toLocaleString('en-US') : 'Unknown';
-  const savings = result.tokenSavingsPercent;
-  const difference = result.noSelection ? 'Context selection did not activate' : Number.isFinite(savings)
-    ? `${Math.abs(savings).toFixed(2)}% ${savings >= 0 ? 'fewer' : 'more'} total tokens`
-    : 'Total token difference unavailable';
+  const maximum = Math.max(...comparisons.flatMap(result => [result.baselineTokens, result.offloadTokens]));
   return <section className="benchmark-evidence" aria-labelledby="benchmark-title">
-    <div className="benchmark-heading"><h2 id="benchmark-title">{evidence.title}</h2><span>{result.scope || evidence.scope}</span></div>
-    <div className="benchmark-workloads" aria-label="Benchmark workload">
-      <button type="button" aria-pressed={workload === 'evolving'} onClick={() => setWorkload('evolving')}>Changing tasks</button>
-      <button type="button" aria-pressed={workload === 'repeated'} onClick={() => setWorkload('repeated')}>Repeated context</button>
-      <button type="button" aria-pressed={workload === 'research'} onClick={() => setWorkload('research')}>Research replay</button>
-      <button type="button" aria-pressed={workload === 'onboarding'} onClick={() => setWorkload('onboarding')}>Onboarding replay</button>
+    <h2 id="benchmark-title">Fewer tokens. Checked results.</h2>
+    <p className="benchmark-intro">{evidence.presentationDescription || 'Same model and tasks, with and without Offload.'}</p>
+    <div className="benchmark-figures">
+      <figure aria-labelledby="benchmark-tokens-title">
+        <figcaption id="benchmark-tokens-title"><h3>Tokens used</h3><span>Lower is better. Selector included.</span></figcaption>
+        {comparisons.map(result => <Comparison key={result.id} result={result} maximum={maximum}/>)}
+      </figure>
+      <figure aria-labelledby="benchmark-checks-title">
+        <figcaption id="benchmark-checks-title"><h3>Checks passed</h3><span>Exact answers and required format.</span></figcaption>
+        {comparisons.map(result => <Comparison key={result.id} result={result} quality/>)}
+      </figure>
     </div>
-    <div className="benchmark-comparison">
-      <div><span>{result.baselineLabel}</span><strong>{number(result.baselineTokens)}</strong><small>tokens · {result.baselinePassed}/{result.stages} exact checks</small></div>
-      <div><span>{result.offloadLabel}</span><strong>{number(result.offloadTokens)}</strong><small>tokens · {result.offloadPassed}/{result.stages} exact checks</small></div>
-    </div>
-    <p className="benchmark-difference">{difference}<span>{result.noSelection ? 'Identical input. Score and token differences are generation variation.' : 'Scoring and recovery included'}</span></p>
-    <Suspense fallback={<p className="benchmark-loading">Loading measured charts...</p>}><BenchmarkCharts result={result}/></Suspense>
-    <details><summary>See the test conditions</summary>
-      <p>{result.description}</p><p>{result.answerModel} · {result.scorer}</p>
-      <p>{result.limitation}</p><a href={result.receipt} target="_blank" rel="noreferrer">Read the measured run</a>
-    </details>
-    <div className="benchmark-support" aria-label="Execution and memory evidence">
-      {evidence.reliability.map(item => <article key={item.title}>
-        <p className="ascii-small">{item.scope}</p><h3>{item.title}</h3><strong>{item.result}</strong>
-        <p>{item.description}</p><a href={item.receipt} target="_blank" rel="noreferrer">Conditions and receipt</a>
-      </article>)}
-    </div>
-    {evidence.personal?.length > 0 && <div className="benchmark-personal">
-      <h3>What real session replays show</h3>
-      {evidence.personal.map(item => <article key={item.id}>
-        <div className="benchmark-heading"><h4>{item.title}</h4><span>{item.status}</span></div>
-        {item.quote && <blockquote>“{item.quote}”<cite>{item.quoteSource}</cite></blockquote>}
-        <p>{item.result}</p><p className="benchmark-caveat">{item.conditions}</p>
-        <a href={item.receipt} target="_blank" rel="noreferrer">Read this replay</a>
-      </article>)}
-    </div>}
+    <p className="benchmark-method">{evidence.presentationMethod || 'GPT-4o-mini · Synthetic development tests: 12 changing-task stages and 4 repeated snapshots × 5 answers. The baseline missed one formatting check.'} <a href="/evidence/benchmark-report.html">Methods and all results</a></p>
   </section>;
 }
