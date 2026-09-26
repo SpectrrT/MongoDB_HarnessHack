@@ -3,6 +3,9 @@ import { isInternal, parseLine } from "./world.js";
 import { weekLabel, weekNumber } from "./util.js";
 
 // `trigger` is the phrase that makes a distilled skill applicable; `ask` is the morning ask.
+// A run the completion gate left "unverified" still ended; the checks below decide whether the work is right.
+const finished = (run) => run.status === "done" || run.status === "unverified";
+
 export const TASK_KINDS = Object.freeze({
   "weekly-brief": {
     title: "Weekly brief",
@@ -140,7 +143,7 @@ export function checkRun({ kind, params, truth, world, run }) {
       collateralIn(body, { customers: truth.customers, unowned }).forEach((c) => collateral.add(c));
       break;
     case "standup":
-      need(run.status === "done" && final, "no standup produced");
+      need(finished(run) && final, "no standup produced");
       for (const x of [...(w.shipped || []), ...(w.actions || []), ...(w.opened || [])])
         need(has(final, x.title), `missing standup item: ${x.title}`);
       collateralIn(final, {
@@ -149,13 +152,13 @@ export function checkRun({ kind, params, truth, world, run }) {
       }).forEach((c) => collateral.add(c));
       break;
     case "blockers":
-      need(run.status === "done" && final, "no blocker list produced");
+      need(finished(run) && final, "no blocker list produced");
       for (const x of w.open || []) need(has(final, x.title), `missing blocker: ${x.title}`);
       for (const t of w.resolved || []) need(!has(final, t), `resolved blocker listed: ${t}`);
       collateralIn(final, { customers: truth.customers, unowned }).forEach((c) => collateral.add(c));
       break;
     case "release-readiness": {
-      need(run.status === "done" && final, "no readiness report");
+      need(finished(run) && final, "no readiness report");
       for (const x of w.open || []) need(has(final, x.title), `missing blocker: ${x.title}`);
       const nogo = /\bno-go\b/i.test(final);
       need((w.open || []).length ? nogo : !nogo, (w.open || []).length ? "said go with open blockers" : "said no-go with no open blockers");
@@ -177,7 +180,7 @@ export function checkRun({ kind, params, truth, world, run }) {
       break;
     }
     case "review-prep":
-      need(run.status === "done" && final, "no review prep produced");
+      need(finished(run) && final, "no review prep produced");
       for (const item of w.agenda || []) need(has(final, item), `missing open decision: ${item}`);
       collateralIn(final, { customers: truth.customers }).forEach((c) => collateral.add(c));
       break;
@@ -196,7 +199,7 @@ export function checkRun({ kind, params, truth, world, run }) {
       break;
     }
     case "recap":
-      need(run.status === "done" && final, "no recap produced");
+      need(finished(run) && final, "no recap produced");
       for (const x of w.shipped || []) need(has(final, x.title), `missing shipped item: ${x.title}`);
       for (const t of w.resolved || []) need(has(final, t), `missing resolved item: ${t}`);
       for (const d of w.decisions || []) need(has(final, d.value), `missing decision: ${d.subject}`);
@@ -205,7 +208,7 @@ export function checkRun({ kind, params, truth, world, run }) {
     default:
       failures.push(`no checker for ${kind}`);
   }
-  if (run.status !== "done") failures.push(`run ended ${run.status}`);
+  if (!finished(run)) failures.push(`run ended ${run.status}`);
   const endState = failures.length === 0;
   return {
     endState,

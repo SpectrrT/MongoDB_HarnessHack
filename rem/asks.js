@@ -96,6 +96,13 @@ export async function decide(ctx, askId, decision, { answer } = {}) {
       .collection("skills")
       .updateOne({ name: ask.skill }, approved ? promote("human", now) : { $set: { declinedAt: now } });
   if (ask.kind === "reconnect" && approved) await setConnection(db, ask.provider, "valid", clock.now());
+  if (ask.kind === "verify")
+    await db
+      .collection("checkpoints")
+      .updateOne(
+        { runId: ask.runId, status: "unverified" },
+        { $set: { status: approved ? "done" : "failed", verifiedBy: "owner", verifiedAt: now, updatedAt: now } },
+      );
   if (ask.kind === "edit.authority") {
     const edit = await db.collection("edits").findOne({ _id: ask.editId });
     let resultVersion = null;

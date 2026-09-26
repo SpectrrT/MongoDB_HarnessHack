@@ -30,7 +30,7 @@ const PHASE_BY_COLLECTION = {
 };
 const PHASES = ["Replay", "Merge", "Distill", "Evolve", "Asks", "Brief"];
 const METRIC_ORDER = ["tasks", "passed", "passRate", "collateral", "cost", "steps", "interventions", "latencyMs"];
-const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", failed: "is-cancelled" };
+const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", unverified: "is-blocked", failed: "is-cancelled" };
 
 const get = async (url) => {
   const r = await fetch(url);
@@ -362,7 +362,7 @@ function RunExtras({ run }) {
 
 function RunLog({ events }) {
   const rows = events.filter(
-    (e) => e.collection === "episodes" || e.collection === "effects" || (e.collection === "checkpoints" && ["paused_for_auth", "done", "failed"].includes(e.status)),
+    (e) => e.collection === "episodes" || e.collection === "effects" || (e.collection === "checkpoints" && ["paused_for_auth", "done", "unverified", "failed"].includes(e.status)),
   );
   if (!rows.length) return <p className="muted">No live steps recorded for this run in this session.</p>;
   return (

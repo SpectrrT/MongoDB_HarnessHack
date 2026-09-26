@@ -83,7 +83,7 @@ function feedEvent(e) {
 }
 
 async function reviewFinished(rem) {
-  const done = await rem.ctx.db.collection("checkpoints").find({ status: "done", verdict: { $exists: false } }).toArray();
+  const done = await rem.ctx.db.collection("checkpoints").find({ status: { $in: ["done", "unverified"] }, verdict: { $exists: false } }).toArray();
   for (const run of done) await review(rem.ctx, run);
   return rem.ctx.db
     .collection("checkpoints")

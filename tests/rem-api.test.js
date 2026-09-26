@@ -29,7 +29,8 @@ test("REM API: run, pause for auth, reconnect, sleep, ask, simulate and reset", 
 
     const reconnected = await api.post("/api/rem/connection").send({ provider: "drive", state: "valid" }).expect(200);
     assert.equal(reconnected.body.resumed.length, 1);
-    assert.equal(reconnected.body.resumed[0].status, "done");
+    // Day 0 leaks a customer name, so the completion gate never clears: the run ends unverified, not done.
+    assert.equal(reconnected.body.resumed[0].status, "unverified");
     assert.ok(reconnected.body.resumed[0].verdict.collateral.includes("customer-name-leak"));
 
     const night = await api.post("/api/rem/sleep").expect(200);
