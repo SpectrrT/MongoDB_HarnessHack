@@ -151,103 +151,131 @@
   },
   "presentationComparisons": [
     {
-      "id": "astra",
+      "id": "astra-v14",
       "label": "GPT-6 Astra",
+      "current": true,
+      "selectorPolicyVersion": "retention-v14-shared-block-groups",
+      "outputFormat": "prompted JSON",
       "baselineLabel": "SDK reference",
-      "baselineTokens": 53388,
-      "offloadTokens": 61790,
-      "baselinePassed": 24,
-      "offloadPassed": 24,
-      "stages": 24,
-      "trialCount": 2,
+      "baselineTokens": 80092,
+      "offloadTokens": 77523,
+      "baselinePassed": 36,
+      "offloadPassed": 36,
+      "stages": 36,
+      "trialCount": 3,
       "answerModel": "openai/gpt-6-astra",
-      "decisionTokens": 40506,
-      "baselineCalls": 26,
-      "offloadCalls": 54,
-      "baselineLatencyMs": 80066,
-      "offloadLatencyMs": 116297,
-      "beforeContextChars": 155090,
-      "afterContextChars": 8875,
-      "receipt": "/evidence/reference-summary.json",
-      "description": "2 full paired trials, each with three synthetic tasks and twelve changing-context stages. Both arms use GPT-6 Astra, identical goals, checks, archive tools and per-call limits. SDK reference receives full history; Offload selects context and can recover the originals.",
-      "limitation": "Development fixtures, not independent unseen tasks or a broad reasoning benchmark. Exact JSON checks cover facts and required format. All-in Offload cost remains unknown because selector prices are absent. Request scheduling waits count in arm latency. Provider routing and caching are uncontrolled.",
-      "trials": [
-        "/evidence/agents-reference-astra-paced-1.json",
-        "/evidence/agents-reference-astra-paced-2.json"
-      ],
+      "decisionTokens": 46083,
+      "baselineCalls": 39,
+      "offloadCalls": 81,
+      "baselineLatencyMs": 126719,
+      "offloadLatencyMs": 170036,
+      "beforeContextChars": 232635,
+      "afterContextChars": 11024,
       "runs": [
         {
-          "baselineTokens": 26688,
-          "offloadTokens": 30971,
+          "baselineTokens": 26702,
+          "offloadTokens": 25876,
           "baselinePassed": 12,
           "offloadPassed": 12,
           "checks": 12,
           "beforeContextChars": 6462.083333333333,
-          "afterContextChars": 389.0833333333333,
-          "receipt": "/evidence/agents-reference-astra-paced-1.json"
+          "afterContextChars": 308.8333333333333,
+          "receipt": "/evidence/agents-reference-astra-v14-1.json"
         },
         {
-          "baselineTokens": 26700,
-          "offloadTokens": 30819,
+          "baselineTokens": 26688,
+          "offloadTokens": 25832,
           "baselinePassed": 12,
           "offloadPassed": 12,
           "checks": 12,
           "beforeContextChars": 6462.083333333333,
-          "afterContextChars": 350.5,
-          "receipt": "/evidence/agents-reference-astra-paced-2.json"
+          "afterContextChars": 308.8333333333333,
+          "receipt": "/evidence/agents-reference-astra-v14-2.json"
+        },
+        {
+          "baselineTokens": 26702,
+          "offloadTokens": 25815,
+          "baselinePassed": 12,
+          "offloadPassed": 12,
+          "checks": 12,
+          "beforeContextChars": 6462.083333333333,
+          "afterContextChars": 301,
+          "receipt": "/evidence/agents-reference-astra-v14-3.json"
         }
+      ],
+      "receipt": "/evidence/reference-summary.json",
+      "description": "3 full paired trials, each with three synthetic tasks and twelve changing-context stages. Both arms use GPT-6 Astra, identical goals, checks, archive tools and per-call limits. SDK reference receives full history; Offload selects context and can recover the originals.",
+      "limitation": "Development fixtures, not independent unseen tasks or a broad reasoning benchmark. Exact JSON checks cover facts and required format. All-in Offload cost remains unknown because selector prices are absent. Request scheduling waits count in arm latency. Provider routing and caching are uncontrolled.",
+      "trials": [
+        "/evidence/agents-reference-astra-v14-1.json",
+        "/evidence/agents-reference-astra-v14-2.json",
+        "/evidence/agents-reference-astra-v14-3.json"
       ]
     },
     {
-      "id": "opus",
+      "id": "opus-v14",
       "label": "Claude Opus 5.5",
+      "current": true,
+      "selectorPolicyVersion": "retention-v14-shared-block-groups",
+      "outputFormat": "prompted JSON",
       "baselineLabel": "SDK reference",
-      "baselineTokens": 135119,
-      "offloadTokens": 119710,
-      "baselinePassed": 24,
-      "offloadPassed": 23,
-      "stages": 24,
-      "trialCount": 2,
+      "baselineTokens": 198507,
+      "offloadTokens": 169892,
+      "baselinePassed": 35,
+      "offloadPassed": 34,
+      "stages": 36,
+      "trialCount": 3,
       "answerModel": "anthropic/claude-opus-5.5",
-      "decisionTokens": 40506,
-      "baselineCalls": 34,
-      "offloadCalls": 64,
-      "baselineLatencyMs": 140180,
-      "offloadLatencyMs": 203921,
-      "beforeContextChars": 155090,
-      "afterContextChars": 9432,
-      "receipt": "/evidence/reference-summary.json",
-      "description": "2 full paired trials, each with three synthetic tasks and twelve changing-context stages. Both arms use Claude Opus 5.5, identical goals, checks, archive tools and per-call limits. SDK reference receives full history; Offload selects context and can recover the originals.",
-      "limitation": "Development fixtures, not independent unseen tasks or a broad reasoning benchmark. Exact JSON checks cover facts and required format. All-in Offload cost remains unknown because selector prices are absent. Request scheduling waits count in arm latency. Provider routing and caching are uncontrolled.",
-      "trials": [
-        "/evidence/agents-reference-opus-paced-1.json",
-        "/evidence/agents-reference-opus-paced-2.json"
-      ],
+      "decisionTokens": 46083,
+      "baselineCalls": 50,
+      "offloadCalls": 97,
+      "baselineLatencyMs": 229329,
+      "offloadLatencyMs": 325617,
+      "beforeContextChars": 232635,
+      "afterContextChars": 11061,
       "runs": [
         {
-          "baselineTokens": 67555,
-          "offloadTokens": 60266,
+          "baselineTokens": 63119,
+          "offloadTokens": 61363,
+          "baselinePassed": 11,
+          "offloadPassed": 11,
+          "checks": 12,
+          "beforeContextChars": 6462.083333333333,
+          "afterContextChars": 308.8333333333333,
+          "receipt": "/evidence/agents-reference-opus-v14-1.json"
+        },
+        {
+          "baselineTokens": 67703,
+          "offloadTokens": 56405,
           "baselinePassed": 12,
           "offloadPassed": 11,
           "checks": 12,
           "beforeContextChars": 6462.083333333333,
-          "afterContextChars": 443.3333333333333,
-          "receipt": "/evidence/agents-reference-opus-paced-1.json"
+          "afterContextChars": 308.8333333333333,
+          "receipt": "/evidence/agents-reference-opus-v14-2.json"
         },
         {
-          "baselineTokens": 67564,
-          "offloadTokens": 59444,
+          "baselineTokens": 67685,
+          "offloadTokens": 52124,
           "baselinePassed": 12,
           "offloadPassed": 12,
           "checks": 12,
           "beforeContextChars": 6462.083333333333,
-          "afterContextChars": 342.6666666666667,
-          "receipt": "/evidence/agents-reference-opus-paced-2.json"
+          "afterContextChars": 304.0833333333333,
+          "receipt": "/evidence/agents-reference-opus-v14-3.json"
         }
+      ],
+      "receipt": "/evidence/reference-summary.json",
+      "description": "3 full paired trials, each with three synthetic tasks and twelve changing-context stages. Both arms use Claude Opus 5.5, identical goals, checks, archive tools and per-call limits. SDK reference receives full history; Offload selects context and can recover the originals.",
+      "limitation": "Development fixtures, not independent unseen tasks or a broad reasoning benchmark. Exact JSON checks cover facts and required format. All-in Offload cost remains unknown because selector prices are absent. Request scheduling waits count in arm latency. Provider routing and caching are uncontrolled.",
+      "trials": [
+        "/evidence/agents-reference-opus-v14-1.json",
+        "/evidence/agents-reference-opus-v14-2.json",
+        "/evidence/agents-reference-opus-v14-3.json"
       ]
     }
   ],
-  "presentationTitle": "Same models. Same tasks.",
+  "presentationTitle": "Same tasks. Fewer tokens.",
   "presentationDescription": "Offload and an OpenAI Agents SDK reference, tested side by side.",
-  "presentationMethod": "Two runs per model. Three tasks, 24 exact checks. Same model and tools in each pair. Selector and retrieval tokens included."
+  "presentationMethod": "Three runs per model. Three development tasks, 36 exact checks per configuration. Same model and tools in each pair. All selector and retrieval tokens included."
 }

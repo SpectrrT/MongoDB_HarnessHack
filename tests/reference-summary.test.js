@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import {exactAnswer} from '../scripts/fixtures/evolving-context.mjs';
 
 const read = path => JSON.parse(fs.readFileSync(new URL('../'+path, import.meta.url), 'utf8'));
@@ -10,6 +11,8 @@ const page = read('src/data/benchmark-evidence.json');
 test('each reference receipt independently reconciles model usage and exact outputs', () => {
   for (const trial of summary.trials) {
     const raw = read('public'+trial.receipt), rows=raw.cases.flatMap(c=>c.stages);
+    const bytes=fs.readFileSync(new URL('../public'+trial.receipt,import.meta.url));
+    assert.equal(trial.sha256,crypto.createHash('sha256').update(bytes).digest('hex'));
     assert.equal(rows.length,12);
     for (const arm of ['reference','offload']) {
       const receipts=raw.receipts.filter(r=>r.arm===arm);
@@ -34,6 +37,9 @@ test('homepage values pool every registered clean trial and count selector overh
     assert.equal(item.offloadPassed,trials.reduce((n,t)=>n+t.summary.offloadPassed,0));
     assert.equal(item.baselinePassed,trials.reduce((n,t)=>n+t.summary.referencePassed,0));
     assert.ok(item.offloadTokens>=item.decisionTokens);
+    assert.deepEqual(item.runs.map(r=>r.offloadTokens),trials.map(t=>t.summary.offload.totalTokens));
+    assert.deepEqual(item.runs.map(r=>r.baselinePassed),trials.map(t=>t.summary.referencePassed));
+    assert.equal(item.afterContextChars,trials.reduce((n,t)=>n+t.afterContextChars,0));
   }
   for(const item of page.presentationComparisons) assert.deepEqual(item,summary.comparisons.find(r=>r.id===item.id));
   const failures=summary.trials.filter(r=>r.httpFailures);

@@ -5,12 +5,10 @@ import evidence from '../data/benchmark-evidence.json';
 
 echarts.use([ScatterChart]);
 const comparisons = evidence.presentationComparisons;
-const number = value => Math.round(value).toLocaleString('en-US');
+const number = value => Number.isFinite(value) ? Math.round(value).toLocaleString('en-US') : 'Not verified';
 const font = '"Avenir Next", Avenir, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 const colors = ['#aaa', '#171717'];
-const runsFor = result => result.runs || [{baselineTokens: result.baselineTokens / result.trialCount, offloadTokens: result.offloadTokens / result.trialCount,
-  baselinePassed: result.baselinePassed / result.trialCount, offloadPassed: result.offloadPassed / result.trialCount,
-  beforeContextChars: result.beforeContextChars / result.stages, afterContextChars: result.afterContextChars / result.stages}];
+const runsFor = result => result.runs;
 
 function metric(result, context, offload) {
   if (context) return result[offload ? 'afterContextChars' : 'beforeContextChars'] / result.stages;
