@@ -42,7 +42,7 @@ test('Plain bars show a small per-arm tooltip on hover and touch', async ({ page
     const tooltip = chart.locator('.benchmark-tooltip');
     await expect(tooltip).toBeVisible();
     await expect(tooltip).toContainText(row.label);
-    await expect(tooltip).toContainText(index === 0 ? 'With Offload' : 'Selected context');
+    await expect(tooltip).toContainText(index === 0 ? 'With Offload' : 'After selection');
     await expect(tooltip.locator('table')).toHaveCount(0);
     for (const run of row.runs) await expect(tooltip).toContainText(Math.round(index === 0 ? run.offloadTokens / run.offloadPassed : run.afterContextChars).toLocaleString('en-US'));
     if (index === 0) await expect(tooltip).toContainText(`${row.offloadPassed}/${row.stages} checks passed`);
