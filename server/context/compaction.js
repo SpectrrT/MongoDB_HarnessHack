@@ -114,8 +114,11 @@ export function createContextCompactor({db, scorer = createJevScorer(), budgetCh
       await writeBatch(archive, archiveWrites.filter(op => !knownParts.has(op.updateOne.filter._id)));
       const candidates = scored.filter(s => !s.protectedReason && !s.duplicateOf && !s.cached);
       const batchUnits = Number.isInteger(scorer.maxBatchUnits) && scorer.maxBatchUnits > 0 ? Math.min(16, scorer.maxBatchUnits) : 8;
+      // No score can reduce this mandatory floor. Preserve the archive and return
+      // the ordinary review outcome without spending on an impossible selection.
+      metrics.protectedChars = scored.reduce((n, s) => n + (s.protectedReason ? s.unit.text.length : 0), 0);
       // Bound work per selection. Unscored records are retained, never implicitly discarded.
-      for (let offset = 0, calls = 0; offset < candidates.length && calls < maxDecisionCalls; calls++) {
+      for (let offset = 0, calls = 0; metrics.protectedChars <= budgetChars && offset < candidates.length && calls < maxDecisionCalls; calls++) {
         const batch = []; let chars = 0;
         while (offset < candidates.length && batch.length < batchUnits && chars + candidates[offset].unit.text.length <= 10000) {
           const candidate = candidates[offset++]; batch.push(candidate); chars += candidate.unit.text.length;

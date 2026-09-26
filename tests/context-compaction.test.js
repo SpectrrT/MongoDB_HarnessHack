@@ -80,3 +80,22 @@ test('identical idempotent reads collapse before Jev and unfinished exchanges st
   assert.equal((await c.read({runId:'duplicates',id:'read-0'})).text,units[0].text);
   await assert.rejects(c.select({runId:'unfinished',goal:'g',units:[{id:'pending',text:'x'.repeat(1000),complete:false}]}),ContextBudgetError);
 });
+
+test('protected context that cannot fit spends nothing and remains exactly recoverable', async () => {
+  let calls = 0;
+  const c = createContextCompactor({db: createMemoryDb(), budgetChars: 650, recentCount: 0,
+    scorer: {name: 'must-not-call', async score() {calls++; throw Error('A provider must not be called');}}});
+  const units = [{id: 'constraint', text: 'Never publish without approval. ' + 'Protected source detail. '.repeat(40), pinned: 'user_instruction'}, noise(0)];
+  await assert.rejects(c.select({runId: 'impossible', goal: 'Prepare the artifact', units}), error => {
+    assert.ok(error instanceof ContextBudgetError);
+    assert.equal(error.metrics.protectedChars, units[0].text.length);
+    assert.equal(error.metrics.decisionCalls, 0);
+    assert.equal(error.metrics.inputTokens + error.metrics.outputTokens, 0);
+    assert.equal(error.metrics.usageKnown, true);
+    assert.equal(error.metrics.costKnown, true);
+    assert.equal(error.metrics.status, 'needs_review');
+    return true;
+  });
+  assert.equal(calls, 0);
+  for (const unit of units) assert.equal((await c.read({runId: 'impossible', id: unit.id})).text, unit.text);
+});
