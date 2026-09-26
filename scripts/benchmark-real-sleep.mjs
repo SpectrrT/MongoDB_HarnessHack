@@ -14,25 +14,39 @@ const args = process.argv.slice(2);
 const value = flag => args.includes(flag) ? args[args.indexOf(flag) + 1] : null;
 const packetPath = value('--packet'), privateRoot = value('--private-output'), publicOutput = value('--output');
 if (!packetPath || !privateRoot || !publicOutput) throw Error('Required: --packet, --private-output, --output.');
-const trials = Number(value('--trials') || 3), model = value('--model') || 'openai/gpt-4o-mini';
-if (!Number.isInteger(trials) || trials < 1 || trials > 3) throw Error('Trials must be 1 to 3.');
+const trials = Number(value('--trials') || 3), startTrial = Number(value('--start-trial') || 1), model = value('--model') || 'openai/gpt-4o-mini';
+if (!Number.isInteger(trials) || trials < 1 || trials > 3 || !Number.isInteger(startTrial) || startTrial < 1 || startTrial + trials > 4) throw Error('Trial numbers must be within 1 to 3.');
 if (!process.env.OPENROUTER_API_KEY) throw Error('Configure the existing private OpenRouter key.');
-const sourceBytes = await fs.readFile(packetPath), packet = JSON.parse(sourceBytes);
+const sourceBytes = await fs.readFile(packetPath), sourcePacket = JSON.parse(sourceBytes);
+const onboarding = typeof sourcePacket.task === 'string' && sourcePacket.outputSchema;
+const packet = onboarding ? {
+  id: 'personal-onboarding-routing', title: 'Reconcile onboarding routing from chronological history',
+  history: sourcePacket.history, goal: sourcePacket.task,
+  input: Object.fromEntries(Object.entries(sourcePacket).filter(([key]) => !['task', 'history'].includes(key))),
+  source: {origin: 'Claude authored requests and selected actual earlier assistant reports'},
+  disclosure: ['The frozen onboarding packet uses 39 authored requests and four curated actual earlier assistant reports.',
+    'The output is a reconstructed text-only routing configuration. Its twelve criteria are structural and lexical proxies, not a runnable UI or semantic-quality evaluation.'],
+} : sourcePacket;
 if (!Array.isArray(packet.history) || typeof packet.goal !== 'string' || !packet.id) throw Error('Invalid frozen packet.');
-const evaluatorPath = path.join(path.dirname(packetPath), 'evaluate.mjs');
+const evaluatorPath = value('--evaluator') || path.join(path.dirname(packetPath), 'evaluate.mjs');
+const evaluatorCommand = evaluatorPath.endsWith('.py') ? 'python3' : process.execPath;
 const evaluatorBytes = await fs.readFile(evaluatorPath);
 const hash = value => createHash('sha256').update(value).digest('hex');
+const frozenFiles = [packetPath, evaluatorPath, ...(value('--checks') ? [value('--checks')] : []), ...(value('--manifest') ? [value('--manifest')] : [])];
+const frozenHashes = new Map(await Promise.all(frozenFiles.map(async file => [file, hash(await fs.readFile(file))])));
+async function verifyFrozen() {for (const [file, digest] of frozenHashes) if (hash(await fs.readFile(file)) !== digest) throw Error('A frozen benchmark input or evaluator changed.');}
 const brief = JSON.stringify({goal: packet.goal, input: packet.input || {}});
 if (brief.length > 4000) throw Error('Packet current task exceeds the production Sleep brief limit.');
 const units = packet.history.map(record => ({id: record.id, text: JSON.stringify({role: record.role, timestamp: record.timestamp, text: record.text}),
   pinned: ['user', 'system'].includes(record.role) ? 'historical_user_instruction' : null}));
 const rawChars = units.reduce((n, record) => n + record.text.length, 0);
 const report = {
-  schema: 1, createdAt: new Date().toISOString(), id: packet.id, title: packet.title,
+  schema: 2, createdAt: new Date().toISOString(), id: packet.id, title: packet.title,
   mode: 'Reconstructed offline artifact replay through production Sleep generation, file writing and declared file checks',
   adapter: 'Benchmark-only immutable historical context attachment. Production Sleep has no context compaction/retrieval integration.',
-  model, scorerPolicy: createJevScorer().policyVersion, trials,
+  model, scorerPolicy: createJevScorer().policyVersion, trials, startTrial,
   provenance: {packetSha256: hash(sourceBytes), evaluatorSha256: hash(evaluatorBytes),
+    frozenFiles: Object.fromEntries([...frozenHashes].map(([file, digest]) => [path.basename(file), digest])),
     origin: packet.source?.origin, sessionSpanHours: packet.source?.sessionSpanHours,
     observedReturnGapSeconds: packet.source?.observedReturnGapSeconds,
     cutoffAt: packet.source?.cutoffAt, historyRecords: units.length, authoredTextChars: packet.history.reduce((n, record) => n + record.text.length, 0), serializedHistoryChars: rawChars},
@@ -111,6 +125,13 @@ async function runArm(pair, arm) {
       receipt.cost = body?.usage?.cost ?? null;
       receipt.reportedModel = body?.model || request.model;
       receipt.finished = true;
+      if (body) {
+        await fs.writeFile(path.join(artifactRoot, `response-${receipt.attempt}.private.json`), JSON.stringify(body, null, 2) + '\n', {mode: 0o600});
+        try {
+          const plan = JSON.parse(body.choices?.[0]?.message?.content || '');
+          receipt.outputShape = {outerKeys: Object.keys(plan), fileContentTypes: Array.isArray(plan.files) ? plan.files.map(file => typeof file.content) : null};
+        } catch {receipt.outputShape = {invalidJson: true};}
+      }
       return response;
     } catch (error) {receipt.error = error.name || 'Request failed'; throw error;}
     finally {receipt.latencyMs = Math.round(performance.now() - start); await save();}
@@ -122,13 +143,18 @@ async function runArm(pair, arm) {
   };
   executor.retrySafe = productionProvider.retrySafe;
   const artifactRoot = path.join(privateRoot, `trial-${pair.trial}`, arm);
+  await fs.mkdir(artifactRoot, {recursive: true, mode: 0o700});
   let result;
   for (let step = 0; step < report.policy.maxAttempts + 1; step++) {
     result = await sleepExecutionTick(armStore, executor, {taskId: task._id, workspace, root: artifactRoot,
       maxOutputTokens: report.policy.maxOutputTokens, callTimeoutMs: 90000});
+    await fs.writeFile(path.join(artifactRoot, 'terminal-task.private.json'), JSON.stringify(result, null, 2) + '\n', {mode: 0o600});
     if (!result || result.status !== 'queued') break;
   }
   row.status = result?.status || 'not-claimed'; row.repairs = result?.repairs || 0;
+  row.terminalReason = result?.reason || null;
+  row.terminalError = result?.error ? (/^(The model returned invalid file JSON\.|invalid-output-path|Sleep model request failed \(\d+\)\.)$/.test(result.error) ? result.error : 'Execution error details retained privately') : null;
+  row.finalReservation = result?.tokensReserved || 0;
   row.declaredChecks = result?.checkResults || [];
   row.runtimeChargedTokens = result?.tokensUsed || 0; row.runtimeUnknownUsage = result?.usageUnknown || 0;
   row.mainUsage = summarizeReceipts(row.calls);
@@ -148,7 +174,8 @@ async function runArm(pair, arm) {
   return {row, privateArtifactPath};
 }
 try {
-  for (let trial = 1; trial <= trials; trial++) {
+  for (let trial = startTrial; trial < startTrial + trials; trial++) {
+    await verifyFrozen();
     const pair = {trial, order: trial % 2 ? ['baseline', 'compacted'] : ['compacted', 'baseline']};
     report.pairs.push(pair);
     const paths = new Map();
@@ -157,12 +184,16 @@ try {
       paths.set(arm, privateArtifactPath);
       await save();
     }
+    await verifyFrozen();
     for (const arm of pair.order) {
       const row = pair[arm], file = paths.get(arm);
       if (file) {
-        const evaluated = spawnSync(process.execPath, [evaluatorPath, file], {encoding: 'utf8', timeout: 10000});
-        if (evaluated.status === 0) {
-          try {const checked = JSON.parse(evaluated.stdout); row.evaluation = {passed: checked.passed, checksPassed: checked.checksPassed, checksTotal: checked.checksTotal, failures: checked.failures};}
+        const evaluated = spawnSync(evaluatorCommand, [evaluatorPath, file], {encoding: 'utf8', timeout: 10000});
+        if ([0, 1].includes(evaluated.status)) {
+          try {const checked = JSON.parse(evaluated.stdout); row.evaluation = evaluatorPath.endsWith('.py') ? {
+            passed: checked.allPassed === true, checksPassed: checked.passed, checksTotal: checked.total,
+            failures: Object.entries(checked.checks || {}).filter(([, pass]) => !pass).map(([name]) => name),
+          } : {passed: checked.passed, checksPassed: checked.checksPassed, checksTotal: checked.checksTotal, failures: checked.failures};}
           catch {row.evaluation = {passed: false, error: 'Evaluator returned invalid JSON'};}
         } else row.evaluation = {passed: false, error: 'Frozen evaluator did not complete'};
       } else row.evaluation = {passed: false, error: 'No generated artifact'};
@@ -176,7 +207,7 @@ try {
     return {trials: rows.length, artifactsGenerated: rows.filter(row => row.artifactSha256).length,
       passed: rows.filter(row => row.evaluation?.passed).length,
       checksPassed: rows.reduce((n, row) => n + (row.evaluation?.checksPassed || 0), 0),
-      checksTotal: rows.reduce((n, row) => n + (row.evaluation?.checksTotal || 0), 0),
+      checksTotal: rows.every(row => Number.isFinite(row.evaluation?.checksTotal)) ? rows.reduce((n, row) => n + row.evaluation.checksTotal, 0) : null,
       totalTokens: known ? rows.reduce((n, row) => n + row.totalTokens, 0) : null,
       decisionTokens: rows.reduce((n, row) => n + (row.decisionTokens || 0), 0),
       decisionCalls: rows.reduce((n, row) => n + (row.selection?.decisionCalls || 0), 0),
