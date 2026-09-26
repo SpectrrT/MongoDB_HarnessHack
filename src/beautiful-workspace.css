@@ -1,11 +1,11 @@
 @font-face { font-family: 'Inter'; src:url('/fonts/Inter-Latin.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
-.workspace { --font-sans:'Inter',system-ui,sans-serif; --font-inter:'Inter'; font-family:var(--font-sans); background:#f8f8f8; padding:10px; gap:0; --surface:#fff; --canvas:#fafafa; --field:#f5f5f5; --shadow-card:0 0 0 1px #0000000f,0 1px 2px #00000008,0 2px 6px #00000005; --shadow-raised:0 0 0 1px #0000000f,0 4px 16px #00000012; --shadow-btn:0 0 0 1px #0000000a,0 1px 2px #00000008; }
+.workspace { --font-sans:'Inter',system-ui,sans-serif; --font-inter:'Inter'; font-family:var(--font-sans); background:#f8f8f8; padding:0; gap:0; --surface:#fff; --canvas:#fafafa; --field:#f5f5f5; --shadow-card:0 0 0 1px #0000000f,0 1px 2px #00000008,0 2px 6px #00000005; --shadow-raised:0 0 0 1px #0000000f,0 4px 16px #00000012; --shadow-btn:0 0 0 1px #0000000a,0 1px 2px #00000008; }
 .workspace.with-sidebar {grid-template-columns:224px minmax(0,1fr);}
 .workspace.with-sidebar.with-suggestions {grid-template-columns:224px minmax(0,1fr) 320px;}
 .workspace.with-suggestions {grid-template-columns:minmax(0,1fr) 320px;}
 .beautiful-sidebar { min-height:0; padding:0; }
 .beautiful-sidebar [data-workspace-trigger] .sidebar-copy {font-family:'Instrument Serif',serif;font-size:27px;color:#171717;}
-.workspace-main { border:1px solid #e5e5e5; border-radius:16px; background:#fff; overflow:hidden; }
+.workspace-main { border:0; border-inline:1px solid var(--off-line,#e5e5e5); border-radius:0; background:#fff; overflow:hidden; }
 .workspace .app-header {height:45px;min-height:45px;padding:0 16px;background:#fafafa;}
 .workspace .local-banner {padding:6px 16px; font-size:10px;min-height:28px;color:#888;}
 .workspace .local-banner .local-label {color:#777;}
@@ -42,3 +42,30 @@
 /* Keep the published composer geometry; app form defaults must not draw a second input. */
 .workspace .beautiful-ui textarea {border:0;border-radius:0;box-shadow:none;background:transparent;resize:none;min-height:68px;padding:8px;}
 .workspace .beautiful-ui [hidden] {display:none;}
+
+/* A single full-height canvas; only the content panels own their internal corners. */
+html[data-offload-workspace],html[data-offload-workspace] body {background:var(--workspace-canvas);overscroll-behavior:none;}
+html[data-offload-workspace] :is(body,#root,.app-screen) {min-height:100dvh;background:var(--workspace-canvas);}
+.workspace[data-palette] {background:var(--off-surface);}
+.workspace[data-palette] :is(.beautiful-sidebar,.workspace-main,.app-header,.suggestions-panel,.panel-bottom) {background:var(--off-surface);}
+@media(max-width:900px){.workspace-main{border-inline:0;}}
+/* Align suggestions to one gutter instead of stacking card and list margins. */
+.workspace .suggestions-head {padding:20px 16px 8px;}
+.workspace .panel-intro {padding:0 16px;margin-bottom:18px;line-height:1.5;}
+.workspace .panel-search {margin:0 16px 12px;border-radius:8px;}
+.workspace .filter-strip {padding:0 16px 10px;gap:14px;}
+.workspace .suggestions-list {padding:14px 16px;display:flex;flex-direction:column;gap:12px;scrollbar-gutter:stable;}
+.workspace .suggestion {width:100%;margin:0;padding:17px 16px;border-radius:12px;flex-shrink:0;transition:border-color 140ms,background-color 140ms;}
+.workspace .suggestion h3 {font-size:14px;line-height:1.45;letter-spacing:-.15px;margin-bottom:9px;}
+.workspace .suggestion > p {font-size:12px;line-height:1.65;}
+.workspace .suggestion-source {font-size:11px;gap:8px;margin-bottom:12px;}
+.workspace .suggestion-foot {margin-top:20px;gap:8px;justify-content:space-between;}
+.workspace .suggestion-foot > button {font-size:11px;min-height:28px;}
+.workspace .panel-bottom {padding:13px 16px;line-height:1.5;}
+.workspace[data-palette] .suggestion:hover {border-color:var(--line-strong);}
+.workspace[data-palette] .filter-strip .active {color:var(--off-ink);border-color:var(--off-ink);}
+.workspace[data-palette] .session-button {background:var(--off-surface);color:var(--off-ink);border-color:var(--off-line);}
+.workspace[data-palette] .icon-button {color:var(--off-muted);}
+.workspace[data-palette] .icon-button:is(:hover,.selected) {background:var(--off-inset);color:var(--off-ink);}
+.workspace[data-palette] .suggestion-source {color:var(--off-muted);}
+@media(prefers-reduced-motion:reduce){.workspace .suggestion{transition:none;}}

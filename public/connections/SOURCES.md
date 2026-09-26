@@ -18,3 +18,5 @@ Google and GitHub artwork comes from the installed service plugins. Other SVGs a
 - supabase: https://raw.githubusercontent.com/simple-icons/simple-icons/13.21.0/icons/supabase.svg
 - microsoftoutlook: https://raw.githubusercontent.com/simple-icons/simple-icons/11.0.0/icons/microsoftoutlook.svg
 - microsoftteams: https://raw.githubusercontent.com/simple-icons/simple-icons/11.0.0/icons/microsoftteams.svg
+
+- openrouter: https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/openrouter.svg

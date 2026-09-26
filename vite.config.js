@@ -4,9 +4,11 @@ export default defineConfig({
   plugins: [react()],
   base: "/",
   server: {
-    port: 5193,
+    host: "127.0.0.1",
+    allowedHosts: ["offload.ai"],
+    port: Number(process.env.OFFLOAD_WEB_PORT || 5193),
     strictPort: true,
-    proxy: { "/api": "http://127.0.0.1:5194" },
+    proxy: { "/api": { target: `http://127.0.0.1:${process.env.PORT || 5194}`, changeOrigin: false } },
   },
   build: {
     chunkSizeWarningLimit: 900,

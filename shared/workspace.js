@@ -196,8 +196,11 @@ export function transition(current, action, now = Date.now()) {
         "sleepSchedule",
         "sleepHour",
         "theme",
+        "agentFolder",
         "modelConnected",
         "modelSelection",
+        "modelProvider",
+        "openrouterModel",
         "reasoningEffort",
         "themeCustom",
       ];
@@ -209,6 +212,8 @@ export function transition(current, action, now = Date.now()) {
     case "profile":
       s.profile.name = String(p.name).trim().slice(0, 60);
       required(s.profile.name, "Enter your first name.");
+      if('email' in p){const email=String(p.email).trim();required(email.length<=254&&(!email||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)),"Enter a valid email.");s.profile.email=email;}
+      if('avatar' in p){required(typeof p.avatar==='string'&&p.avatar.length<=40000&&(!p.avatar||/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(p.avatar)),"Choose a valid profile image.");s.profile.avatar=p.avatar;}
       break;
     case "connect": {
       const c = required(
@@ -344,7 +349,8 @@ export function transition(current, action, now = Date.now()) {
       let c = s.conversations.find(c => c.id === p.id);
       if (!c) { c = {id:p.id, title:String(p.text).slice(0,48), createdAt:now, messages:[]}; s.conversations.unshift(c); }
       required(!c.pending, "A reply is already in progress.");
-      c.messages.push({id:uid(), role:"user", text:String(p.text).slice(0,4000), at:now});
+      if(!c.messages.length)c.title=String(p.displayText || p.text).trim().slice(0,48);
+      c.messages.push({id:uid(), role:"user", text:String(p.text).slice(0,20000), ...(typeof p.displayText==="string"?{displayText:p.displayText.slice(0,20000)}:{}), files:Array.isArray(p.files)?p.files.slice(0,6).map(f=>({name:String(f.name).slice(0,120),characters:Number(f.characters)||0,...(typeof f.preview==='string'&&f.preview.length<=60000&&/^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/.test(f.preview)?{preview:f.preview}:{})})):[], at:now});
       c.pending = {id:p.jobId, model:p.model, effort:p.effort, notes:p.notes || []};
       c.error = null;
       break;
@@ -352,7 +358,7 @@ export function transition(current, action, now = Date.now()) {
     case "chat-finish": {
       const c = required(s.conversations.find(c => c.id === p.id), "Conversation not found.");
       if(c.pending?.id !== p.jobId) break;
-      if(p.text) c.messages.push({id:uid(), role:"assistant", text:String(p.text).slice(0,20000), at:now, model:c.pending.model, effort:c.pending.effort, notes:c.pending.notes, usage:p.usage});
+      if(p.text) c.messages.push({id:uid(), role:"assistant", text:String(p.text).slice(0,20000), at:now, model:c.pending.model, effort:c.pending.effort, notes:c.pending.notes, usage:p.usage,agent:p.agent});
       c.pending = null; c.error = p.error || null;
       break;
     }

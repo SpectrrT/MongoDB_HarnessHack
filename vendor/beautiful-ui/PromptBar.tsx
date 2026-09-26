@@ -149,9 +149,11 @@ export default function PromptBar({
   tall = false,
   placeholder,
   onSend,
-  models, modelValue, onModelChange, disabled = false, controls,
+  models, modelValue, onModelChange, disabled = false, controls, onAttach, hasAttachments = false,
 }: {
   controls?: React.ReactNode;
+  onAttach?: () => void;
+  hasAttachments?: boolean;
   models?: {key:string;name:string}[];
   modelValue?: string;
   onModelChange?: (key:string) => void;
@@ -162,13 +164,14 @@ export default function PromptBar({
   /** hero sizing: a multi-line input with controls on their own row */
   tall?: boolean;
   placeholder?: string;
-  onSend?: (text: string) => void;
+  onSend?: (text: string) => void | boolean | Promise<void | boolean>;
 }) {
   const pill = variant === "Pill";
   const [draft, setDraft] = useState("");
   const [dismissed, setDismissed] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
+  const [modelQuery,setModelQuery] = useState("");
   const modelOptions = models?.length ? models : MODELS;
   const [pickedModel, setPickedModel] = useState(modelOptions[1] || modelOptions[0]);
   const model = modelOptions.find(m => m.key === modelValue) || pickedModel;
@@ -400,10 +403,10 @@ export default function PromptBar({
     inputRef.current?.focus();
   };
 
-  const canSend = !disabled && (draft.trim().length > 0 || attachments.length > 0);
-  const send = () => {
+  const canSend = !disabled && (draft.trim().length > 0 || attachments.length > 0 || hasAttachments);
+  const send = async () => {
     if (!canSend) return;
-    onSend?.(draft.trim());
+    if (await onSend?.(draft.trim()) === false) return;
     setDraft("");
     setAttachments([]);
     closeMenus();
@@ -425,6 +428,7 @@ export default function PromptBar({
           className="absolute inset-x-0 bottom-full z-10 mb-2 rounded-[10px] bg-surface p-1 shadow-raised"
           style={{ animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom center" }}
         >
+          {modelOptions.length > 10 && <input aria-label="Find a model" placeholder="Find a model…" value={modelQuery} onChange={e=>setModelQuery(e.target.value)} className="w-full rounded-md p-2 text-[12px]"/>}
           {/* single gliding highlight — appears once a row is hovered */}
           <span
             aria-hidden
@@ -496,9 +500,10 @@ export default function PromptBar({
       {modelOpen && (
         <div
           onMouseLeave={() => setModelHovered(null)}
-          className="absolute z-10 w-44 rounded-[10px] bg-surface p-1 shadow-raised"
+          className="absolute z-10 w-64 rounded-[10px] bg-surface p-1 shadow-raised"
           style={{ left: modelMenuLeft, bottom: modelMenuBottom, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" }}
         >
+          {modelOptions.length > 10 && <input aria-label="Find a model" placeholder="Find a model…" value={modelQuery} onChange={e=>setModelQuery(e.target.value)} className="w-full rounded-md p-2 text-[12px]"/>}
           {/* single gliding highlight — floats to the hovered / selected row */}
           <span
             aria-hidden
@@ -511,7 +516,8 @@ export default function PromptBar({
                 "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
             }}
           />
-          {modelOptions.map((m, i) => (
+          <div style={{maxHeight:280,overflowY:"auto"}}>
+          {modelOptions.filter(m=>m.name.toLowerCase().includes(modelQuery.toLowerCase())).map((m, i) => (
             <button
               key={m.key}
               type="button"
@@ -533,6 +539,7 @@ export default function PromptBar({
               </span>
             </button>
           ))}
+          </div>
         </div>
       )}
 
@@ -599,9 +606,10 @@ export default function PromptBar({
           <button
             type="button"
             aria-label="Add attachments and sources"
-            disabled={!local}
-            aria-expanded={plusOpen}
+            disabled={disabled || (!local && !onAttach)}
+            aria-expanded={local ? plusOpen : undefined}
             onClick={() => {
+              if(onAttach){onAttach();return;}
               setModelOpen(false);
               setPlusOpen((current) => !current);
               inputRef.current?.focus();

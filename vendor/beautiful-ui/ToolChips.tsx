@@ -112,9 +112,11 @@ export default function ToolChips({
   className,
   onOpenChange,
   onToggleRow,
+  live = false,
 }: {
   /** Accepted for gallery/registry parity; ToolChips has no visual variants. */
   variant?: string;
+  live?: boolean;
   steps?: ToolStep[];
   diffs?: ToolDiff[];
   diffLines?: Record<string, ToolDiffLine[]>;
@@ -152,10 +154,10 @@ export default function ToolChips({
   const total = steps.length + 1; // rows, then diff chips
 
   useEffect(() => {
-    if (step >= total) return;
+    if (live || step >= total) return;
     const t = setTimeout(() => setStep((s) => s + 1), STEP_MS);
     return () => clearTimeout(t);
-  }, [step, total]);
+  }, [step, total, live]);
 
   const toggleRow = (label: string) =>
     setOpenRows((current) => {
@@ -191,7 +193,7 @@ export default function ToolChips({
             row hover pills room inside this overflow-hidden clip box */}
         <div className="-mx-1 overflow-hidden px-1.5 pb-1">
         <div className="mt-1.5 flex flex-col gap-1">
-          {steps.slice(0, step).map((row) => {
+          {steps.slice(0, live ? steps.length : step).map((row) => {
             const rowOpen = openRows.has(row.label);
             return (
             <div key={row.label} style={{ animation: "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" }}>

@@ -1,32 +1,83 @@
+import {createOpenRouter} from "./openrouter.js";
+import path from "node:path";
+import fs from "node:fs/promises";
+import crypto from "node:crypto";
+import {sessionFolder} from "./agent-session.js";
+import {collectArtifacts} from "./agent-artifacts.js";
 import { z } from 'zod';
 import { codexStatus, runCodex } from './codex.js';
 import { modelPrompt } from '../shared/retrieval.js';
-const input=z.object({requestId:z.string().uuid(),model:z.string().min(1).max(100),effort:z.enum(["low","medium","high","xhigh","max","ultra"]).default("low"),messages:z.array(z.object({role:z.enum(['user','assistant']),text:z.string().max(4000)})).min(1).max(8),notes:z.array(z.object({id:z.string().max(100),source:z.string().max(80),text:z.string().max(360)})).max(4)}).strict();
-export function mountModel(app,{status=codexStatus,run=runCodex,enabled=process.env.NODE_ENV !== 'production'}={}) {
-  const jobs=new Map();
+const localHost=host=>/^(127\.0\.0\.1|localhost):([1-9]\d{0,4})$/.test(host)||host==='offload.ai';
+const localOrigin=origin=>/^http:\/\/(127\.0\.0\.1|localhost):([1-9]\d{0,4})$/.test(origin)||origin==='https://offload.ai';
+const input=z.object({requestId:z.string().uuid(),conversationId:z.string().uuid().optional(),folder:z.string().max(1000).refine(p=>!p||path.isAbsolute(p)).optional(),images:z.array(z.object({name:z.string().max(120),data:z.string().max(4000000).regex(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/)})).max(3).default([]),provider:z.enum(["codex","openrouter"]).default("codex"),model:z.string().min(1).max(100),effort:z.enum(["low","medium","high","xhigh","max","ultra"]).default("low"),messages:z.array(z.object({role:z.enum(['user','assistant']),text:z.string().max(20000)})).min(1).max(20),notes:z.array(z.object({id:z.string().max(100),source:z.string().max(80),text:z.string().max(360)})).max(4)}).strict();
+export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.resolve(".data"),enabled=process.env.NODE_ENV !== 'production'}={}) {
+  const jobs=new Map(), router=createOpenRouter({dataDir});
+  const jobFolder=(owner,id)=>path.join(dataDir,'agent-jobs',owner,id);
+  const save=async job=>{const folder=jobFolder(job.owner,job.id);await fs.mkdir(folder,{recursive:true,mode:0o700});const temp=path.join(folder,'job-'+crypto.randomUUID()+'.tmp');await fs.writeFile(temp,JSON.stringify(publicJob(job)),{mode:0o600});await fs.rename(temp,path.join(folder,'job.json'));};
+  const getJob=async(owner,id)=>{const current=jobs.get(owner+':'+id);if(current)return current;if(!/^[a-f0-9-]{36}$/.test(id))return null;try{const saved=JSON.parse(await fs.readFile(path.join(jobFolder(owner,id),'job.json'),'utf8'));return {...saved,owner,...(saved.status==='running'?{status:'failed',approvals:[],error:'The local service restarted. Continue the conversation to resume its saved agent session.'}:{})};}catch{return null;}};
   app.use('/api/model',(req,res,next)=>{
     const host=req.get('host') || '', origin=req.get('origin');
-    const allowed=/^(127\.0\.0\.1|localhost):(5193|5194|5195)$/;
-    if(!enabled || !allowed.test(host) || (origin && !/^http:\/\/(127\.0\.0\.1|localhost):(5193|5194|5195)$/.test(origin)) || req.get('X-Offload-Client')!=='local')return res.status(403).json({error:'The model connection is available only in the local Offload app.'});
+    if(!enabled || !localHost(host) || (origin && (!localOrigin(origin)||new URL(origin).host!==host)) || req.get('X-Offload-Client')!=='local')return res.status(403).json({error:'The model connection is available only in the local Offload app.'});
     next();
   });
   app.get('/api/model/status',async(req,res)=>res.json(await status()));
+  app.get('/api/model/openrouter/status',async(req,res)=>{try{res.json(await router.status(req.workspaceKey));}catch{res.status(503).json({error:'OpenRouter is unavailable. Try again.'});}});
+  app.post('/api/model/openrouter/start',(req,res)=>{const origin=req.get('origin')||'http://'+req.get('host');const auth=router.start(req.workspaceKey,origin);res.cookie('offload_oauth',auth.state,{httpOnly:true,sameSite:'lax',secure:origin==='https://offload.ai',path:'/api/openrouter/callback',maxAge:600000});res.json({url:auth.url});});
+  app.post('/api/model/openrouter/disconnect',async(req,res)=>{await router.disconnect(req.workspaceKey);res.json({connected:false});});
+  app.get('/api/openrouter/callback',async(req,res)=>{
+    if(!enabled||!localHost(req.get('host')||''))return res.status(403).send('Local connection only.');
+    try{const binding=req.headers.cookie?.split(";").map(c=>c.trim()).find(c=>c.startsWith("offload_oauth="))?.slice(14);await router.complete(binding,req.query.state,req.query.code);res.clearCookie("offload_oauth",{path:"/api/openrouter/callback"});res.redirect('/app/connections?connected=openrouter');}catch{res.redirect('/app/connections?connection_error=openrouter');}
+  });
   app.post('/api/model/jobs',async(req,res)=>{
     const parsed=input.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:'The request is too long or incomplete.'});
     const p=parsed.data,key=req.workspaceKey+':'+p.requestId;
-    if(jobs.has(key))return res.json(publicJob(jobs.get(key)));
+    const previous=await getJob(req.workspaceKey,p.requestId);if(previous)return res.json(publicJob(previous));
     if([...jobs.values()].some(j=>j.status==='running'))return res.status(409).json({error:'A task is already running on this Mac. Wait or stop it first.'});
-    const connection=await status();if(!connection.connected)return res.status(409).json({error:connection.message});
+    const connection=p.provider==='openrouter'?await router.status(req.workspaceKey):await status();if(!connection.connected)return res.status(409).json({error:connection.message});
     if(!connection.models.some(m=>m.id===p.model))return res.status(400).json({error:'Choose a model available to your account.'});
-    if(!connection.models.find(m=>m.id===p.model)?.efforts?.includes(p.effort))return res.status(400).json({error:"This model does not support that reasoning level."});
+    if(connection.models.find(m=>m.id===p.model)?.efforts?.length&&!connection.models.find(m=>m.id===p.model)?.efforts?.includes(p.effort))return res.status(400).json({error:"This model does not support that reasoning level."});
     // Recheck after authentication so concurrent requests cannot start two jobs.
     if([...jobs.values()].some(j=>j.status==='running'))return res.status(409).json({error:'A task is already running.'});
     if(jobs.size>=100){for(const [k,j] of jobs){if(j.status!=='running'){jobs.delete(k);break;}}}
-    const job={id:p.requestId,owner:req.workspaceKey,status:'running',createdAt:Date.now(),controller:new AbortController()};jobs.set(key,job);
-    res.status(202).json(publicJob(job));
-    run({prompt:modelPrompt(p.messages,p.notes),model:p.model,effort:p.effort,signal:job.controller.signal}).then(result=>{if(job.status==='running'){job.status='completed';job.result=result;}}).catch(e=>{if(job.status==='running'){job.status='failed';job.error=e.message;}});
+    const job={id:p.requestId,owner:req.workspaceKey,status:'running',createdAt:Date.now(),controller:new AbortController(),events:[],decisions:[],approvals:new Map(),stream:''};jobs.set(key,job);
+    await save(job);res.status(202).json(publicJob(job));
+    const onEvent=event=>{
+      if(job.status!=='running')return;
+      if(event.type==='approvalResolved'){for(const a of job.approvals.values())if(a.rpcId===event.rpcId){job.approvals.delete(a.id);a.reject(Error('Request resolved'));}return;}
+      if(event.type==='delta'){job.stream=(job.stream+event.text).slice(-40000);return;}
+      if(event.type==='message'){job.stream=event.text.slice(-40000);return;}
+      const old=job.events.find(e=>e.id===event.id);
+      if(event.type==='output'){if(old)old.output=((old.output||'')+event.text).slice(-16000);return;}
+      if(old)Object.assign(old,event);else job.events.push(event);if(job.events.length>80)job.events.shift();
+    };
+    const onRequest=({method,params,rpcId})=>new Promise((resolve,reject)=>{
+      if(job.status!=='running'||job.controller.signal.aborted)return reject(Error('Stopped.'));
+      const id=crypto.randomUUID(),request={id,method,params:structuredClone(params),rpcId,resolve,reject};job.approvals.set(id,request);
+    });
+    (async()=>{
+      const folder=await sessionFolder(dataDir,job.owner,p.conversationId||p.requestId,p.folder);job.cwd=folder.cwd;await save(job);
+      const args={owner:job.owner,model:p.model,messages:p.messages,notes:p.notes,effort:p.effort,images:p.images,cwd:folder.cwd,onEvent,onRequest,signal:job.controller.signal};
+      const result=p.provider==='openrouter'?await router.run(args):await run({...args,...folder,prompt:modelPrompt(folder.threadId?p.messages.slice(-1):p.messages,p.notes)});
+      if(job.status!=='running')return;
+      for(const item of result.items||[])if(item.type==='imageGeneration'&&item.status==='completed'&&/^[A-Za-z0-9+/=]+$/.test(item.result||'')&&item.result.length<28000000){await fs.writeFile(path.join(folder.cwd,'generated-'+crypto.randomUUID()+'.png'),Buffer.from(item.result,'base64'),{mode:0o600});}
+      const artifacts=await collectArtifacts(folder.cwd,path.join(jobFolder(job.owner,job.id),'files'),job.createdAt);
+      job.result={text:result.text.slice(0,20000),usage:result.usage,model:p.model,agent:{jobId:job.id,cwd:folder.cwd,events:job.events,artifacts}};job.status='completed';job.stream='';
+    })().catch(e=>{if(job.status==='running'){job.status='failed';job.error=e.message;}}).finally(async()=>{for(const a of job.approvals.values())a.reject(Error('Run ended.'));job.approvals.clear();await save(job).catch(()=>{});});
   });
-  app.get('/api/model/jobs/:id',(req,res)=>{const job=jobs.get(req.workspaceKey+':'+req.params.id);if(!job)return res.status(404).json({error:'This run is no longer available. It may have stopped when the server restarted.'});res.json(publicJob(job));});
-  app.post('/api/model/jobs/:id/stop',(req,res)=>{const job=jobs.get(req.workspaceKey+':'+req.params.id);if(!job)return res.status(404).json({error:'Run not found.'});if(job.status==='running'){job.status='cancelled';job.controller.abort();}res.json(publicJob(job));});
+  app.get('/api/model/jobs/:id',async(req,res)=>{const job=await getJob(req.workspaceKey,req.params.id);if(!job)return res.status(404).json({error:'Run not found.'});res.json(publicJob(job));});
+  app.post('/api/model/jobs/:id/stop',async(req,res)=>{const job=jobs.get(req.workspaceKey+':'+req.params.id);if(!job)return res.status(404).json({error:'Run not found.'});if(job.status==='running'){job.status='cancelled';job.controller.abort();for(const a of job.approvals.values())a.reject(Error('Stopped.'));job.approvals.clear();await save(job);}res.json(publicJob(job));});
+  app.post('/api/model/jobs/:id/approvals/:approvalId',(req,res)=>{
+    const job=jobs.get(req.workspaceKey+':'+req.params.id),approval=job?.approvals?.get(req.params.approvalId);
+    if(!job||job.status!=='running'||!approval)return res.status(409).json({error:'This approval is no longer pending.'});
+    const answer=z.object({action:z.enum(['approve','deny']),answers:z.record(z.string(),z.string().max(8000)).optional(),content:z.record(z.string(),z.unknown()).optional()}).strict().safeParse(req.body);
+    if(!answer.success)return res.status(400).json({error:'Choose a response.'});
+    job.approvals.delete(approval.id);job.decisions.push({id:approval.id,method:approval.method,action:answer.data.action,at:Date.now()});approval.resolve(answer.data);res.json({ok:true});
+  });
+  app.get('/api/model/jobs/:id/artifacts/:artifactId',async(req,res)=>{
+    const job=await getJob(req.workspaceKey,req.params.id),artifact=job?.result?.agent?.artifacts?.find(a=>a.id===req.params.artifactId);
+    if(!artifact)return res.status(404).json({error:'File not found.'});
+    res.set('Content-Disposition',`attachment; filename="${path.basename(artifact.name).replace(/[^a-zA-Z0-9._-]/g,'_')}"`);res.type('application/octet-stream');
+    res.sendFile(path.resolve(jobFolder(req.workspaceKey,job.id),'files',artifact.id),{dotfiles:'allow'});
+  });
 }
-function publicJob({id,status,createdAt,result,error}) {return {id,status,createdAt,result,error};}
+function publicJob(job){const {id,status,createdAt,result,error,events,stream,cwd,decisions}=job;return {id,status,createdAt,result,error,events,stream,cwd,decisions,approvals:job.approvals instanceof Map?[...job.approvals.values()].map(({id,method,params})=>({id,method,params})):[]};}

@@ -145,10 +145,14 @@ export default function ApprovalCard({
   onSubmitted,
   onAnswerChange,
   resettable = true,
+  manual = false,
+  onSkipped,
 }: {
   questions?: ApprovalQuestion[];
   labels?: Partial<ApprovalLabels>;
-  onSubmitted?: (answers: Record<number, number[]>) => void;
+  onSubmitted?: (answers: Record<number, number[]>, custom: Record<number,string>) => void;
+  manual?: boolean;
+  onSkipped?: () => void;
   onAnswerChange?: (questionIndex: number, answer: number[]) => void;
   resettable?: boolean;
   variant?: string;
@@ -208,7 +212,7 @@ export default function ApprovalCard({
   const send = () => {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     setSent(true);
-    onSubmitted?.(answers);
+    onSubmitted?.(answers, custom);
   };
 
   const advance = () => {
@@ -228,7 +232,7 @@ export default function ApprovalCard({
       onAnswerChange?.(qi, next);
       return { ...current, [qi]: next };
     });
-    if (type === "radio") {
+    if (type === "radio" && !manual) {
       setCustom((current) => ({ ...current, [qi]: "" }));
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
       advanceTimer.current = setTimeout(() => {
@@ -279,7 +283,7 @@ export default function ApprovalCard({
         <button
           type="button"
           aria-label="Dismiss"
-          onClick={() => setOpen(false)}
+          onClick={() => onSkipped ? onSkipped() : setOpen(false)}
           className="primitive-icon-button absolute right-2.5 top-2.5 z-10 text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink"
         >
           <Ico size={14} sw={2.2} path={<path d="M18 6L6 18M6 6l12 12" />} />
@@ -405,7 +409,7 @@ export default function ApprovalCard({
           </div>
 
           <div className="-mr-0.5 flex items-center gap-1.5">
-            <Button variant="ghost" size="sm" onClick={() => (last ? setOpen(false) : goTo(qi + 1))}>
+            <Button variant="ghost" size="sm" onClick={() => onSkipped ? onSkipped() : (last ? setOpen(false) : goTo(qi + 1))}>
               {t.skip}
             </Button>
             <Button variant="accent" size="sm" disabled={!hasAnswer} onClick={advance}>
