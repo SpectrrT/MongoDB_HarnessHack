@@ -7,24 +7,28 @@ import snapshot from './history-workflow-snapshot.json';
 import '../history-workflow.css';
 
 // Above the chat box: read the computer history, find where the back-and-forth is, and propose a workflow
-// Offload could run. The analysis runs on Atlas at every click. If the API can't be reached, the last saved
+// Offload could run. The analysis runs through the local history service at every click. If the API can't be reached, the last saved
 // analysis of the same sample week is shown, labeled as such.
 const post = async (url, body = {}) => {
-  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const value = await r.json().catch(() => ({}));
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Offload-Client':'local' }, body: JSON.stringify(body) });
+  if(!r.headers.get('content-type')?.includes('application/json'))throw Error('The local computer history service is unavailable.');
+  const value = await r.json();
   if (!r.ok) throw Error(value.error || 'Request failed.');
   return value;
 };
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const provenanceOf = finding => finding.provenance || (finding.sample ? 'seed' : 'unknown');
+const provenanceLabel = finding => ({seed:'Sample activity',captured:'Captured activity',mixed:'Sample and captured activity',unknown:'Activity source not verified'})[provenanceOf(finding)];
+
 function refinePrompt({ summary, finding, workflow }) {
   const steps = workflow.steps.map((s, i) => `${i + 1}. ${s.label} (${s.app}): ${s.detail}`).join('\n');
   return [
-    `Offload looked at my computer history: ${summary}`,
-    finding.topTitle ? `The thread I keep reopening: "${finding.topTitle}" (${finding.topTitleVisitsPerDay} times a night).` : '',
-    finding.meetingTimes.length ? `The meetings I end up booking: ${finding.meetingTimes.join(', ')}.` : '',
+    `Source: ${provenanceLabel(finding)}. This is a workflow proposal, not completed work. ${summary}`,
+    finding.topTitle ? `Repeated window title: "${finding.topTitle}" (${finding.topTitleVisitsPerDay} visits per recorded day).` : '',
+    finding.meetingTimes.length ? `Times found in saved window titles: ${finding.meetingTimes.join(', ')}. These do not prove a meeting was booked.` : '',
     `Draft workflow, "${workflow.title}":\n${steps}`,
-    'Improve this workflow for me. Keep the step where you ask me once before sending or booking. Say exactly what you would do with the next scheduling thread, and which permissions you need.',
+    'Improve this proposed workflow using only the supplied evidence. Preserve sample-data labels. Do not claim task completion or authorize sends, bookings, database writes or other external actions. Describe a local draft and the permissions still needed.',
   ]
     .filter(Boolean)
     .join('\n\n');
@@ -35,11 +39,13 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
   const [result, setResult] = useState(null);
   const [saved, setSaved] = useState(false);
   const [note, setNote] = useState('');
+  const [saving,setSaving]=useState(false);
+  const [saveError,setSaveError]=useState('');
 
   const build = async () => {
     setPhase('loading');
     setSaved(false);
-    setNote('');
+    setNote('');setSaveError('');
     try {
       const [value] = await Promise.all([post('/api/activity/workflow'), wait(1400)]);
       if (!value.finding) return setPhase('empty');
@@ -51,12 +57,14 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
     setPhase('done');
   };
   const handOff = async () => {
+    setSaving(true);setSaveError('');
     try {
-      await post('/api/activity/workflows', { ...result.workflow });
-    } catch {
-      // Saving is best effort; the card still reflects the decision.
-    }
-    setSaved(true);
+      const {saves,...workflow}=result.workflow;
+      const saved=await post('/api/activity/workflows', {...workflow,provenance:provenanceOf(result.finding)});
+      if(saved.status!=='saved-proposal'||!saved.id)throw Error('The service did not confirm that this proposal was saved.');
+      setSaved(true);
+    } catch(error) {setSaveError(error.message);}
+    finally {setSaving(false);}
   };
 
   if (phase === 'idle' || phase === 'empty')
@@ -65,17 +73,17 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
         <button type="button" onClick={build}>
           <Sparkles size={15} aria-hidden="true" />
           <span>Find work to hand off</span>
-          <small>from your computer history</small>
+          <small>from saved activity</small>
         </button>
-        {phase === 'empty' && <p role="status">Nothing repeats enough yet. Keep the collector running for a few days.</p>}
+        {phase === 'empty' && <p role="status">No repeated workflow found in the saved activity. You can use the example in Sleep without enabling capture.</p>}
       </div>
     );
 
   if (phase === 'loading')
     return (
       <div className="history-workflow is-loading">
-        <OrbLoading compact state="searching" label="Reading your computer history…" />
-        <p>Looking for the hour you switch apps the most, across the last two weeks.</p>
+        <OrbLoading compact state="searching" label="Reading saved activity…" />
+        <p>Looking for the hour you switch apps the most, across the last 28 days.</p>
       </div>
     );
 
@@ -86,8 +94,7 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
     <section className="history-workflow" aria-labelledby="history-workflow-title">
       <header>
         <span className="eyebrow">
-          <Clock3 size={13} aria-hidden="true" /> From your computer history
-          {finding.sample && <em>Sample week</em>}
+          <Clock3 size={13} aria-hidden="true" /> {provenanceLabel(finding)}
         </span>
         <button type="button" className="icon" aria-label="Close" onClick={() => setPhase('idle')}>
           <X size={15} />
@@ -99,15 +106,15 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
           <span key={a.label} className="app-chip">
             {a.logo ? <ConnectionLogo id={a.logo} size={16} /> : null}
             {a.name}
-            <small>{a.visitsPerDay}× a night</small>
+            <small>{a.visitsPerDay}× per recorded day</small>
           </span>
         ))}
         {finding.topTitle && (
           <span className="stat-chip">
-            Reopened “{finding.topTitle}” {finding.topTitleVisitsPerDay}× a night
+            Reopened “{finding.topTitle}” {finding.topTitleVisitsPerDay}× per recorded day
           </span>
         )}
-        {finding.meetingTimes[0] && <span className="stat-chip">Meetings land at {finding.meetingTimes[0]}</span>}
+        {finding.meetingTimes[0] && <span className="stat-chip">Time shown in a saved title: {finding.meetingTimes[0]}</span>}
       </div>
       <div className="history-workflow-strip" aria-hidden="true">
         {finding.timeline.map((s, i) => (
@@ -116,7 +123,7 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
       </div>
 
       <div className="history-workflow-plan">
-        <p className="kicker">Offload can take this off your plate</p>
+        <p className="kicker">Proposed workflow</p>
         <h4>{workflow.title}</h4>
         <p className="problem">{workflow.problem}</p>
         <p className="trigger">
@@ -144,19 +151,19 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
           ))}
         </ul>
         <p className="needs">
-          Needs {workflow.needs.join(' · ')}. Saves {workflow.saves}.
+          Needs {workflow.needs.join(' · ')}. {workflow.observation || 'Time savings have not been measured.'}
         </p>
       </div>
 
       <footer>
         {saved ? (
           <p className="saved" role="status">
-            <Check size={15} aria-hidden="true" /> Handed off. Offload asks you once before it sends or books anything.
+            <Check size={15} aria-hidden="true" /> Proposal saved. No task has started and no account changes are authorized.
           </p>
         ) : (
           <>
-            <button type="button" className="button small" onClick={handOff}>
-              Hand it off
+            <button type="button" className="button small" disabled={saving} onClick={handOff}>
+              {saving ? 'Saving…' : 'Save proposal'}
             </button>
             {ready && (
               <button type="button" className="button small secondary" onClick={() => onRefine(refinePrompt(result), `Refine “${workflow.title}”`)}>
@@ -169,7 +176,8 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
           </>
         )}
       </footer>
-      <p className="source">{note || `Found with one aggregation over ${finding.sessions} sessions in MongoDB Atlas, planned on this Mac.`}</p>
+      {saveError&&<p role="alert">{saveError}</p>}
+      <p className="source">{note || `Found with one aggregation over ${finding.sessions} saved sessions. This rule-based proposal has not executed any work.`}</p>
     </section>
   );
 }

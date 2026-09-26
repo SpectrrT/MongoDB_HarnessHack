@@ -315,9 +315,9 @@ test('computer history on MongoDB', async (t) => {
       assert.ok(plan.steps.some((step) => step.ask), 'the plan asks once before sending');
       assert.match(plan.problem, /12:00 AM/);
       const api = createApp({ serveStatic: false, activity: s });
-      const body = (await request(api).post('/api/activity/workflow').send({}).expect(200)).body;
+      const body = (await request(api).post('/api/activity/workflow').set('X-Offload-Client','local').send({}).expect(200)).body;
       assert.equal(body.workflow.title, plan.title);
-      assert.equal((await request(api).post('/api/activity/workflows').send(body.workflow).expect(201)).body.status, 'handed-off');
+      assert.equal((await request(api).post('/api/activity/workflows').set('X-Offload-Client','local').send(body.workflow).expect(201)).body.status, 'saved-proposal');
       assert.equal(await s.db.collection('activity_workflows').countDocuments(), 1);
     });
   } finally {

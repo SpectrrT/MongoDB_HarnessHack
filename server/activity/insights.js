@@ -26,7 +26,7 @@ export const appInfo = (label) => APPS[label] || { name: label, logo: null };
 const clock = (hour, minute = 0) =>
   new Date(Date.UTC(2000, 0, 1, hour, minute)).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 
-export async function findFriction(activity, workspace, { days = 14 } = {}) {
+export async function findFriction(activity, workspace, { days = 28 } = {}) {
   const since = new Date(Date.now() - days * 86400e3);
   const [hot] = await activity.sessions
     .aggregate([
@@ -44,7 +44,7 @@ export async function findFriction(activity, workspace, { days = 14 } = {}) {
           switches: { $sum: { $cond: [{ $and: [{ $ne: ['$previous', null] }, { $ne: ['$previous', '$label'] }] }, 1, 0] } },
           seconds: { $sum: '$durationSec' },
           sessions: {
-            $push: { label: '$label', title: '$title', sec: '$durationSec', start: '$start', minute: { $minute: '$start' }, source: '$source' },
+            $push: { label: '$label', title: '$title', sec: '$durationSec', start: '$start', id: '$_id', minute: { $minute: {date:'$start',timezone:activity.timeZone||'UTC'} }, source: '$source' },
           },
         },
       },
@@ -60,11 +60,12 @@ export async function findFriction(activity, workspace, { days = 14 } = {}) {
       { $set: { dayCount: { $size: '$days' } } },
       { $match: { dayCount: { $gte: 2 } } },
       { $set: { switchesPerDay: { $divide: ['$switches', '$dayCount'] } } },
+      { $match: { $or: [{switchesPerDay:{$gte:4}},{switchesPerDay:{$gte:3},dayCount:{$gte:3}}] } },
       { $sort: { switchesPerDay: -1, seconds: -1 } },
       { $limit: 1 },
     ])
     .toArray();
-  if (!hot || hot.switchesPerDay < 4) return null;
+  if (!hot || (hot.switchesPerDay < 4 && !(hot.switchesPerDay >= 3 && hot.dayCount >= 3))) return null;
 
   const sessions = hot.sessions.flat().sort((a, b) => new Date(a.start) - new Date(b.start));
   const byApp = new Map();
@@ -84,8 +85,13 @@ export async function findFriction(activity, workspace, { days = 14 } = {}) {
   const minutes = sessions.map((s) => s.minute).sort((a, b) => a - b);
   const startMinute = minutes[Math.floor(minutes.length / 4)] ?? 0;
   const dayCount = hot.dayCount;
+  const counts={seed:0,captured:0,unknown:0};
+  for(const session of sessions)counts[session.source==='seed'?'seed':session.source==='collector'?'captured':'unknown']++;
+  const sources=Object.keys(counts).filter(key=>counts[key]>0);
+  const provenance=sources.length>1?'mixed':sources[0]||'unknown';
   return {
     hour: hot._id,
+    lookbackDays:days,timeZone:activity.timeZone||'UTC',provenance,sourceCounts:counts,sourceIds:sessions.map(session=>String(session.id)),
     window: `${clock(hot._id, startMinute)}`,
     days: dayCount,
     minutesPerDay: Math.round(hot.seconds / dayCount / 60),
@@ -115,19 +121,31 @@ export function describe(f) {
   const names = f.apps.map((a) => a.name);
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
   const when = f.hour >= 20 || f.hour < 5 ? 'nights' : 'days';
-  return `On ${f.days} ${when} in the last two weeks, around ${f.window}, you spent about ${f.minutesPerDay} minutes bouncing between ${list}, switching ${f.switchesPerDay} times each ${when === 'nights' ? 'night' : 'day'}.`;
+  return `On ${f.days} ${when} in the last ${f.lookbackDays||28} days, around ${f.window}, you spent about ${f.minutesPerDay} minutes bouncing between ${list}, switching ${f.switchesPerDay} times each ${when === 'nights' ? 'night' : 'day'}.`;
 }
 
 export function planWorkflow(f) {
   const has = (label) => f.apps.some((a) => a.label === label);
   const who = f.places.length > 1 ? `${f.places.slice(0, -1).join(', ')} and ${f.places.at(-1)}` : f.places[0] || 'everyone';
-  const saves = `about ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches a night`;
+  const observation = `Observed: about ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches per recorded day. Time savings have not been measured.`;
+  if(has('cloud.mongodb.com')&&has('github.com')&&/query|index|explain/i.test(f.topTitle||''))return {
+    kind:'engineering',title:'Prepare a database query review',
+    problem:'Repeated activity across Atlas and the source repository suggests a query-review workflow to confirm.',
+    trigger:'Before the next confirmed query review',
+    steps:[
+      {app:'MongoDB Atlas',label:'Collect supplied evidence',detail:'Gather the supplied query shape, baseline metrics and existing issue notes. Mark missing inputs.'},
+      {app:'GitHub',label:'Compare staging plans',detail:'Review owner-provided explain plans against query code. Do not execute queries or create indexes.'},
+      {app:'Offload',label:'Draft rollout and rollback',detail:'Prepare a local checklist with proposed checks and unknown owners or thresholds clearly marked.'},
+      {app:'You',label:'Review the draft',detail:'Confirm the plan and permissions before any database or issue changes.',ask:true},
+    ],proactive:['Prepare review notes from supplied evidence','Suggest next steps after the review'],
+    needs:['Selected query and meeting notes','Permission for a local draft'],observation,executionStatus:'proposal',
+  };
   if (has('mail.google.com') && has('calendar.google.com')) {
     const late = f.meetingTimes.find((t) => /^(12|1[01]):\d{2}\s?PM$|^(12|[1-5]):\d{2}\s?AM$/.test(t));
     return {
       kind: 'scheduling',
       title: 'Schedule across time zones for you',
-      problem: `Scheduling by hand${f.places.length ? ` with ${who}` : ''}${late ? `, and the meeting still lands at ${late}` : ''}.`,
+      problem: `Repeated scheduling-related activity${f.places.length ? ` mentioning ${who}` : ''}${late ? `. Saved titles mention ${late}` : ''}. Confirm the meeting details before acting.`,
       trigger: `A scheduling thread arrives in Gmail${f.topTitle ? `, like "${f.topTitle}"` : ''}`,
       steps: [
         { app: 'Gmail', logo: 'gmail', label: 'Read the thread', detail: 'Pull out who needs to meet, how long, and the times already proposed' },
@@ -137,12 +155,13 @@ export function planWorkflow(f) {
         { app: 'Google Calendar', logo: 'calendar', label: 'Book and confirm', detail: late ? `Send the invite, and flag it when ${late} is the only overlap` : 'Send the invite and add the agenda from the thread' },
       ],
       proactive: [
-        late ? `Stop booking you at ${late}: propose the next morning’s overlap instead` : 'Batch scheduling replies into one pass a day',
+        late ? `If ${late} is a confirmed meeting time, consider the next morning’s overlap` : 'Batch scheduling replies into one pass a day',
         'Keep a standing slot that works for every time zone',
-        'Answer “does this time work?” threads while you sleep',
+        'Draft scheduling replies for review while you sleep',
       ],
       needs: ['Gmail: read and send', 'Google Calendar: read and write'],
-      saves,
+      observation,
+      executionStatus:'proposal',
     };
   }
   if (has('Codex') && (has('Code') || has('Terminal') || has('github.com'))) {
@@ -159,7 +178,8 @@ export function planWorkflow(f) {
       ],
       proactive: ['Run the tests before you look at them', 'Summarize what failed overnight'],
       needs: ['Local tools: read files and run commands'],
-      saves,
+      observation,
+      executionStatus:'proposal',
     };
   }
   const names = f.apps.map((a) => a.name);
@@ -174,6 +194,7 @@ export function planWorkflow(f) {
     ],
     proactive: ['Prepare the summary before you start'],
     needs: names.map((n) => `${n}: read`),
-    saves,
+    observation,
+    executionStatus:'proposal',
   };
 }

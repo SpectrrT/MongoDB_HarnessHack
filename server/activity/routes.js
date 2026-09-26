@@ -64,11 +64,15 @@ export function activityRoutes(app, { activity }) {
   app.post(
     '/api/activity/workflows',
     route(async (req, res) => {
-      const body = z
-        .object({ title: z.string().min(1).max(120), kind: z.string().max(40), steps: z.array(z.object({ label: z.string().max(120), app: z.string().max(60) }).passthrough()).max(12) })
-        .passthrough()
-        .parse(req.body);
-      const doc = { workspace, ...body, status: 'handed-off', createdAt: new Date() };
+      const body = z.object({title:z.string().min(1).max(120),kind:z.enum(['scheduling','coding','batch','engineering']),
+        problem:z.string().max(2000).optional(),trigger:z.string().max(500).optional(),
+        steps:z.array(z.object({label:z.string().min(1).max(120),app:z.string().max(60),detail:z.string().max(2000).optional(),
+          logo:z.string().max(60).nullable().optional(),ask:z.boolean().optional(),step:z.number().int().min(1).max(12).optional()}).strict()).min(1).max(12),
+        proactive:z.array(z.string().max(1000)).max(12).optional(),needs:z.array(z.string().max(200)).max(12).optional(),
+        observation:z.string().max(500).optional(),executionStatus:z.literal('proposal').optional(),
+        provenance:z.enum(['seed','captured','mixed','unknown']).default('unknown'),
+      }).strict().parse(req.body);
+      const doc = { ...body, workspace, status: 'saved-proposal', createdAt: new Date() };
       const { insertedId } = await activity.db.collection('activity_workflows').insertOne(doc);
       res.status(201).json({ id: String(insertedId), status: doc.status });
     }),
