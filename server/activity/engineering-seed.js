@@ -14,10 +14,18 @@ export const ENGINEERING_STEPS = [
 ];
 
 export function engineeringSamples(now = new Date()) {
-  return mongodbDemoOccurrences(now).flatMap(timestamp => ENGINEERING_STEPS.flatMap((step, index) => {
+  const weekly = mongodbDemoOccurrences(now).flatMap(timestamp => ENGINEERING_STEPS.flatMap((step, index) => {
     const start = +new Date(timestamp) + index * 315000;
     return Array.from({ length: 60 }, (_, sample) => ({ ...step, ts: new Date(start + sample * SAMPLE_MS), source: 'seed', active: true }));
   }));
+  const clock = new Date(now); clock.setUTCSeconds(0, 0);
+  const today = [
+    { from: 35, to: 5, app: 'zoom.us', title: 'Example: Orders query review | p95 180 ms | timeouts 0.6%', active: false },
+    { from: 4, to: 0, app: 'Notion', title: 'Example: Orders meeting notes | draft staging rollout and rollback checklist', active: true },
+  ].flatMap(({from, to, ...step}) => Array.from({length: (from - to) * 60e3 / SAMPLE_MS}, (_, index) => ({
+    ...step, ts: new Date(+clock - from * 60e3 + index * SAMPLE_MS), source: 'seed',
+  })));
+  return [...weekly, ...today];
 }
 
 export async function seedEngineeringHistory(activity, { workspace = workspaceId(), now = new Date(), reset = false } = {}) {
