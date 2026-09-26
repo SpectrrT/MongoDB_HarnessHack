@@ -10,12 +10,13 @@ export const MONGODB_DEMO = Object.freeze({
 export function mongodbDemoOccurrences(now = new Date()) {
   const hour = new Date(now);
   if (!Number.isFinite(+hour)) throw new TypeError('The example needs a valid date.');
-  hour.setUTCMinutes(0, 0, 0);
+  hour.setUTCHours(15, 0, 0, 0);
   return [20, 13, 6].map(days => new Date(+hour - days * 86400e3).toISOString());
 }
 
 export function mongodbDemoSources(now = new Date()) {
   const clock = new Date(now);
+  clock.setUTCSeconds(0, 0);
   const occurrences = mongodbDemoOccurrences(clock);
   const base = { projectId: MONGODB_DEMO.projectId, projectTitle: MONGODB_DEMO.projectTitle, origin: 'user' };
   const events = occurrences.map(timestamp => {
@@ -24,7 +25,7 @@ export function mongodbDemoSources(now = new Date()) {
       timestamp, kind: 'routine', text: MONGODB_DEMO.routineText,
       locator: `example://mongodb/weekly-orders-review/${day}` };
   });
-  const sessionId = `example-orders-meeting-${clock.toISOString().slice(0, 10)}`;
+  const sessionId = `example-orders-meeting-${clock.toISOString().slice(0, 16)}`;
   const meeting = { id: MONGODB_DEMO.meetingId, title: MONGODB_DEMO.title,
     startsAt: new Date(+clock - 35 * 60e3).toISOString(), endsAt: new Date(+clock - 5 * 60e3).toISOString(), status: 'completed' };
   events.push({ ...base, sourceId: `${sessionId}:notes`, sessionId, timestamp: new Date(+clock - 4 * 60e3).toISOString(), kind: 'meeting-note', meeting,
