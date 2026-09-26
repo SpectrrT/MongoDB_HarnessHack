@@ -1,0 +1,54 @@
+# Sleep assigned tasks: execution and evidence
+
+Sleep now assigns local drafting tasks to a durable worker. The former overnight queue stored a brief with `runner: unconfigured` and could not produce an artifact. The new queue stores a deadline, token budget, independent output checks, and explicit file-write permission. A worker makes one bounded generation call, persists the proposal, pauses for approval when needed, writes into a new isolated task folder through the existing local-tool adapter, runs the checks, and either completes or attempts a bounded repair.
+
+The default provider is OpenRouter, using the existing connected account key or the configured worker key. The provider receives no tools. This is a real local file workflow, not autonomous browser research or arbitrary shell execution. It never sends messages, publishes, records, or selects user folders. The UI remains under Sleep.
+
+## Measured baseline and improvements
+
+Three short synthetic tasks ask for a Markdown release handoff, a Markdown meeting preparation note, and a JSON project state record. All acceptance checks are fixed before generation. They check required exact phrases, minimum file size, and JSON syntax. The meeting draft deliberately requires approval. These checks establish the declared criteria, not overall semantic quality.
+
+| Run | Verified tasks | Model calls | Reported total tokens | Provider cost | Wall time | Approval pauses |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Old queue-only implementation | 0/3 | 0 | 0 | $0 | Not executable | 0 |
+| First live execution run | 2/3 | 7 | 1,721 | $0.001352 | 9.390 s | 3 |
+| Refined execution prompt | 3/3 | 3 | 815 | $0.000608 | 3.791 s | 1 |
+
+Both live runs used `openai/gpt-4.1-mini` through OpenRouter against temporary local MongoDB, with the same three tasks and criteria. The first run repeatedly changed capitalization or split required phrases with Markdown. We clarified the exact phrase contract and retained the failed draft alongside failed checks for subsequent repair. The second run produced three verified real files using four fewer calls and 906 fewer reported tokens. One persisted draft resumed after approval without regenerating it. Raw evidence includes each artifact's contents, SHA-256, individual checks, costs, provider usage, and task events:
+
+- `docs/evidence/sleep-execution-live-initial.json`
+- `docs/evidence/sleep-execution-live.json`
+
+These are small sequential runs, not statistically reliable quality, latency, or token-saving benchmarks. The old queue's zero usage reflects its inability to execute. This evidence does not establish general context-compaction savings or long-horizon scale. Local MongoDB exercises the actual driver and atomic update path; this particular test did not use Atlas. No missing usage occurred in either live run.
+
+## Recovery and boundaries
+
+- Claims are persisted with a unique lease token. Every checkpoint commit and renewal checks that token and an unexpired lease. Stale workers cannot commit.
+- Each lease writes immutable staged files in a separate folder. A stopped process can leave an orphan draft, but cannot overwrite the artifact selected by another claim. The database atomically selects the verified artifacts. This does not claim exactly-once arbitrary external effects.
+- The task reserves a conservative UTF-8-byte input estimate plus a capped output allowance before each model call. Reported input and output usage settle that reservation. Unknown usage after crashes, timeouts, or cancellation consumes the entire reservation. This can overcount. Provider-reported overages end the task before any artifact is accepted. Reservations are a harness safeguard, not a universal tokenizer or billing guarantee.
+- The default call timeout is 60 seconds and the default maximum is three generations. Deadline, budget exhaustion, and failed acceptance checks produce explicit incomplete outcomes. Cancellation and pauses fence the active worker; shutdown parks the task for a manual resume. Only generation marked retry-safe can retry a provider failure.
+- Approval is bound to the exact persisted proposal. Repaired proposals require new approval unless the user already granted creation of the named file in the isolated task folder.
+- Read and control routes require workspace ownership. Downloads verify the recorded content hash before returning the file. Artifacts live on the worker filesystem, so worker and server must share the configured `SLEEP_TASK_ROOT`; remote artifact replication is not implemented.
+
+## Reproduce
+
+From the project root after installing dependencies:
+
+```sh
+node --test tests/sleep-execution.test.js
+node scripts/sleep-execution-demo.mjs
+node --env-file=.env scripts/sleep-execution-demo.mjs --live
+```
+
+The default demo uses labeled scripted fixtures and no credentials. The `--live` demo requires `OPENROUTER_API_KEY`; it creates only synthetic local files under `work/sleep-execution-live`. Both write raw evidence under `docs/evidence`. `SLEEP_BENCH_MODEL` overrides the live demo model. The live run costs money.
+
+To run assigned UI tasks, set `MONGODB_URI` and provide `OPENROUTER_API_KEY` in the existing ignored `.env`, or connect OpenRouter in the current workspace. Set `OFFLOAD_MODEL` for the worker model. Either start a separate worker or explicitly enable it with the local server:
+
+```sh
+node --env-file=.env server/sleep/execution-worker.js
+SLEEP_EXECUTION_ENABLED=true npm start
+```
+
+Use one of those commands. `OFFLOAD_DATA_DIR` selects account storage; `SLEEP_TASK_ROOT` selects the shared isolated artifact root. Leave auto-start disabled to save and inspect tasks without executing them. Existing legacy briefs are not silently started: the UI asks the user to add output checks and assign them.
+
+The focused suite contains 19 scenarios, reported by Node as 20 passing tests including its parent suite. It covers real files, repair and incomplete results, deadlines, reservations and missing usage, explicit approval after restart, concurrent claims, stale workers, cancellation, shutdown, bounded timeouts, retry safety, scope, idempotency, ownership, tamper detection, and the provider wire contract. The full unit/API suite at implementation time reported 145 passing and one optional live Atlas test skipped. The build passed with the separate baseline Connections JSX correction applied. Browser tests use labeled rendering fixtures and do not substitute for the live provider evidence.

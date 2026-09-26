@@ -23,3 +23,10 @@ The native OpenRouter tool loop now also uses the selector when enabled. In a se
 local file tools, both paths recover the same archived key; serialized prompt text is 111,805 versus 45,148 characters
 (59.62% lower). The compacted path needs one additional model request (8 to 9) and 15 scripted decision calls. This
 checks integration and overhead accounting, not live model token efficiency. Evidence: `docs/evidence/native-context-paired.json`.
+## Assigned tasks that actually run
+
+Sleep also executes assigned local drafts with MongoDB leases, persisted approvals, bounded generation, token reservations, and independent file checks. A failed check leads to a bounded repair; a deadline or exhausted budget ends as incomplete. Waiting itself is not the source of efficiency. Resuming a persisted proposal avoids regenerating it.
+
+Three synthetic live OpenRouter `openai/gpt-4.1-mini` tasks produced three verified artifacts with 815 reported total tokens, three calls, $0.000608 provider cost, and 3.791 seconds of wall time. One draft resumed after an explicit approval pause without another model call. The initial implementation passed two of three with 1,721 tokens and seven calls. Clarifying exact acceptance phrases and carrying the failed draft into repairs eliminated unnecessary retries in the second run. The old overnight queue only saved briefs and produced no artifacts.
+
+This is a small local MongoDB execution smoke test, not a general quality or scale benchmark. File checks establish required phrases, size, and JSON syntax, not complete semantic correctness. The worker creates isolated local drafts only. It cannot autonomously send, publish, browse, or execute arbitrary shell commands. Raw before-and-after evidence and exact run instructions are in [Sleep task execution](sleep-task-execution.md).
