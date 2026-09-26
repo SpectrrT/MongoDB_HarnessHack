@@ -47,7 +47,7 @@ export async function createRem({
   model = traceModel(model, { costOf });
   await ensureIndexes(db, { dims: embedder.dims || 1024, search: db.kind !== "mongo" || db.atlasSearch !== false });
   await archiveLegacyEpisodes(db, { now: clock.now() });
-  const ctx = { db, model, embedder, clock, workspace, proposer, chaos: null, day: 1, onEvent };
+  const ctx = { db, model, embedder, clock, workspace, proposer, completion, chaos: null, day: 1, onEvent };
   ctx.world = db.kind === "mongo" ? await createPersistentWorld(db, workspace) : createWorld(workspace);
   ctx.agent = createAgent({
     db,

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { remAccess } from "./rem-access.js";
 import { createRem } from "../rem/index.js";
+import { MAX_EPISODE_JSON_CHARS } from "../rem/episode-archive.js";
 import { review } from "../rem/cycle.js";
 import { createEmbedder } from "../rem/embed.js";
 import { createModel } from "../rem/model.js";
@@ -117,7 +118,7 @@ export function mountRem(app) {
   }));
   app.get("/api/rem/episodes/:id", handle(async (req, res) => {
     const id = z.string().min(1).max(200).parse(req.params.id);
-    const query = z.object({ offset: z.coerce.number().int().min(0).max(33554432).default(0),
+    const query = z.object({ offset: z.coerce.number().int().min(0).max(MAX_EPISODE_JSON_CHARS).default(0),
       limit: z.coerce.number().int().min(1).max(8000).default(4000) }).strict().parse(req.query);
     const result = await (await getRem()).episode(id, query);
     if (!result) { res.status(404); return { error: "Episode not found." }; }

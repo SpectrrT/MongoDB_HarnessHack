@@ -365,9 +365,29 @@ export async function runGymTask(t, genome, { model, embedder, skills = [], grad
 async function gradeRun(gate, run, genome, verdict) {
   const final = run.final ?? "";
   const failures = [...verdict.failures, ...verdict.collateral.map((c) => `collateral: ${c}`)];
-  const checked = await gate.check({ cp: run, final, genome, evidence: { failures, pass: verdict.pass } });
-  const blind = await gate.check({ cp: run, final, genome, evidence: null });
-  return { source: blind.source, checked: checked.p, blind: blind.p };
+  const score = async (mode, evidence) => {
+    let result, failed = false;
+    try { result = await gate.check({ cp: run, final, genome, evidence }); }
+    catch (error) {
+      failed = true;
+      result = { ...error?.usage, usage: error?.usage, source: gate.name, available: false };
+    }
+    result ||= {};
+    const stub = !failed && (result.source ?? gate.name) === "stub";
+    const tokens = Number.isSafeInteger(result.tokens) && result.tokens >= 0 ? result.tokens : stub ? 0 : null;
+    const cost = Number.isFinite(result.cost) && result.cost >= 0 ? result.cost : stub ? 0 : null;
+    const validScore = result.available !== false && Number.isFinite(result.p) && result.p >= 0 && result.p <= 1;
+    return { mode, source: result.source ?? gate.name, p: validScore ? result.p : null, validScore,
+      available: result.available !== false, ...(failed ? { error: "Completion grader threw before returning a score." } : {}),
+      tokens, cost, usageKnown: result.usageKnown !== false && tokens !== null, costKnown: result.costKnown !== false && cost !== null,
+      ...(result.inputTokens !== undefined ? { inputTokens: result.inputTokens } : {}),
+      ...(result.outputTokens !== undefined ? { outputTokens: result.outputTokens } : {}),
+      ...(result.usage !== undefined ? { usage: result.usage } : {}),
+    };
+  };
+  const checked = await score("checked", { failures, pass: verdict.pass });
+  const blind = await score("blind", null);
+  return { source: blind.source, checked: checked.p, blind: blind.p, receipts: [checked, blind] };
 }
 
 // `extra`: more tasks to run after the gym's own (Rehearse's kept variants, which are train tasks).
