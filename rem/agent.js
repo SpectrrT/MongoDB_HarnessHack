@@ -10,6 +10,7 @@ import { randomUUID } from "node:crypto";
 import { ContextBudgetError } from "../server/context/compaction.js";
 import { completionRecord } from "./completion-record.js";
 import { createTranscriptStore, RunOwnershipError } from "./transcript.js";
+import { EVIDENCE_POLICY } from "../server/context/evidence-policy.js";
 import { sha256 } from "./util.js";
 
 export const TOOL_LATENCY_MS = 250;
@@ -315,7 +316,7 @@ export function createAgent({
         memories: context.memories,
         skills: context.skill ? [context.skill] : [],
         lessonSources: context.lessons?.sources || [],
-      }),
+      }) + "\n" + EVIDENCE_POLICY,
     },
     { role: "user", content: cp.instruction },
     ...archiveNotice,

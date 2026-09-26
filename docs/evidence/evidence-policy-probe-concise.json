@@ -1,0 +1,52 @@
+{
+  "model": "openai/gpt-4o-mini",
+  "policy": "Only explicit statements linking facts to the requested subject establish its state. An unselected named plan is not that subject’s decision. A retrieved old record does not become a newer update. Use timestamps and corrections. Answer directly when provided evidence suffices.",
+  "cases": [
+    {
+      "id": "existing-routing",
+      "path": "after-concise",
+      "expected": {
+        "region": "us-west-2"
+      },
+      "calls": 3,
+      "inputTokens": 5939,
+      "outputTokens": 73,
+      "cost": 0.0006562499999999999,
+      "answer": {
+        "region": "us-west-2"
+      },
+      "pass": true
+    },
+    {
+      "id": "unseen-shipping",
+      "path": "after-concise",
+      "expected": {
+        "carrier": "UPS"
+      },
+      "calls": 3,
+      "inputTokens": 1144,
+      "outputTokens": 76,
+      "cost": 0.0002172,
+      "answer": {
+        "carrier": "UPS"
+      },
+      "pass": true
+    },
+    {
+      "id": "unseen-reference",
+      "path": "after-concise",
+      "expected": {
+        "carrier": "FedEx"
+      },
+      "calls": 3,
+      "inputTokens": 1199,
+      "outputTokens": 62,
+      "cost": 0.00021705,
+      "answer": {
+        "carrier": "FedEx"
+      },
+      "pass": true
+    }
+  ],
+  "limitations": "Three synthetic probes of a general evidence rule, not a replacement for the full frozen benchmark."
+}

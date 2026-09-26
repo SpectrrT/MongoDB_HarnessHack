@@ -37,3 +37,7 @@ three source documents. [Personal workflow and limits](personal-suggestions.md).
 
 The implementation is local and tested. It does not demonstrate billion-token sessions, weeks of autonomous operation,
 calibrated completion probabilities, or universal savings. Waiting more slowly is not itself a token optimization.
+
+A separate source-interpretation probe improves 2/3 to 3/3 exact answers on the original routing failure and two new
+shipping variants. Tokens increase 5,666 to 7,870, which is retained as an adverse result while the full combined
+optimization is measured. [Probe evidence](evidence/evidence-policy-probe.json).

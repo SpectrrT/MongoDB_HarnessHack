@@ -463,3 +463,12 @@ The durable handoff test runs one task across three actual Node processes. It ki
 REM previously recreated its simulated provider state when the server restarted, even with MongoDB checkpoints. With MongoDB enabled, REM now transactionally persists simulated Sent, Drafts, Trash, sequence numbers and effect receipts. The restart test kills a worker after one simulated send but before the ledger/checkpoint commit, then waits for its real 30-second lease to expire. The replacement reconciles that send; one sent message and one provider receipt remain. Concurrent replay, argument mismatch, receipt rollback and simulated human restoration are covered separately.
 
 These are fixture-model tasks against disposable local MongoDB, including a replica set for transactions. They do not exercise real Gmail/Drive, live Atlas, Jev or paid model providers. No token, latency or cost improvement is claimed. The fixture state is a single MongoDB document intended for the bounded demo, not billion-token storage. Raw regression evidence is in `docs/evidence/process-recovery.txt`; implementation and test conditions are in `docs/completion-contract.md`.
+
+### Evidence interpretation repair
+
+A live GPT-4o-mini probe reproduced the incorrect choice of an unselected routing plan. A shared production prompt
+now binds facts to the requested subject and treats retrieval time separately from event time. The original case plus
+two new shipping variants improve from 2/3 to 3/3 exact answers. Both paths take seven calls; total tokens rise from
+5,666 to 7,870. A shorter candidate also passes 3/3 but uses 8,493 tokens, so it was not selected. This is an accuracy
+repair with measured overhead, pending the full evolving-suite rerun. [All probe outcomes](docs/evidence/evidence-policy-probe.json)
+and [shorter candidate](docs/evidence/evidence-policy-probe-concise.json). No expected answer is supplied to the model.

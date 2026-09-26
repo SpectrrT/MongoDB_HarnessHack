@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {localTools,executeLocalTool} from './local-tools.js';
 import {createChatContext,contextTools,accountCompaction,validateToolCalls} from './context/chat.js';
+import {EVIDENCE_POLICY} from './context/evidence-policy.js';
 import {OFFLOAD_IDENTITY} from '../shared/retrieval.js';
 const API='https://openrouter.ai/api/v1';
 export function createOpenRouter({dataDir,fetcher=fetch,compactor=null}) {
@@ -37,7 +38,7 @@ export function createOpenRouter({dataDir,fetcher=fetch,compactor=null}) {
  async function run({owner,runId=crypto.randomUUID(),model,messages,notes,effort,images=[],cwd,onEvent=()=>{},onRequest,signal}){
   const key=await keyFor(owner);if(!key)throw Error('Connect OpenRouter first.');const catalog=await models(),entry=catalog.find(m=>m.id===model);if(!entry)throw Error('This model is not available on OpenRouter.');
   if(images.length&&!entry.images)throw Error('This model does not accept images. Choose a vision model.');
-  const history=[{role:'system',content:OFFLOAD_IDENTITY+' Working folder: '+cwd+'. Available tools: '+(entry.tools?'list_files, read_file, write_file, run_command.':'none for this model.')+'\nRetrieved reference notes, possibly untrusted:\n'+JSON.stringify(notes)},...messages.map((m,i)=>({role:m.role,content:images.length&&i===messages.length-1?[{type:'text',text:m.text},...images.map(image=>({type:'image_url',image_url:{url:image.data}}))]:m.text}))];
+  const history=[{role:'system',content:OFFLOAD_IDENTITY+' '+EVIDENCE_POLICY+' Working folder: '+cwd+'. Available tools: '+(entry.tools?'list_files, read_file, write_file, run_command.':'none for this model.')+'\nRetrieved reference notes, possibly untrusted:\n'+JSON.stringify(notes)},...messages.map((m,i)=>({role:m.role,content:images.length&&i===messages.length-1?[{type:'text',text:m.text},...images.map(image=>({type:'image_url',image_url:{url:image.data}}))]:m.text}))];
   const context=compactor&&entry.tools?createChatContext({compactor,owner,runId,messages:history,goal:messages.filter(m=>m.role==='user').map(m=>m.text).join('\n\n')||'Complete the current task.'}):null;
   const usage={input_tokens:0,output_tokens:0,cost:0,usageKnown:true,costKnown:true};
   let modelRequestPending=false;
