@@ -105,7 +105,7 @@ const MODELS = [
 const FILES = ["flavor-chart.png", "summer-menu.pdf", "pos-export.csv"];
 const DICTATION = "Compare pistachio weekends to last summer";
 
-/* self-running demo: walk the @ menu, then the / menu, and repeat.
+/* self-running local: walk the @ menu, then the / menu, and repeat.
  * Any pointer or key interaction hands control to the user. */
 const AUTO_STEPS: {
   draft: string;
@@ -145,14 +145,20 @@ function parseToken(draft: string): { kind: "at" | "slash"; query: string; start
 
 export default function PromptBar({
   variant = "Rounded",
-  demo = true,
+  local = true,
   tall = false,
   placeholder,
   onSend,
+  models, modelValue, onModelChange, disabled = false, controls,
 }: {
+  controls?: React.ReactNode;
+  models?: {key:string;name:string}[];
+  modelValue?: string;
+  onModelChange?: (key:string) => void;
+  disabled?: boolean;
   variant?: string;
   /** the self-running walkthrough; turn off when embedding in a real surface */
-  demo?: boolean;
+  local?: boolean;
   /** hero sizing: a multi-line input with controls on their own row */
   tall?: boolean;
   placeholder?: string;
@@ -163,12 +169,15 @@ export default function PromptBar({
   const [dismissed, setDismissed] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
-  const [model, setModel] = useState(MODELS[1]);
+  const modelOptions = models?.length ? models : MODELS;
+  const [pickedModel, setPickedModel] = useState(modelOptions[1] || modelOptions[0]);
+  const model = modelOptions.find(m => m.key === modelValue) || pickedModel;
+  const setModel = (next: {key:string;name:string}) => {setPickedModel(next); onModelChange?.(next.key);};
   const [attachments, setAttachments] = useState<string[]>([]);
   const [connected, setConnected] = useState(false);
   const [active, setActive] = useState(0);
   const [listening, setListening] = useState(false);
-  const [auto, setAuto] = useState(demo);
+  const [auto, setAuto] = useState(local);
   const [autoStep, setAutoStep] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const wide = expanded || tall;
@@ -189,8 +198,8 @@ export default function PromptBar({
   const shaderRef = useRef<ReturnType<typeof createShader> | null>(null);
   const sweepingRef = useRef(false);
 
-  /* hand control to the user: stop the demo loop, and when they aim at
-   * the input itself, clear the demo's leftover draft for a clean start */
+  /* hand control to the user: stop the local loop, and when they aim at
+   * the input itself, clear the local's leftover draft for a clean start */
   const takeOver = (event: { target: EventTarget | null }) => {
     setAuto(false);
     if (auto && event.target === inputRef.current) setDraft("");
@@ -221,7 +230,7 @@ export default function PromptBar({
 
   /* same gliding highlight in the model menu — floats to the hovered
    * row, falling back to the currently-selected model */
-  const modelIndex = MODELS.findIndex((m) => m.key === model.key);
+  const modelIndex = modelOptions.findIndex((m) => m.key === model.key);
   useLayoutEffect(() => {
     if (!modelOpen) return;
     const target = modelRowRefs.current[modelHovered ?? modelIndex];
@@ -391,7 +400,7 @@ export default function PromptBar({
     inputRef.current?.focus();
   };
 
-  const canSend = draft.trim().length > 0 || attachments.length > 0;
+  const canSend = !disabled && (draft.trim().length > 0 || attachments.length > 0);
   const send = () => {
     if (!canSend) return;
     onSend?.(draft.trim());
@@ -403,7 +412,7 @@ export default function PromptBar({
   return (
     <div
       data-promptbar
-      className={demo ? "flex min-h-[384px] w-full max-w-105 flex-col justify-end pb-8" : "w-full"}
+      className={local ? "flex min-h-[384px] w-full max-w-105 flex-col justify-end pb-8" : "w-full"}
       onPointerDownCapture={takeOver}
       onKeyDownCapture={takeOver}
     >
@@ -502,7 +511,7 @@ export default function PromptBar({
                 "top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease",
             }}
           />
-          {MODELS.map((m, i) => (
+          {modelOptions.map((m, i) => (
             <button
               key={m.key}
               type="button"
@@ -590,6 +599,7 @@ export default function PromptBar({
           <button
             type="button"
             aria-label="Add attachments and sources"
+            disabled={!local}
             aria-expanded={plusOpen}
             onClick={() => {
               setModelOpen(false);
@@ -649,6 +659,7 @@ export default function PromptBar({
             type="button"
             aria-expanded={modelOpen}
             aria-label="Choose model"
+            disabled={disabled}
             onClick={() => {
               setPlusOpen(false);
               setModelOpen((current) => !current);
@@ -663,10 +674,13 @@ export default function PromptBar({
             </span>
           </button>
 
+          {controls && <div className={wide ? "col-start-3 row-start-2 justify-self-start" : "col-start-4 row-start-1"}>{controls}</div>}
+
           {/* dictation */}
           <button
             type="button"
             aria-label={listening ? "Stop dictation" : "Start dictation"}
+            disabled={!local}
             aria-pressed={listening}
             onClick={() => setListening((current) => !current)}
             className={`flex size-7 shrink-0 items-center justify-center transition-[background-color,color,transform] duration-150 active:scale-[0.94] ${

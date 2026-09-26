@@ -18,7 +18,7 @@ Seven unit/API tests and all six desktop/mobile Chrome end-to-end tests passed. 
 
 ## Required backend integration
 
-Use the event-provided **MongoDB Atlas Hackathon Sandbox**. The product requires Atlas persistence, agentic memory tooling, and actual Atlas Vector Search. Local storage and deterministic demo transitions do not satisfy those requirements.
+Use the event-provided **MongoDB Atlas Hackathon Sandbox**. The product requires Atlas persistence, agentic memory tooling, and actual Atlas Vector Search. Local storage and deterministic local transitions do not satisfy those requirements.
 
 Keep these responsibilities distinct:
 
@@ -44,13 +44,13 @@ Voyage embeddings are a possible fit for Atlas Vector Search. Confirm the sandbo
 5. Start a new update, retrieve relevant memory through Atlas Vector Search, and apply the approved rule without another reminder.
 6. Interrupt execution, restart, and resume from Atlas. Verify that the output is not duplicated.
 
-Record the first and improved outputs, correctness checks, correction counts, tool calls, and retrieved memory IDs. Keep the current demo labels until the corresponding live paths actually pass. A fixed script or a saved note alone is not evidence of learning.
+Record the first and improved outputs, correctness checks, correction counts, tool calls, and retrieved memory IDs. Keep the current local labels until the corresponding live paths actually pass. A fixed script or a saved note alone is not evidence of learning.
 
 ## Existing integration points
 
 - `src/store.jsx`: browser/API adapter.
-- `server/index.js`: local Express API; currently file-backed, loopback-only, and based on anonymous demo cookies.
-- `shared/workspace.js`: deterministic sample transitions, including chat, runs, and sleep.
+- `server/index.js`: local Express API; currently file-backed, loopback-only, and based on anonymous local cookies.
+- `shared/workspace.js`: deterministic example transitions, including chat, runs, and sleep.
 - `src/pages/Workspace.jsx`: connections, tasks, memory, and sleep screens.
 - `desktop/main.cjs`: existing Electron wrapper; currently serves static files and capture controls only.
 - `src/components/ScreenTransition.jsx`: reusable transitions and accessible orb loading states.

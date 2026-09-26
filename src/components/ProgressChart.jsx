@@ -4,7 +4,7 @@ export default function ProgressChart() {
     <div
       className="progress-chart"
       role="img"
-      aria-label="Sample comparison: first run 12 steps, saved routine 7 steps"
+      aria-label="Example comparison: first run 12 steps, saved routine 7 steps"
     >
       <EChartsBarChart
         data={[

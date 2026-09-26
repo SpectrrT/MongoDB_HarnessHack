@@ -20,13 +20,13 @@ The Mac app is built locally at `release/mac-arm64/Offload.app` (not committed).
 - Local conversations and memory, notes sessions, explicit microphone/screen capture with downloadable recordings.
 - Mock account connect/expire/reconnect, task checkpoints, cancel/resume, editable drafts and export.
 - Sleep review, duplicate-note consolidation, candidate routines, approval/pause, local scheduling while open.
-- File-backed Express demo API with atomic writes and per-visitor isolation, request validation and origin checks.
+- File-backed Express local API with atomic writes and per-visitor isolation, request validation and origin checks.
 - Cross-tab browser writes coordinated with the Web Locks API.
 - Actual Thinking Orbs, original Beautiful UI code and Evil Charts ECharts bar component. All 21 Beautiful UI previews render in Settings > Component library. See THIRD_PARTY.md for adaptations and distribution caveat.
 
 ## What is mocked
 
-External account access, model responses, workflow detection and routine generation. No real OAuth credentials, LLM, MongoDB, transcription, sending, autonomous computer control, cloud jobs, multi-user production auth or cross-device sync. Keep demo labels until replacing these with verified integrations.
+External account access, model responses, workflow detection and routine generation. No real OAuth credentials, LLM, MongoDB, transcription, sending, autonomous computer control, cloud jobs, multi-user production auth or cross-device sync. Keep local labels until replacing these with verified integrations.
 
 ## Verification
 
@@ -47,7 +47,7 @@ Use separate feature branches and pull main first. Coordinate edits to the state
 
 ## Next backend work
 
-Replace demo transitions with a durable runner. Store observations, versioned skills, grants, runs and action receipts in Atlas. Add user auth and scoped OAuth. Keep secrets outside model context. Add held-out task evaluations before enabling autonomous execution. Use a real scheduler if the app must continue after its window closes. The static Vercel config is ready for a public isolated demo; the local API is not a multi-user production service.
+Replace local transitions with a durable runner. Store observations, versioned skills, grants, runs and action receipts in Atlas. Add user auth and scoped OAuth. Keep secrets outside model context. Add held-out task evaluations before enabling autonomous execution. Use a real scheduler if the app must continue after its window closes. The static Vercel config is ready for a public isolated local; the local API is not a multi-user production service.
 
 ## Hackathon admin
 

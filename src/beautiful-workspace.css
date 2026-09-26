@@ -1,0 +1,44 @@
+@font-face { font-family: 'Inter'; src:url('/fonts/Inter-Latin.woff2') format('woff2'); font-weight:100 900; font-display:swap; }
+.workspace { --font-sans:'Inter',system-ui,sans-serif; --font-inter:'Inter'; font-family:var(--font-sans); background:#f8f8f8; padding:10px; gap:0; --surface:#fff; --canvas:#fafafa; --field:#f5f5f5; --shadow-card:0 0 0 1px #0000000f,0 1px 2px #00000008,0 2px 6px #00000005; --shadow-raised:0 0 0 1px #0000000f,0 4px 16px #00000012; --shadow-btn:0 0 0 1px #0000000a,0 1px 2px #00000008; }
+.workspace.with-sidebar {grid-template-columns:224px minmax(0,1fr);}
+.workspace.with-sidebar.with-suggestions {grid-template-columns:224px minmax(0,1fr) 320px;}
+.workspace.with-suggestions {grid-template-columns:minmax(0,1fr) 320px;}
+.beautiful-sidebar { min-height:0; padding:0; }
+.beautiful-sidebar [data-workspace-trigger] .sidebar-copy {font-family:'Instrument Serif',serif;font-size:27px;color:#171717;}
+.workspace-main { border:1px solid #e5e5e5; border-radius:16px; background:#fff; overflow:hidden; }
+.workspace .app-header {height:45px;min-height:45px;padding:0 16px;background:#fafafa;}
+.workspace .local-banner {padding:6px 16px; font-size:10px;min-height:28px;color:#888;}
+.workspace .local-banner .local-label {color:#777;}
+.workspace .session-button {height:28px;padding:4px 9px;font-size:11px;border-radius:6px;}
+.workspace .icon-button {width:28px;height:28px;min-width:28px;min-height:28px;}
+.workspace .live-chat {max-width:736px;width:100%;padding:26px 40px 20px;}
+.workspace .live-chat.empty-thread {justify-content:center;padding-bottom:7vh;}
+.workspace .live-chat .chat-empty {flex:0;align-items:flex-start;text-align:left;padding:0;margin-bottom:28px;}
+.workspace .live-chat .chat-empty h1 {font:400 26px/1.5 'Inter',sans-serif;letter-spacing:-.6px;margin:0;}
+.workspace .live-chat .chat-empty h1 span {color:#929292;}
+.workspace .live-chat.empty-thread .chat-composer {margin-top:0;}
+.workspace .live-chat .chat-composer > small {font-size:10px;text-align:left;margin:10px 3px;color:#888;}
+.workspace .live-chat .chat-composer .bg-surface {box-shadow:var(--shadow-card);}
+.workspace .live-chat .message {max-width:100%;font:400 13px/1.65 'Inter',sans-serif;}
+.workspace .live-chat .message.user {border-radius:10px;background:var(--inset);padding:10px 14px;max-width:85%;}
+.workspace .live-chat .answer-byline .wordmark {font-size:22px;margin:0;}
+.workspace .model-connection {border:1px solid #e5e5e5;border-radius:12px;background:#fafafa;padding:14px;margin:0 0 28px;}
+.workspace .model-connection .button {font-size:11px;padding:7px 10px;}
+.chat-starters {display:flex;flex-direction:column;gap:5px;margin-top:14px;}
+.chat-starters button {display:flex;gap:12px;align-items:center;text-align:left;padding:9px 1px;font-size:13px;color:#555;}
+.chat-starters button:hover {color:#111;}
+.workspace .services-heading h1,.workspace .slow-heading h1,.workspace .page-title h1 {font-family:'Inter',sans-serif;font-size:26px;line-height:1.3;font-weight:500;letter-spacing:-.65px;}
+.workspace .services-heading,.workspace .slow-heading {margin-bottom:28px;}
+.workspace .services-heading p,.workspace .slow-heading p {font-size:13px;}
+.workspace .suggestions-panel {background:#f8f8f8;}
+.workspace .suggestion {background:white;border:1px solid #e8e8e8;border-radius:10px;margin:12px;padding:16px;}
+.workspace .suggestion h3 {font-size:13px;font-weight:500;line-height:1.55;}
+.workspace .suggestion > p {font-size:12px;line-height:1.65;color:#777;}
+.workspace .suggestion-foot {margin-top:16px;}
+.workspace .suggestion-foot > span,.workspace .suggestion-foot > button {font-size:10px;}
+.workspace .standard-page {max-width:1000px;padding-top:32px;}
+@media(max-width:900px){.workspace,.workspace.with-sidebar,.workspace.with-sidebar.with-suggestions,.workspace.with-suggestions {grid-template-columns:minmax(0,1fr);padding:0;}.workspace-main{border:0;border-radius:0;}.beautiful-sidebar{position:fixed;left:0;top:0;bottom:0;width:224px;z-index:40;background:#fafafa;padding:10px 0;box-shadow:12px 0 40px #0001;}.workspace .live-chat{padding:24px;}.workspace .suggestions-panel{z-index:45;}.workspace .live-chat.empty-thread{padding-bottom:3vh;}}
+@media(max-width:480px){.workspace .live-chat{padding:24px 18px 18px;}.workspace .local-banner{font-size:9px;gap:8px;}.workspace .live-chat .chat-empty h1{font-size:24px;}.workspace .model-connection{gap:10px;}.workspace .model-connection > div{min-width:180px;}}
+/* Keep the published composer geometry; app form defaults must not draw a second input. */
+.workspace .beautiful-ui textarea {border:0;border-radius:0;box-shadow:none;background:transparent;resize:none;min-height:68px;padding:8px;}
+.workspace .beautiful-ui [hidden] {display:none;}

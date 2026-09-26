@@ -29,7 +29,7 @@ export default function Gallery() {
         <div>
           <h1>Component library</h1>
           <p>
-            The original Beautiful UI examples. Sample content belongs to the
+            The original Beautiful UI examples. Example content belongs to the
             upstream previews.
           </p>
         </div>

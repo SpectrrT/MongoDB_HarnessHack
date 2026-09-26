@@ -89,6 +89,7 @@ const DEFAULT_LABELS: StreamingLabels = {
 };
 
 export default function StreamingText({
+  live = false,
   content = TOKENS,
   sources = SOURCES,
   followUps = FOLLOW_UPS,
@@ -98,6 +99,7 @@ export default function StreamingText({
   onDone,
   onFollowUp,
 }: {
+  live?: boolean;
   variant?: string;
   /** the streamed tokens; `cite` tokens render an inline source chip */
   content?: StreamingToken[];
@@ -116,11 +118,12 @@ export default function StreamingText({
   onFollowUp?: (text: string, index: number) => void;
 } = {}) {
   const l = { ...DEFAULT_LABELS, ...labels };
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(live ? content.length : 0);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const done = count >= content.length;
 
   useEffect(() => {
+    if (live) return;
     if (done && !loop) {
       onDone?.();
       return;
@@ -135,7 +138,7 @@ export default function StreamingText({
 
   return (
     <div className={fill ? "w-full" : "min-h-[15.5rem] w-full max-w-95"}>
-      <p className="text-[13px] leading-relaxed text-ink">
+      <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-ink">
         {content.slice(0, count).map((token, i) =>
           token.cite ? (
             <SourceChip key={i} source={sources[0]} />
@@ -158,11 +161,12 @@ export default function StreamingText({
         className="mt-2 flex items-center gap-0.5 transition-opacity duration-400"
         style={{ opacity: done ? 1 : 0, pointerEvents: done ? "auto" : "none" }}
       >
-        {ACTION_ICONS.map((icon, i) => (
+        {ACTION_ICONS.filter((_, i) => !live || i === 0).map((icon, i) => (
           <button
             key={i}
             type="button"
-            aria-label="Action"
+            aria-label={i === 0 ? "Copy response" : "Action"}
+            onClick={() => { if(i === 0) navigator.clipboard.writeText(content.map(t=>t.text).join(" ")).catch(()=>{}); }}
             className="flex size-6 items-center justify-center rounded-[6px] text-ink-3
               transition-colors duration-100 hover:bg-hover-2 hover:text-ink-2"
           >
@@ -173,6 +177,7 @@ export default function StreamingText({
         ))}
         <button
           type="button"
+          hidden={!sources.length}
           aria-expanded={sourcesOpen}
           onClick={() => setSourcesOpen((current) => !current)}
           className="ml-1.5 flex items-center gap-1.5 rounded-[6px] px-1 py-0.5 text-left transition-colors duration-150 hover:bg-hover"
@@ -223,7 +228,7 @@ export default function StreamingText({
         className="mt-2.5 transition-opacity duration-400"
         style={{ opacity: done ? 1 : 0, pointerEvents: done ? "auto" : "none" }}
       >
-        <p className="text-[12px] font-medium text-ink-2">{l.followUps}</p>
+        {followUps.length > 0 && <p className="text-[12px] font-medium text-ink-2">{l.followUps}</p>}
         <div className="mt-0.5 flex flex-col">
           {followUps.map((text, i) => (
             <button

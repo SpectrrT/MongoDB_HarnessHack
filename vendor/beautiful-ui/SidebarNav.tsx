@@ -48,6 +48,11 @@ const DEFAULT_RECENTS: SidebarRecent[] = [
 ];
 
 type SidebarNavProps = {
+  navItems?: typeof NAV_ITEMS;
+  workspaceName?: string;
+  workspaceLogo?: ReactNode;
+  onCollapse?: () => void;
+  onWorkspaceClick?: () => void;
   activeTitle?: string | null;
   className?: string;
   fill?: boolean;
@@ -56,7 +61,7 @@ type SidebarNavProps = {
   /** controlled primary-nav selection (e.g. "home" | "invite") */
   activeNav?: string;
   onNavigate?: (key: string) => void;
-  /** footer call-to-action — defaults to the demo "Upgrade" button */
+  /** footer call-to-action — defaults to the local "Upgrade" button */
   footerLabel?: string;
   footerIcon?: ReactNode;
   onFooterClick?: () => void;
@@ -201,6 +206,7 @@ function WorkspaceMenu({
 
 export default function SidebarNav({
   activeTitle,
+  navItems = NAV_ITEMS, workspaceName = WORKSPACE.name, workspaceLogo, onCollapse, onWorkspaceClick,
   className = "",
   fill = false,
   onNewChat,
@@ -247,6 +253,7 @@ export default function SidebarNav({
   }, [searchOpen]);
 
   const collapse = () => {
+    onCollapse?.();
     setCollapsed(true);
     setWorkspaceOpen(false);
     setSearchOpen(false);
@@ -277,6 +284,7 @@ export default function SidebarNav({
             aria-hidden={collapsed}
             tabIndex={collapsed ? -1 : 0}
             onClick={() => {
+              if (onWorkspaceClick) { onWorkspaceClick(); return; }
               if (!workspaceOpen && workspaceButtonRef.current) {
                 const rect = workspaceButtonRef.current.getBoundingClientRect();
                 setWorkspacePosition({ top: rect.bottom + 6, left: rect.left });
@@ -286,10 +294,10 @@ export default function SidebarNav({
             className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
           >
             <span className="sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink">
-              <IconPopsicle2 size={18} />
+              {workspaceLogo || <IconPopsicle2 size={18} />}
             </span>
             <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2">
-              {WORKSPACE.name}
+              {workspaceName}
             </span>
             <span className="sidebar-copy ml-1 flex shrink-0 text-ink-3">
               <IconChevronDownSmall size={16} />
@@ -330,7 +338,7 @@ export default function SidebarNav({
               onNewChat?.();
             }}
           />
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <RailButton
               key={item.key}
               icon={item.icon}

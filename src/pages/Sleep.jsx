@@ -20,7 +20,7 @@ export default function Sleep() {
     finally { setBusy(false); }
   };
   return <div className="standard-page sleep-page">
-    <div className="page-title"><h1>A moment to learn.</h1><p>Let the day settle. Keep what helps tomorrow.</p></div>
+    <div className="page-title"><h1>Review your saved context</h1><p>Let the day settle. Keep what helps tomorrow.</p></div>
     <div className="sleep-intro sleep-hero">
       <ThinkingOrb state={working ? "weaving" : "breathing"} size={64} />
       <div>
@@ -57,7 +57,7 @@ export default function Sleep() {
     {!skills.length && <div className="sleep-empty"><h3>{state.skills.length ? "No routines in this view." : "Your first routine starts with context."}</h3><p>Save specific instructions about repeated work. A review needs at least two distinct supporting notes for a candidate.</p><Link to="/app/memory">Open memory</Link></div>}
     {skills.map(skill => <article className="skill" key={skill.id}>
       <div className="section-line"><h2>{skill.name}</h2><span>Version {skill.version}</span></div>
-      <span className="sleep-badge">{skill.enabled ? "Approved" : "Needs approval"}{skill.sample ? " · Sample context" : ""}</span>
+      <span className="sleep-badge">{skill.enabled ? "Approved" : "Needs approval"}{(skill.example ?? skill.sample) ? " · Example context" : ""}</span>
       <p>{skill.description}</p>
       <div className="skill-rules">{skill.rules.map((rule, i) => <p key={i}>{rule}</p>)}</div>
       <details><summary>Supporting notes ({skill.evidence?.length || skill.sourceIds.length})</summary>{(skill.evidence || []).map(note => <blockquote key={note.id}><p>{note.text}</p><small>{note.source}</small></blockquote>)}</details>

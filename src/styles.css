@@ -695,7 +695,7 @@ summary:focus-visible {
   border-radius: 50%;
   text-align: center;
 }
-.demo-banner {
+.local-banner {
   min-height: 31px;
   display: flex;
   align-items: center;
@@ -707,7 +707,7 @@ summary:focus-visible {
   border-bottom: 1px solid #f0f0f0;
   padding: 5px 12px;
 }
-.demo-label {
+.local-label {
   color: #555;
   font-weight: 500;
 }
@@ -739,16 +739,13 @@ summary:focus-visible {
 }
 .beautiful-ui {
   font-family: var(--font-sans);
-  filter: grayscale(1);
+
 }
 .home-composer > div,
 .chat-composer > div {
   max-width: 100% !important;
 }
-.home-composer .bg-surface,
-.chat-composer .bg-surface {
-  box-shadow: none !important;
-}
+
 .section-line {
   display: flex;
   align-items: center;
@@ -1973,7 +1970,7 @@ summary:focus-visible {
   .session-button > svg {
     display: none;
   }
-  .demo-banner {
+  .local-banner {
     font-size: 8px;
     gap: 5px;
   }
@@ -2206,17 +2203,6 @@ summary:focus-visible {
     display: none;
   }
 }
-/* The upstream composer includes demo-only account/model/dictation controls.
-   Keep its input, keyboard handling and send interaction; hide sample controls in the app. */
-.home-composer [aria-label="Add attachments and sources"],
-.chat-composer [aria-label="Add attachments and sources"],
-.home-composer [aria-label="Choose model"],
-.chat-composer [aria-label="Choose model"],
-.home-composer [aria-label="Start dictation"],
-.chat-composer [aria-label="Start dictation"] {
-  visibility: hidden;
-  pointer-events: none;
-}
 @media (max-width: 600px) {
   input,
   textarea,
@@ -2229,14 +2215,7 @@ summary:focus-visible {
     min-height: 36px;
   }
 }
-.beautiful-ui textarea {
-  border: 0;
-  box-shadow: none !important;
-  resize: none;
-  min-height: 0;
-  padding: 0;
-  border-radius: 0;
-}
+
 .sidebar nav a,
 .sidebar-bottom > a {
   font-size: 13px;
@@ -2295,7 +2274,7 @@ summary:focus-visible {
 .suggestions-head h2 {
   font-size: 15px;
 }
-.demo-banner {
+.local-banner {
   font-size: 10px;
 }
 .session-button {

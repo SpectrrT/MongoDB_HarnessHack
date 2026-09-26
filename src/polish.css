@@ -32,7 +32,7 @@
 
 /* ---- Readability floor: nothing readable below 12px ---- */
 
-.demo-banner,
+.local-banner,
 .suggestion-source,
 .suggestion-foot > span,
 .panel-bottom,
@@ -53,7 +53,7 @@
   font-size: 12px;
   color: var(--ink-soft);
 }
-.demo-banner .demo-label {
+.local-banner .local-label {
   color: #171717;
 }
 .suggestion > p,
@@ -134,7 +134,7 @@
   font-size: 13px;
 }
 
-/* ---- Run status: the demo's pause → resume moment should read from the back row ---- */
+/* ---- Run status: the local's pause → resume moment should read from the back row ---- */
 
 .status-label,
 .page-title .status-label {
@@ -276,7 +276,7 @@
     transparent 58%
   );
 }
-.demo-control {
+.local-control {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -291,7 +291,7 @@
     color 0.18s,
     background-color 0.18s;
 }
-.demo-control:hover {
+.local-control:hover {
   border-color: #171717;
   color: #171717;
   background: #fafafa;

@@ -52,6 +52,15 @@ import PromptBar from "../vendor/beautiful/PromptBar";
 import TaskRows from "../vendor/beautiful/TaskRows";
 import ContextCards from "../vendor/beautiful/ContextCards";
 import LoadingState from "../vendor/beautiful/LoadingState";
+import { Connections, ConnectDialog } from "./Connections";
+import SlowMode from "./SlowMode";
+import { ConnectionLogo } from "../components/ConnectionLogo";
+import LiveChat from "./LiveChat";
+import SidebarNav from "../vendor/beautiful/SidebarNav";
+import "../beautiful-workspace.css";
+import "../themes.css";
+import {resolveTheme,themeStyle} from "../../shared/themes";
+import Appearance from "../components/Appearance";
 const Gallery = lazy(() => import("./Gallery"));
 const nav = [
   ["", "Overview", Home],
@@ -60,7 +69,7 @@ const nav = [
   ["harness", "Durable handoff", ListTodo],
   ["adapt", "Harness sleep", Moon],
   ["memory", "Memory", Brain],
-  ["sleep", "Sleep", Moon],
+  ["sleep", "Slow mode", Moon],
   ["connections", "Connections", Plug],
 ];
 const date = (x) =>
@@ -72,6 +81,8 @@ export default function Workspace() {
     [session, setSession] = useState(false),
     [search, setSearch] = useState(false),
     [connect, setConnect] = useState(null);
+  const [systemDark,setSystemDark] = useState(matchMedia("(prefers-color-scheme: dark)").matches);
+  useEffect(()=>{const media=matchMedia("(prefers-color-scheme: dark)");const update=()=>setSystemDark(media.matches);media.addEventListener("change",update);return()=>media.removeEventListener("change",update);},[]);
   const navigate = useNavigate(),
     location = useLocation();
   useEffect(() => {
@@ -116,19 +127,15 @@ export default function Workspace() {
     navigate("/app/chat/" + id);
   };
   const run = async (id) => {
-    try {
-      const s = await act("start-run", { id });
-      const r = s.runs.find(
-        (x) =>
-          x.suggestionId === id &&
-          ["running", "blocked", "ready"].includes(x.status),
-      );
-      navigate("/app/tasks/" + r.id);
-      if (innerWidth < 1100) setSuggestions(false);
-    } catch {}
+    const suggestion = state.suggestions.find(s => s.id === id);
+    if (!suggestion) return;
+    navigate("/app/chat?prompt=" + encodeURIComponent(suggestion.title + ". Use my saved notes. Ask for missing details; do not invent facts from my accounts."));
+    if(innerWidth < 1100) setSuggestions(false);
   };
   return (
     <div
+      data-palette={state.settings.theme}
+      style={themeStyle(resolveTheme(state.settings.theme,systemDark,state.settings.themeCustom))}
       className={`workspace ${sidebar ? "with-sidebar" : ""} ${suggestions ? "with-suggestions" : ""}`}
     >
       {sidebar && (
@@ -138,68 +145,17 @@ export default function Workspace() {
             aria-label="Close navigation"
             onClick={() => setSidebar(false)}
           />
-          <aside className="sidebar">
-            <div className="sidebar-brand">
-              <Link to="/" className="wordmark">
-                offload
-              </Link>
-              <button
-                className="icon-button"
-                aria-label="Collapse sidebar"
-                onClick={() => setSidebar(false)}
-              >
-                <PanelLeft size={18} />
-              </button>
-            </div>
-            <button className="new-chat" onClick={newChat}>
-              <Plus size={17} /> New conversation <span>⌘ N</span>
-            </button>
-            <nav>
-              {nav.map(([path, label, Icon]) => (
-                <NavLink
-                  key={path}
-                  end={path === ""}
-                  to={"/app" + (path ? "/" + path : "")}
-                  onClick={() => {
-                    if (innerWidth < 900) setSidebar(false);
-                  }}
-                >
-                  <Icon size={17} />
-                  {label}
-                  {path === "tasks" &&
-                    state.runs.some((r) => r.status === "running") && (
-                      <i className="status-dot" />
-                    )}
-                </NavLink>
-              ))}
-            </nav>
-            <div className="sidebar-recent">
-              <span>Recent conversations</span>
-              {state.conversations.slice(0, 5).map((c) => (
-                <Link key={c.id} to={"/app/chat/" + c.id}>
-                  {c.title}
-                </Link>
-              ))}
-              {!state.conversations.length && (
-                <p>Your conversations will appear here.</p>
-              )}
-            </div>
-            <div className="sidebar-bottom">
-              <NavLink to="/app/settings">
-                <Settings size={16} />
-                Settings
-              </NavLink>
-              <div className="profile">
-                <span className="avatar">
-                  {state.profile.name[0].toUpperCase()}
-                </span>
-                <div>
-                  <strong>{state.profile.name}</strong>
-                  <small>Local workspace</small>
-                </div>
-              </div>
-            </div>
-          </aside>
+          <div className="beautiful-sidebar beautiful-ui">
+            <SidebarNav fill workspaceName="offload" workspaceLogo={<img src="/favicon.svg" width="18" height="18" alt=""/>}
+              navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18}/>}))}
+              activeNav={page} activeTitle={state.conversations.find(c=>c.id===route[1])?.title || null}
+              onNewChat={newChat} onCollapse={()=>setSidebar(false)}
+              onWorkspaceClick={()=>navigate("/")}
+              onNavigate={key=>{navigate("/app"+(key?"/"+key:""));if(innerWidth<900)setSidebar(false);}}
+              onPick={id=>{navigate("/app/chat/"+id);if(innerWidth<900)setSidebar(false);}}
+              recents={state.conversations.map(c=>({id:c.id,label:c.title}))}
+              footerLabel="Settings" footerIcon={<Settings size={16}/>} onFooterClick={()=>navigate("/app/settings")}/>
+          </div>
         </>
       )}
       <div className="workspace-main">
@@ -255,10 +211,6 @@ export default function Workspace() {
             </button>
           </div>
         </header>
-        <div className="demo-banner">
-          <span className="demo-label">Local demo</span>
-          <span>Sample accounts. Real local saves. Nothing is sent.</span>
-        </div>
         {error && (
           <div className="error-banner" role="alert">
             {error}
@@ -272,17 +224,11 @@ export default function Workspace() {
           screenKey={location.pathname}
           className={"app-content page-" + (page || "home")}
         >
-          {page === "" && (
-            <Overview
-              onRun={run}
-              onSession={() => setSession(true)}
-              onSuggestions={() => setSuggestions(true)}
-            />
-          )}
-          {page === "chat" && <Chat id={route[1]} onNew={newChat} />}
+          {page === "" && <LiveChat />}
+          {page === "chat" && <LiveChat id={route[1]} onNew={newChat} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
           {page === "memory" && <Memory />}
-          {page === "sleep" && <Sleep />}
+          {page === "sleep" && <SlowMode><Sleep /></SlowMode>}
           {page === "harness" && <Harness />}
           {page === "adapt" && <Adapt />}
           {page === "connections" && <Connections onConnect={setConnect} />}
@@ -404,8 +350,8 @@ function Onboarding() {
                 Your say.
               </h1>
               <p>
-                This is a local demo with sample data. Account connections and
-                agent actions are simulated.
+                Your workspace starts with example tasks. Account access and agent
+                execution still need to be connected.
               </p>
               <div className="onboard-note">
                 <Shield size={20} />
@@ -454,7 +400,7 @@ function Overview({ onRun, onSession, onSuggestions }) {
       </div>
       <div className="home-composer beautiful-ui">
         <PromptBar
-          demo={false}
+          local={false}
           tall
           placeholder="What would you like to work on?"
           onSend={(text) =>
@@ -554,7 +500,7 @@ function Suggestions({ onClose, onRun }) {
           <X size={18} />
         </button>
       </div>
-      <p className="panel-intro">A few things you could hand over.</p>
+      <p className="panel-intro">Tasks you can review and queue.</p>
       <div className="panel-search">
         <Search size={15} />
         <input
@@ -579,7 +525,7 @@ function Suggestions({ onClose, onRun }) {
         {list.map((a) => (
           <article key={a.id} className="suggestion">
             <div className="suggestion-source">
-              <FileText size={14} />
+              <ConnectionLogo source={a.source} size={16} />
               <span>{a.source}</span>
               <details>
                 <summary aria-label={"Options for " + a.title}>
@@ -611,9 +557,9 @@ function Suggestions({ onClose, onRun }) {
             <h3>{a.title}</h3>
             <p>{a.reason}</p>
             <div className="suggestion-foot">
-              <span>{a.occurrences} sample examples</span>
+              <span>{a.occurrences} related entries</span>
               <button onClick={() => onRun(a.id)}>
-                Prepare draft <ArrowUpRight size={14} />
+                Start task <ArrowUpRight size={14} />
               </button>
             </div>
           </article>
@@ -634,89 +580,6 @@ function Suggestions({ onClose, onRun }) {
         Saved suggestions stay here until you act.
       </div>
     </aside>
-  );
-}
-function Chat({ id, onNew }) {
-  const { state, act } = useWorkspace();
-  const navigate = useNavigate(),
-    location = useLocation();
-  const conversation = state.conversations.find((x) => x.id === id);
-  const [busy, setBusy] = useState(false);
-  const end = useRef();
-  const send = async (text) => {
-    setBusy(true);
-    const cid = id || crypto.randomUUID();
-    try {
-      await act("chat", { id: cid, text });
-      navigate("/app/chat/" + cid, { replace: true });
-    } finally {
-      setBusy(false);
-    }
-  };
-  useEffect(() => {
-    const t = new URLSearchParams(location.search).get("prompt");
-    if (t) {
-      navigate("/app/chat", { replace: true });
-      send(t);
-    }
-  }, []);
-  // Braces matter: newer Chrome returns a Promise from scrollIntoView, and an
-  // effect may only return a cleanup function.
-  useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth" });
-  }, [conversation?.messages.length]);
-  return (
-    <div className="chat-page">
-      {!conversation?.messages.length ? (
-        <div className="chat-empty">
-          <ThinkingOrb state="breathing" size={64} />
-          <h1>
-            What can I take
-            <br />
-            off your plate?
-          </h1>
-          <p>Work through a task, or keep a thought for later.</p>
-        </div>
-      ) : (
-        <div className="messages">
-          {conversation.messages.map((m) => (
-            <div key={m.id} className={"message " + m.role}>
-              {m.role === "assistant" && (
-                <span className="wordmark">offload</span>
-              )}
-              <p>{m.text}</p>
-              {m.role === "user" && (
-                <button
-                  className="text-button"
-                  onClick={() =>
-                    act("memory", {
-                      text: m.text,
-                      source: "Conversation",
-                    }).catch(() => {})
-                  }
-                >
-                  <Plus size={13} />
-                  Save as memory
-                </button>
-              )}
-            </div>
-          ))}
-          {busy && <OrbLoading compact state="composing" label="Preparing your reply…" />}
-          <div ref={end} />
-        </div>
-      )}
-      <div className="chat-composer beautiful-ui">
-        <PromptBar
-          demo={false}
-          tall
-          placeholder="Write a message…"
-          onSend={send}
-        />
-        <small>
-          Demo replies use a local script. A live model is not connected.
-        </small>
-      </div>
-    </div>
   );
 }
 function Tasks({ id, onConnect }) {
@@ -778,14 +641,14 @@ function Tasks({ id, onConnect }) {
               <h3>Reconnect to keep going.</h3>
               <p>
                 Your progress is safe at step {run.checkpoint + 1}. This is a
-                sample account interruption.
+                example account interruption.
               </p>
               <div className="button-row">
                 <button
                   className="button small"
                   onClick={() => onConnect(run.provider)}
                 >
-                  Reconnect sample account
+                  Reconnect example account
                 </button>
                 <button
                   className="button secondary small"
@@ -954,7 +817,7 @@ function Memory() {
             <div className="memory-meta">
               <span>
                 {m.source}
-                {m.sample ? " · Sample" : ""}
+                {m.example ? " · Example" : ""}
               </span>
               <span>{date(m.createdAt)}</span>
               <button
@@ -977,126 +840,6 @@ function Memory() {
         )}
       </div>
     </div>
-  );
-}
-function Connections({ onConnect }) {
-  const { state, act } = useWorkspace();
-  return (
-    <div className="standard-page">
-      <PageTitle
-        title="Connections"
-        description="Choose what Offload can work with."
-      />
-      <div className="notice quiet">
-        <Shield size={20} />
-        <p>
-          These are sample connections. No credentials are requested or stored.
-          Live OAuth comes with the backend integration.
-        </p>
-      </div>
-      <div className="connection-list">
-        {state.connections.map((c) => {
-          const Icon = CONNECTION_ICONS[c.id] || Plug;
-          return (
-            <article key={c.id} className={"is-" + c.status}>
-              <div className="connection-icon" aria-hidden="true">
-                <Icon size={20} strokeWidth={1.6} />
-              </div>
-              <div>
-                <h3>{c.name}</h3>
-                <p>{c.detail}</p>
-                <span className={"connection-state is-" + c.status}>
-                  {c.status === "connected"
-                    ? "Sample account connected"
-                    : c.status === "expired"
-                      ? "Access expired in demo"
-                      : "Not connected"}
-                </span>
-              </div>
-              <div className="connection-actions">
-                <button
-                  className={
-                    "button small " +
-                    (c.status === "connected" ? "secondary" : "")
-                  }
-                  onClick={() =>
-                    c.status === "connected"
-                      ? act("connect", { id: c.id, disconnect: true }).catch(
-                          () => {},
-                        )
-                      : onConnect(c.id)
-                  }
-                >
-                  {c.status === "connected"
-                    ? "Disconnect"
-                    : c.status === "expired"
-                      ? "Reconnect"
-                      : "Connect sample"}
-                </button>
-                {c.status === "connected" && (
-                  <button
-                    className="demo-control"
-                    onClick={() => act("expire", { id: c.id }).catch(() => {})}
-                  >
-                    <TimerReset size={14} aria-hidden="true" />
-                    Simulate expiry
-                  </button>
-                )}
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-const CONNECTION_ICONS = {
-  drive: HardDrive,
-  gmail: Mail,
-  github: GitPullRequest,
-  calendar: CalendarDays,
-};
-function ConnectDialog({ id, onClose }) {
-  const { state, act } = useWorkspace();
-  const c = state.connections.find((x) => x.id === id);
-  const [ok, setOk] = useState(false);
-  return (
-    <Modal title={"Connect " + (c?.name || "account")} onClose={onClose}>
-      <p>
-        Try the connection flow with a sample account. This does not open or
-        access your real {c?.name} account.
-      </p>
-      <div className="permissions-list">
-        <p>
-          <Check size={16} />
-          Read selected sample context
-        </p>
-        <p>
-          <Check size={16} />
-          Create a local draft
-        </p>
-      </div>
-      <label className="check-label">
-        <input
-          type="checkbox"
-          checked={ok}
-          onChange={(e) => setOk(e.target.checked)}
-        />
-        Use the demo account for this workspace
-      </label>
-      <button
-        className="button"
-        disabled={!ok}
-        onClick={async () => {
-          try {
-            await act("connect", { id });
-            onClose();
-          } catch {}
-        }}
-      >
-        Connect sample account <ArrowRight size={16} />
-      </button>
-    </Modal>
   );
 }
 function Session({ onClose }) {
@@ -1416,7 +1159,7 @@ function SettingsPage() {
           {mode === "browser"
             ? "Saved in this browser on this device."
             : "Saved by the local API on this computer."}{" "}
-          This demo has no cross-device sync.
+          This workspace does not sync across devices.
         </p>
         <div className="button-row">
           <button
@@ -1450,10 +1193,11 @@ function SettingsPage() {
           Explore the component library <ArrowUpRight size={15} />
         </Link>
       </section>
+      <Appearance/>
       {confirm && (
         <Modal title="Reset this workspace?" onClose={() => setConfirm(false)}>
           <p>
-            This deletes this demo workspace from your current storage. Export
+            This deletes this workspace from your current storage. Export
             it first if you want to keep your notes and drafts.
           </p>
           <button className="button" onClick={reset}>

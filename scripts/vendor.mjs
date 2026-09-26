@@ -35,9 +35,9 @@ for (const file of await fs.readdir("vendor/beautiful-ui")) {
   if (file === "PromptBar.tsx")
     source = source.replace(
       'plusOpen ? "at" : token?.kind ?? null',
-      'demo ? (plusOpen ? "at" : token?.kind ?? null) : null',
+      'local ? (plusOpen ? "at" : token?.kind ?? null) : null',
     );
-  // Upstream rows that are neither done nor running play a gallery demo sequence
+  // Upstream rows that are neither done nor running play a gallery local sequence
   // (pending → failed → done). Checkpointed runs need static "idle" and "paused" steps.
   if (file === "TaskRows.tsx") {
     source = source.replace(
