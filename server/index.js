@@ -18,6 +18,7 @@ import {
 import { connectStore, RunConflict } from './harness/store.js';
 import { inputSchema } from './harness/workflow.js';
 import { sleepRoutes } from './sleep/routes.js';
+import { sleepExecutionRoutes } from './sleep/execution-routes.js';
 import { activityRoutes } from './activity/routes.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const types = [
@@ -131,6 +132,9 @@ export function createApp({
   serveStatic = true,
   harnessStore = null,
   sleep = null,
+  sleepTasks = null,
+  sleepTaskRoot = path.join(dataDir, 'sleep-artifacts'),
+  sleepTaskWorkerEnabled = false,
   atlas = null,
   activity = null,
   chatCompactor = null,
@@ -234,6 +238,7 @@ export function createApp({
     } catch (error) { next(error); }
   });
   sleepRoutes(app, { sleep, harnessStore });
+  sleepExecutionRoutes(app, { store: sleepTasks, root: sleepTaskRoot, enabled: sleepTaskWorkerEnabled });
   activityRoutes(app, { activity });
   async function access(req, fn) {
     const key = req.workspaceKey;
@@ -339,7 +344,19 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const db=connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon');
     await Promise.all([db.collection('context_archive').createIndex({runId:1,unitId:1,part:1},{name:'context_run_unit'}),db.collection('context_decisions').createIndex({runId:1,stateKey:1},{name:'context_run_state'})]);
   }
-  createApp({ harnessStore: connection?.store, sleep, atlas, activity, chatCompactor }).listen(port, "127.0.0.1", () =>
+  const sleepTasks = connection ? new (await import('./sleep/execution-store.js')).SleepExecutionStore(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon')) : null;
+  if (sleepTasks) await sleepTasks.initialize();
+  const dataDir = process.env.OFFLOAD_DATA_DIR || path.join(here, '../.data');
+  const sleepTaskRoot = path.resolve(process.env.SLEEP_TASK_ROOT || path.join(dataDir, 'sleep-artifacts'));
+  const sleepTaskWorkerEnabled = process.env.SLEEP_EXECUTION_ENABLED === 'true';
+  if (sleepTasks && sleepTaskWorkerEnabled) {
+    const { sleepOpenRouterExecutor } = await import('./sleep/execution-provider.js');
+    const { startSleepExecutionWorker } = await import('./sleep/execution-worker.js');
+    const worker = startSleepExecutionWorker(sleepTasks, sleepOpenRouterExecutor({ dataDir }), { root: sleepTaskRoot });
+    process.once('SIGTERM', worker.stop); process.once('SIGINT', worker.stop);
+  }
+  createApp({ harnessStore: connection?.store, sleep, atlas, activity, sleepTasks, sleepTaskRoot, sleepTaskWorkerEnabled, chatCompactor }).listen(port, "127.0.0.1", () =>
+
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
 }
