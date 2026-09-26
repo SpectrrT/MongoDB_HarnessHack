@@ -39,10 +39,12 @@ test('refining a sample proposal keeps its provenance and does not authorize ext
  let sent;
  await page.route('**/api/model/jobs',route=>{sent=route.request().postDataJSON();return route.fulfill({status:400,json:{error:'Stopped after inspecting the test request.'}});});
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
+ await page.getByRole('textbox',{name:'Tell Offload what to change in this workflow'}).fill('Only on weekdays.');
  await page.getByRole('button',{name:'Prepare with model',exact:true}).click();
  await expect.poll(()=>sent?.messages?.at(-1)?.text).toContain('Source provenance: Demo history');
  expect(sent.messages.at(-1).text).toContain('Do not send messages, book meetings, or change external accounts as part of this planning request.');
  expect(sent.messages.at(-1).text).toContain('(not executed)');
+ expect(sent.messages.at(-1).text).toContain('Requested plan changes: Only on weekdays.');
  expect(sent.messages.at(-1).text).toContain('Keep any sending or booking behind a separate explicit approval.');
  expect(sent.messages.at(-1).text).not.toContain('looked at my computer history');
 });

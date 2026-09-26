@@ -24,7 +24,11 @@ export const appInfo = (label) => APPS[label] || { name: label, logo: null };
 const clock = (hour, minute = 0) =>
   new Date(Date.UTC(2000, 0, 1, hour, minute)).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 
+const cleanTitle = (title) => (title ? title.replace(/\s+-\s+(Gmail|Google Calendar|Google Docs)$/, '') : null);
+const dayLabel = (day) => new Date(`${day}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+
 export async function findFriction(activity, workspace, { days = 28 } = {}) {
+  const at = (d) => new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: activity.timeZone || 'UTC' });
   const since = new Date(Date.now() - days * 86400e3);
   const [hot] = await activity.sessions
     .aggregate([
@@ -42,7 +46,7 @@ export async function findFriction(activity, workspace, { days = 28 } = {}) {
           switches: { $sum: { $cond: [{ $and: [{ $ne: ['$previous', null] }, { $ne: ['$previous', '$label'] }] }, 1, 0] } },
           seconds: { $sum: '$durationSec' },
           sessions: {
-            $push: { id: '$_id', label: '$label', title: '$title', sec: '$durationSec', start: '$start', minute: { $minute: { date: '$start', timezone: activity.timeZone || 'UTC' } }, source: '$source' },
+            $push: { label: '$label', title: '$title', sec: '$durationSec', start: '$start', day: '$day', id: '$_id', minute: { $minute: {date:'$start',timezone:activity.timeZone||'UTC'} }, source: '$source' },
           },
         },
       },
@@ -83,6 +87,18 @@ export async function findFriction(activity, workspace, { days = 28 } = {}) {
   const minutes = sessions.map((s) => s.minute).sort((a, b) => a - b);
   const startMinute = minutes[Math.floor(minutes.length / 4)] ?? 0;
   const dayCount = hot.dayCount;
+  // The most recent night as a timestamped agenda, and one line per night for the expanded view.
+  const byDay = new Map();
+  for (const s of sessions) byDay.set(s.day, [...(byDay.get(s.day) || []), s]);
+  const lastDay = [...byDay.keys()].sort().at(-1);
+  const night = {
+    day: lastDay,
+    date: dayLabel(lastDay),
+    sessions: byDay.get(lastDay).filter((s) => s.sec >= 30).map((s) => ({ time: at(s.start), label: s.label, ...appInfo(s.label), title: cleanTitle(s.title), minutes: Math.max(1, Math.round(s.sec / 60)) })),
+  };
+  const nights = [...byDay.entries()]
+    .sort(([a], [b]) => (a < b ? 1 : -1))
+    .map(([day, list]) => ({ day, date: dayLabel(day), start: at(list[0].start), minutes: Math.round(list.reduce((sum, s) => sum + s.sec, 0) / 60), switches: list.filter((s, i) => i > 0 && s.label !== list[i - 1].label).length }));
   const counts={seed:0,captured:0,unknown:0};
   for(const session of sessions)counts[session.source==='seed'?'seed':session.source==='collector'?'captured':'unknown']++;
   const sources=Object.keys(counts).filter(key=>counts[key]>0);
@@ -112,6 +128,8 @@ export async function findFriction(activity, workspace, { days = 28 } = {}) {
       .filter((s) => s.sec >= 30)
       .slice(-14)
       .map((s) => ({ label: s.label, name: appInfo(s.label).name, minutes: Math.max(1, Math.round(s.sec / 60)) })),
+    night,
+    nights,
     sample: sessions.every((s) => s.source === 'seed'),
     sessions: sessions.length,
   };
@@ -133,8 +151,8 @@ export function planWorkflow(f) {
     problem:'Repeated activity across Atlas and the source repository suggests a query-review workflow to confirm.',
     trigger:'Before the next confirmed query review',
     steps:[
-      {app:'MongoDB Atlas',label:'Collect supplied evidence',detail:'Gather the supplied query shape, baseline metrics and existing issue notes. Mark missing inputs.'},
-      {app:'GitHub',label:'Compare staging plans',detail:'Review owner-provided explain plans against query code. Do not execute queries or create indexes.'},
+      {app:'MongoDB Atlas',logo:'mongodb',label:'Collect supplied evidence',detail:'Gather the supplied query shape, baseline metrics and existing issue notes. Mark missing inputs.'},
+      {app:'GitHub',logo:'github',label:'Compare staging plans',detail:'Review owner-provided explain plans against query code. Do not execute queries or create indexes.'},
       {app:'Offload',label:'Draft rollout and rollback',detail:'Prepare a local checklist with proposed checks and unknown owners or thresholds clearly marked.'},
       {app:'You',label:'Review the draft',detail:'Confirm the plan and permissions before any database or issue changes.',ask:true},
     ],proactive:['Prepare review notes from supplied evidence','Suggest next steps after the review'],
