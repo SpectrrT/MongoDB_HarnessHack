@@ -76,10 +76,8 @@ const Gallery = lazy(() => import("./Gallery"));
 const nav = [
   ["overview", "Overview", Home],
   ["tasks", "Tasks", ListTodo],
-  ["rem", "REM", Sparkles],
-  ["memory", "Memory", Brain],
-  ["history", "Computer history", HistoryIcon],
   ["sleep", "Sleep", Moon],
+  ["history", "Computer history", HistoryIcon],
   ["connections", "Connections", Plug],
 ];
 const date = (x) =>
@@ -240,12 +238,12 @@ export default function Workspace() {
           {page === "overview" && <Overview />}
           {page === "chat" && <LiveChat id={route[1]} onRevealSidebar={()=>setSidebar(true)} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
-          {page === "memory" && <Memory />}
+          {page === "memory" && <Navigate to="/app/sleep?view=memory" replace />}
           {page === "archive" && <ConversationArchive/>}
           {page === "history" && <HistoryPage />}
-          {page === "sleep" && <SlowMode><Sleep /></SlowMode>}
+          {page === "sleep" && <SlowMode memory={<Memory />} review={<Sleep />} rem={<Rem />} />}
           {page === "harness" && <Harness />}
-          {page === "rem" && <Rem />}
+          {page === "rem" && <Navigate to="/app/sleep?view=rem" replace />}
           {page === "connections" && <Connections onConnect={setConnect} />}
           {page === "settings" && <SettingsPage />}
           {page === "library" && (

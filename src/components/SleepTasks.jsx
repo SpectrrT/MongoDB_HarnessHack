@@ -6,6 +6,7 @@ import { Modal } from './Modal';
 const deadline = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(8,0,0,0); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16); };
 async function api(url, value) {
   const response = await fetch(url, value ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) } : {});
+  if (!response.headers.get('content-type')?.includes('application/json')) throw Error('Overnight tasks need the local Offload service. Open the local app to assign and run tasks.');
   const result = await response.json(); if (!response.ok) throw Error(result.error || 'Sleep request failed.'); return result;
 }
 const labels = { queued: 'Queued', running: 'Working', approval: 'Approval needed', paused: 'Paused', completed: 'Checks passed', incomplete: 'Incomplete', cancelled: 'Cancelled' };
@@ -49,7 +50,7 @@ export default function SleepTasks() {
         <button className="button small ghost" onClick={() => control(task, 'cancel')}><X size={14}/> Cancel task</button>
       </div>}
     </article>)}
-    <p className="runner-note">{status?.configured ? status.enabled ? 'The local Sleep worker is enabled. Keep the server running while it works.' : 'Task storage is connected. Start the Sleep task worker on this computer to execute the queue.' : 'MongoDB task storage is not configured. A connected worker is required to run assigned tasks.'} Completion means the checks you set passed. A draft still needs your judgment.</p>
+    <p className="runner-note">{!status ? 'Worker status is unavailable.' : status.configured ? status.enabled ? 'The local Sleep worker is enabled. Keep the server running while it works.' : 'Task storage is connected. Start the Sleep task worker on this computer to execute the queue.' : 'MongoDB task storage is not configured. A connected worker is required to run assigned tasks.'} Completion means the checks you set passed. A draft still needs your judgment.</p>
     {!!state.overnight?.length && <><div className="overnight-heading"><h2>Previously saved briefs</h2><span>Not assigned to the worker</span></div>{state.overnight.filter(t => t.status !== 'cancelled').map(task => <article className="overnight-task" key={task.id}><h3>{task.title}</h3><p>{task.brief}</p><button className="button small secondary" onClick={() => { open(); setDraft(d => ({...d,title:task.title,brief:task.brief,budget:String(task.budget)})); }}>Add output checks to assign</button><button className="button small ghost" onClick={() => act('overnight',{id:task.id,status:'cancelled'}).catch(e => setError(e.message))}>Dismiss saved brief</button></article>)}</>}
     <div className="overnight-heading"><h2>Ideas for tonight</h2><span>Choose what to queue</span></div>
     {state.suggestions.filter(s => s.status === 'pending').slice(0,4).map(s => <button className="night-suggestion" key={s.id} onClick={() => open(s)}><span><strong>{s.title}</strong><small>{s.reason}</small></span><ArrowUpRight size={18}/></button>)}

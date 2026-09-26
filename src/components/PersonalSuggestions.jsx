@@ -2,12 +2,13 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './PersonalSuggestions.css';
 const api=async(path='',body)=>{
   const response=await fetch(`/api/suggestions${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!response.headers.get('content-type')?.includes('application/json'))throw Error('Next actions need the local Offload service. Open the local app to import sessions and prepare tasks.');
   const result=await response.json();if(!response.ok)throw Error(result.error||'Unable to load saved suggestions.');return result;
 };
 export default function PersonalSuggestions(){
   const fileInput=useRef(null);
   const [state,setState]=useState(null),[project,setProject]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[versions,setVersions]=useState(null);
-  const load=useCallback(async()=>{try{const data=await api();setState(data);setProject(old=>old||data.projects[0]?.projectId||'');}catch(e){setError(e.message);}},[]);
+  const load=useCallback(async()=>{try{const data=await api();setState(data);setError('');setProject(old=>old||data.projects[0]?.projectId||'');}catch(e){setError(e.message);}},[]);
   useEffect(()=>{load();},[load]);
   const hasWork=state?.runs.some(r=>['queued','running'].includes(r.status));
   useEffect(()=>{if(!hasWork)return;const timer=setInterval(load,2000);return()=>clearInterval(timer);},[hasWork,load]);
