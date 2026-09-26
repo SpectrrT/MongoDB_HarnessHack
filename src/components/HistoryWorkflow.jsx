@@ -21,7 +21,7 @@ const provenanceOf = finding => {
   const source = finding.provenance || (finding.sample ? 'seed' : 'unknown');
   return ({sample:'seed',live:'captured'})[source] || (['seed','captured','mixed'].includes(source) ? source : 'unknown');
 };
-const provenanceLabel = finding => ({seed:'Demo history',captured:'Captured activity',mixed:'Demo and captured activity',unknown:'Activity source not verified'})[provenanceOf(finding)];
+const provenanceLabel = finding => ({seed:'Sample history',captured:'Captured activity',mixed:'Sample and captured activity',unknown:'Activity source not verified'})[provenanceOf(finding)];
 
 function refinePrompt({ summary, finding, workflow, cached = false }, instruction = '') {
   const steps = workflow.steps.map((s, i) => `${i + 1}. ${s.label} (${s.app}): ${s.detail}`).join('\n');
@@ -146,7 +146,7 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
     <section className="history-workflow" aria-labelledby="history-workflow-title">
       <header>
         <span className="eyebrow">
-          <Clock3 size={13} aria-hidden="true" /> {provenanceLabel(finding)}
+          <Clock3 size={13} aria-hidden="true" /> Computer history
           {result.cached && <em>Saved analysis</em>}
         </span>
         <span className="header-actions">
@@ -256,7 +256,7 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
         </form>
       )}
       {note && <button type="button" className="text-button" disabled={!!busy} onClick={build}>Retry saved activity</button>}
-      <p className="source">{note || `Found with one aggregation over ${finding.sessions} saved sessions. This rule-based proposal has not executed any work.`} {workflow.observation || 'Time savings have not been measured.'}</p>
+      {note && <p className="source">{note}</p>}
     </section>
   );
 }

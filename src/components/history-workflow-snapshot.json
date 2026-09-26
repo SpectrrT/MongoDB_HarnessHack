@@ -180,7 +180,7 @@
       }
     ]
   },
-  "summary": "On 3 days in the last 28 days, around 11:05 AM, you spent about 20 minutes bouncing between MongoDB Atlas, GitHub and Linear, switching 3 times each day.",
+  "summary": "Sample history shows activity across MongoDB Atlas, GitHub and Linear on 3 dates in the last 28 days, around 11:05 AM. Recorded sessions averaged 20 minutes and 3 app switches per date in that hour. Window names do not establish what the task was.",
   "workflow": {
     "kind": "engineering",
     "title": "Prepare a database query review",

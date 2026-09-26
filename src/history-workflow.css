@@ -23,7 +23,7 @@
 .history-workflow .icon:hover { background: var(--off-hover); }
 .history-workflow .header-actions { display: inline-flex; align-items: center; gap: 4px; }
 .history-workflow .text-button { display: inline-flex; align-items: center; gap: 5px; }
-.history-workflow h3 { margin: 2px 0 14px; font-size: 20px; font-weight: 600; line-height: 1.35; letter-spacing: -.35px; }
+.history-workflow h3 { margin: 2px 0 12px; font-size: 16px; font-weight: 600; line-height: 1.45; letter-spacing: -.2px; }
 .history-agenda, .history-more { margin-bottom: 14px; }
 .history-workflow .agenda-date { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--off-muted); text-transform: uppercase; letter-spacing: .4px; }
 .history-agenda ol { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--off-line); }

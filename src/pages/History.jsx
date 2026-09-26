@@ -200,7 +200,7 @@ function scrollToTop(el) {
   scrollTo({ top: el.getBoundingClientRect().top + scrollY - 16, behavior });
 }
 
-const Tag = ({ children = "Demo history" }) => <span className="hx-tag">{children}</span>;
+const Tag = ({ children = "Sample history" }) => <span className="hx-tag">{children}</span>;
 const STATE_LABEL = {
   checking: "Checking…",
   off: "Not connected",
@@ -806,7 +806,7 @@ function Day({ sectionRef, day, today, data, error, onDay, live, liveNote, lande
           {(recent || (hasSample && !stale) || (isToday && live === "open")) && (
             <p className="hx-sub">
               {recent && <span>{longDate(day)}</span>}
-              {hasSample && !stale && <Tag>{allSample ? "Demo history" : "Includes demo history"}</Tag>}
+              {hasSample && !stale && <Tag>{allSample ? "Sample history" : "Includes sample history"}</Tag>}
               {isToday && live === "open" && (
                 <span className="hx-live" title="Updates arrive through an Atlas change stream">
                   Live
