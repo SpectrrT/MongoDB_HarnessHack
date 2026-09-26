@@ -74,7 +74,7 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
   if (phase === 'loading')
     return (
       <div className="history-workflow is-loading">
-        <OrbLoading compact state="thinking" label="Reading your computer history…" />
+        <OrbLoading compact state="searching" label="Reading your computer history…" />
         <p>Looking for the hour you switch apps the most, across the last two weeks.</p>
       </div>
     );
