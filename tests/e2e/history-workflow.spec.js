@@ -27,7 +27,7 @@ test('static-host fallback preserves sample provenance and cannot claim a saved 
  await page.route('**/api/activity/**',route=>route.fulfill({contentType:'text/html',body:'<html>Static app</html>'}));
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
  await expect(page.locator('.history-workflow')).toContainText('Demo history');
- await expect(page.locator('.history-workflow')).toContainText('Showing saved demo analysis. Live history is not reachable right now.');
+ await expect(page.locator('.history-workflow')).toContainText('Showing the last saved analysis of the engineering example. The live history is not reachable right now.');
  await page.getByRole('button',{name:'Save workflow',exact:true}).click();
  await expect(page.locator('.history-workflow').getByRole('alert')).toContainText('local computer history service is unavailable');
  await expect(page.locator('.history-workflow')).not.toContainText('Workflow saved');
@@ -45,4 +45,41 @@ test('refining a sample proposal keeps its provenance and does not authorize ext
  expect(sent.messages.at(-1).text).toContain('(not executed)');
  expect(sent.messages.at(-1).text).toContain('Keep any sending or booking behind a separate explicit approval.');
  expect(sent.messages.at(-1).text).not.toContain('looked at my computer history');
+});
+test('a stalled activity read ends with an identified example and can retry live history',async({page})=>{
+ await prepare(page);let attempts=0;
+ await page.route('**/api/activity/workflow',route=>{
+  attempts++;
+  if(attempts===1)return;
+  return route.fulfill({json:snapshot});
+ });
+ await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
+ await expect(page.getByText('Reading saved activity…',{exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Retry saved activity'})).toBeVisible({timeout:16000});
+ await expect(page.locator('.history-workflow')).toContainText('Demo history');
+ await expect(page.getByRole('heading',{name:'Prepare a database query review'})).toBeVisible();
+ await page.getByRole('button',{name:'Retry saved activity'}).click();
+ await expect(page.locator('.history-workflow')).toContainText('Found with one aggregation over 12 saved sessions');
+ await expect(page.getByRole('button',{name:'Retry saved activity'})).toHaveCount(0);
+});
+test('cancel releases a pending activity read and allows another request',async({page})=>{
+ await prepare(page);let attempts=0;
+ await page.route('**/api/activity/workflow',route=>{
+  attempts++;
+  if(attempts===1)return;
+  return route.fulfill({json:snapshot});
+ });
+ await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
+ await page.getByRole('button',{name:'Cancel',exact:true}).click();
+ await expect(page.getByRole('button',{name:/Find work to hand off/})).toBeVisible();
+ await page.getByRole('button',{name:/Find work to hand off/}).click();
+ await expect(page.getByRole('heading',{name:'Prepare a database query review'})).toBeVisible();
+});
+test('an empty saved history does not silently become a sample result',async({page})=>{
+ await prepare(page);
+ await page.route('**/api/activity/workflow',route=>route.fulfill({json:{finding:null}}));
+ await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
+ await expect(page.getByRole('status')).toContainText('No repeated workflow found');
+ await expect(page.getByRole('button',{name:'Save workflow',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:/Find work to hand off/})).toBeVisible();
 });

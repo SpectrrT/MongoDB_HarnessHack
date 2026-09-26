@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Check, Clock3, Sparkles, X } from 'lucide-react';
 import TaskRows from '../vendor/beautiful/TaskRows';
 import { ConnectionLogo } from './ConnectionLogo';
@@ -8,9 +8,9 @@ import '../history-workflow.css';
 
 // Above the chat box: read the computer history, find where the back-and-forth is, and propose a workflow
 // Offload could run. The analysis runs through the local history service at every click. If the API can't be reached, the last saved
-// analysis of the same sample week is shown, labeled as such.
-const post = async (url, body = {}) => {
-  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Offload-Client':'local' }, body: JSON.stringify(body) });
+// analysis of the engineering example is shown, labeled as such.
+const post = async (url, body = {}, signal = AbortSignal.timeout(12000)) => {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Offload-Client':'local' }, body: JSON.stringify(body), signal });
   if(!r.headers.get('content-type')?.includes('application/json'))throw Error('The local computer history service is unavailable.');
   const value = await r.json();
   if (!r.ok) throw Error(value.error || 'Request failed.');
@@ -43,19 +43,35 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const pending = useRef(null);
+  useEffect(() => () => pending.current?.abort(), []);
+  const cancel = () => {
+    pending.current?.abort();
+    pending.current = null;
+    setPhase('idle');
+  };
 
   const build = async () => {
+    pending.current?.abort();
+    const controller = new AbortController();
+    pending.current = controller;
+    const deadline = setTimeout(() => controller.abort(new DOMException('History request timed out.', 'TimeoutError')), 12000);
     setPhase('loading');
     setSaved(false);
     setNote('');
     setError('');
     try {
-      const value = await post('/api/activity/workflow');
+      const value = await post('/api/activity/workflow', {}, controller.signal);
+      if (pending.current !== controller) return;
       if (!value.finding) return setPhase('empty');
       setResult({ ...value, cached: false });
-    } catch {
+    } catch (error) {
+      if (pending.current !== controller || error.name === 'AbortError') return;
       setResult({ ...snapshot, cached: true });
-      setNote('Showing saved demo analysis. Live history is not reachable right now.');
+      setNote('Showing the last saved analysis of the engineering example. The live history is not reachable right now.');
+    } finally {
+      clearTimeout(deadline);
+      if (pending.current === controller) pending.current = null;
     }
     setPhase('done');
   };
@@ -102,9 +118,10 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
 
   if (phase === 'loading')
     return (
-      <div className="history-workflow is-loading">
+      <div className="history-workflow is-loading" aria-busy="true">
         <OrbLoading compact state="searching" label="Reading saved activity…" />
         <p>Looking for the hour you switch apps the most, across the last 28 days.</p>
+        <button type="button" className="text-button" onClick={cancel}>Cancel</button>
       </div>
     );
 
@@ -188,7 +205,8 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
         </button>}
         <button type="button" className="text-button" disabled={!!busy} onClick={() => setPhase('idle')}>Not now</button>
       </footer>
-      <p className="source">{note || `Based on ${finding.sessions} saved app/window sessions. Proposed steps have not been executed.`}</p>
+      {note && <button type="button" className="text-button" disabled={!!busy} onClick={build}>Retry saved activity</button>}
+      <p className="source">{note || `Found with one aggregation over ${finding.sessions} saved sessions. This rule-based proposal has not executed any work.`}</p>
     </section>
   );
 }
