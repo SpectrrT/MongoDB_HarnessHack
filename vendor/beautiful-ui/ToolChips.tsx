@@ -203,7 +203,7 @@ export default function ToolChips({
                 type="button"
                 aria-expanded={rowOpen}
                 onClick={() => toggleRow(row.label)}
-                className="group/row -mx-[3px] flex h-7 w-[calc(100%+6px)] min-w-0 items-center gap-2 rounded-control px-[3px] text-left transition-colors duration-100 hover:bg-hover-2"
+                className="tool-activity-row group/row -mx-[3px] flex h-7 w-[calc(100%+6px)] min-w-0 items-center gap-2 rounded-control px-[3px] text-left transition-colors duration-100 hover:bg-hover-2"
               >
                 <span className="relative flex size-4 shrink-0 items-center justify-center text-ink-3">
                   {row.iconNode || <svg
@@ -212,17 +212,17 @@ export default function ToolChips({
                   >
                     {Icons[row.icon]}
                   </svg>}
-                  <svg
+                  {!row.iconNode && <svg
                     width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                     className={`absolute transition-[opacity,transform] duration-150 group-hover/row:opacity-100 ${rowOpen ? "opacity-100" : "opacity-0"}`}
                     style={{ transform: rowOpen ? "rotate(0deg)" : "rotate(-90deg)" }}
                   >
                     <path d="M6 9l6 6 6-6" />
-                  </svg>
+                  </svg>}
                 </span>
-                <span className="shrink-0 text-[12.5px] font-medium text-ink">{row.label}</span>
+                <span className="tool-activity-label shrink-0 text-[12.5px] font-medium text-ink">{row.label}</span>
                 <span
-                  className={`inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-field px-1.5
+                  className={`tool-activity-status inline-flex h-5.5 min-w-0 flex-1 cursor-pointer items-center truncate rounded-chip bg-field px-1.5
                     text-[11.5px] text-ink-2 shadow-hairline transition-colors duration-100 hover:bg-hover-2
                     ${row.mono ? "font-mono" : ""}`}
                 >

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import MarkdownContent from "../../components/MarkdownContent";
+import "../../response-markdown.css";
 
 /* ─────────────────────────────────────────────────────────
  * STREAMING TEXT
@@ -120,7 +122,7 @@ export default function StreamingText({
   const l = { ...DEFAULT_LABELS, ...labels };
   const [count, setCount] = useState(live ? content.length : 0);
   const [sourcesOpen, setSourcesOpen] = useState(false);
-  const done = count >= content.length;
+  const done = live || count >= content.length;
 
   useEffect(() => {
     if (live) return;
@@ -138,7 +140,7 @@ export default function StreamingText({
 
   return (
     <div className={fill ? "w-full" : "min-h-[15.5rem] w-full max-w-95"}>
-      <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-ink">
+      {live ? <MarkdownContent text={content.filter(token=>!token.cite).map(token=>token.text).join(" ")}/> : <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-ink">
         {content.slice(0, count).map((token, i) =>
           token.cite ? (
             <SourceChip key={i} source={sources[0]} />
@@ -154,7 +156,7 @@ export default function StreamingText({
             style={{ animation: "fade-in 150ms ease-out both" }}
           />
         )}
-      </p>
+      </p>}
 
       {/* action icons row */}
       <div

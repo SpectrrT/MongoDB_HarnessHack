@@ -12,5 +12,9 @@ test('landing evidence follows the complete hero and exposes measured conditions
  await expect(card.getByText(evidence.limitation,{exact:true})).toBeVisible();
  const response=await page.request.get(evidence.receipt);expect(response.ok()).toBe(true);
  const raw=await response.json();expect(raw.summary.baselineTotal).toBe(evidence.baselineTokens);expect(raw.summary.compactedTotal).toBe(evidence.offloadTokens);
+ await card.getByRole('button',{name:'Repeated context',exact:true}).click();
+ await expect(card.getByText(evidence.repeated.offloadTokens.toLocaleString('en-US'),{exact:true})).toBeVisible();
+ const repeated=await (await page.request.get(evidence.repeated.receipt)).json();expect(repeated.summary.compactedTotal).toBe(evidence.repeated.offloadTokens);
+ for(const item of evidence.reliability){await expect(card.getByRole('heading',{name:item.title,exact:true})).toBeVisible();expect((await page.request.get(item.receipt)).ok()).toBe(true);}
  const width=await page.evaluate(()=>({content:document.documentElement.scrollWidth,viewport:innerWidth}));expect(width.content).toBeLessThanOrEqual(width.viewport+1);
 });

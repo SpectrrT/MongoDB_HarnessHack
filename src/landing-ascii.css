@@ -95,3 +95,18 @@
 @media (max-width: 600px) { .ascii-site .benchmark-evidence { padding: 15px; } .benchmark-comparison { gap: 12px; } .benchmark-comparison > div + div { padding-left: 12px; } }
 
 @media (max-width: 1250px) { .ascii-site .benchmark-evidence { margin-left: 6%; margin-right: 6%; } }
+/* Tool-backed task cards share one rhythm across the landing page. */
+.ascii-site .preview-suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-content:center;}
+.ascii-site .preview-row{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;padding:22px;border:1px solid #e3e3e3;border-radius:16px;min-width:0;background:#fff;transition:border-color 160ms,box-shadow 160ms,transform 160ms;}
+.ascii-site .preview-row:first-child{border-top:1px solid #e3e3e3;}
+.ascii-site .preview-row:hover{border-color:#bdbdbd;box-shadow:0 7px 22px #00000006;transform:translateY(-2px);}
+.ascii-site .preview-row .landing-task-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;color:#777;font-size:11px;margin-bottom:18px;}
+.ascii-site .preview-row strong{font-size:15px;line-height:1.45;letter-spacing:-.2px;font-weight:500;}
+.ascii-site .preview-row p{font-size:12px;line-height:1.7;margin:10px 0 22px;color:#777;}
+.ascii-site .preview-row .landing-task-tools{display:flex;flex-wrap:wrap;gap:10px;margin-top:auto;}
+.ascii-site .landing-task-tools span{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:#646464;white-space:nowrap;}
+.ascii-site .landing-task-tools img{object-fit:contain;flex:none;}
+.ascii-site .story-details h3{display:flex;align-items:center;gap:10px;}
+@media(max-width:600px){.ascii-site .preview-suggestions{grid-template-columns:1fr;}.ascii-site .preview-row{padding:22px;}}
+@media(prefers-reduced-motion:reduce){.ascii-site .preview-row{transition:none;}.ascii-site .preview-row:hover{transform:none;}}
+.landing-focused .hero{min-height:calc(100svh - 112px);padding-top:36px;padding-bottom:44px;}.landing-focused .site-nav{justify-content:space-between;}.hero-engineering{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:28px;color:#7b827d;font:10px/1.5 var(--ascii-font,monospace);}.hero-engineering span{display:flex;align-items:center;gap:7px;}.hero-engineering span:before{content:'';width:3px;height:3px;border-radius:50%;background:#94a79b;}.landing-focused .hero-description{max-width:440px;}@media(max-width:900px){.landing-focused .hero{min-height:0;}.landing-focused .hero-engineering{margin-top:22px;}.landing-focused .harness-diagram{margin-top:8px;}}

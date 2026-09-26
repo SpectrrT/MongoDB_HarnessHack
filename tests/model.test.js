@@ -101,3 +101,21 @@ test('cancelled jobs retain provider usage returned after the cancellation',asyn
  const job=await untilJob(app,payload.requestId,j=>j.usage?.input_tokens===100);
  assert.equal(job.status,'cancelled');assert.equal(job.usage.output_tokens,5);assert.equal(job.usage.usageKnown,false);
 });
+
+test('different conversations run together; duplicate starts and stop remain isolated',async()=>{
+ const runs=new Map();
+ const app=appWith(({signal,cwd})=>new Promise((resolve,reject)=>{runs.set(cwd,{signal,resolve});signal.addEventListener('abort',()=>reject(Error('Stopped')));}));
+ const first={...payload,conversationId:'11111111-1111-4111-8111-111111111111'};
+ const second={...payload,requestId:'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',conversationId:'22222222-2222-4222-8222-222222222222'};
+ const [a,b]=await Promise.all([post(app,'/api/model/jobs',first),post(app,'/api/model/jobs',second)]);
+ assert.equal(a.status,202);assert.equal(b.status,202);
+ await untilJob(app,a.body.id,j=>!!j.cwd&&runs.has(j.cwd));await untilJob(app,b.body.id,j=>!!j.cwd&&runs.has(j.cwd));
+ await post(app,'/api/model/jobs',{...first,requestId:'cccccccc-cccc-4ccc-8ccc-cccccccccccc'}).expect(409);
+ await post(app,'/api/model/jobs',first).expect(200);
+ assert.equal(runs.size,2);
+ await post(app,'/api/model/jobs/'+a.body.id+'/stop',{}).expect(200);
+ assert.equal((await get(app,b.body.id)).body.status,'running');
+ const active=[...runs.values()].filter(r=>!r.signal.aborted);assert.equal(active.length,1);
+ active[0].resolve({text:'Second task completed',usage:{}});
+ const done=await untilJob(app,b.body.id,j=>j.status==='completed');assert.equal(done.result.text,'Second task completed');
+});

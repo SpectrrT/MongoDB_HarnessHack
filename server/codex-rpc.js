@@ -1,8 +1,9 @@
+import {findCodex} from './codex-installation.js';
 import {spawn} from 'node:child_process';
 import os from 'node:os';import path from 'node:path';
 const clients=new Set();process.once('exit',()=>{for(const client of clients)client.close();});
 export function codexClient(){
- const child=spawn(process.env.OFFLOAD_CODEX_BIN||path.join(os.homedir(),'.local/bin/codex'),['app-server','--stdio'],{env:Object.fromEntries(['HOME','PATH','USER','TMPDIR','CODEX_HOME'].filter(k=>process.env[k]).map(k=>[k,process.env[k]])),stdio:['pipe','pipe','ignore']});
+ const child=spawn(findCodex(),['app-server','--stdio'],{env:Object.fromEntries(['HOME','PATH','USER','TMPDIR','CODEX_HOME'].filter(k=>process.env[k]).map(k=>[k,process.env[k]])),stdio:['pipe','pipe','ignore']});
  const requests=new Map(),listeners=new Set();let sequence=0,buffer='',closed=false;
  const client={
   request(method,params={}){return new Promise((resolve,reject)=>{if(closed)return reject(Error('Codex connection closed.'));const id=++sequence,timer=setTimeout(()=>{requests.delete(id);reject(Error('Codex did not respond.'));},20000);requests.set(id,{resolve,reject,timer});child.stdin.write(JSON.stringify({id,method,params})+'\n');});},

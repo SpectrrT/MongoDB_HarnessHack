@@ -27,6 +27,7 @@ test('Sleep assignment, exact file approval and verified artifact render on desk
     return route.fulfill({ json: tasks });
   });
   await page.goto('/app/sleep');
+  await page.getByRole('button', { name: 'Overnight tasks', exact: true }).click();
   await page.getByRole('button', { name: 'Add a task', exact: true }).click();
   await page.getByLabel('Task', { exact: true }).fill('Prepare checked handoff');
   await page.getByLabel('What should be ready?').fill('Draft these facts: Release blocked. Owner Maya.');
@@ -37,6 +38,7 @@ test('Sleep assignment, exact file approval and verified artifact render on desk
   expect(submitted.input.writeFiles).toEqual([]);
   expect(submitted.input.checks[0].contains).toEqual(['Release blocked', 'Owner Maya']);
   await page.reload();
+  await page.getByRole('button', { name: 'Overnight tasks', exact: true }).click();
   await page.locator('summary').filter({ hasText: 'report.md' }).click();
   await expect(page.locator('pre').filter({ hasText: 'Owner Maya' })).toBeVisible();
   await page.getByRole('button', { name: 'Approve displayed files', exact: true }).click();

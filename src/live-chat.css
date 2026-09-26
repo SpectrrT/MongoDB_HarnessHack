@@ -7,6 +7,15 @@
 .answer-byline small,.token-receipt { color:#777; font:10px monospace; }
 .retrieved-notes { font-size:12px; color:#777; margin:12px 0; }
 .model-working { display:flex; gap:22px; align-items:center; }
+/* Keep the Beautiful UI loader calm and steady only while a chat reply is pending. */
+.live-chat .model-working .chat-thinking > [role="status"] {min-height:24px;}
+.live-chat .model-working .chat-thinking > [role="status"] > span:nth-child(2) {min-width:7.6em;white-space:nowrap;animation-duration:4s!important;}
+.live-chat .model-working .chat-thinking > [role="status"] > span:last-child {min-width:10ch;}
+.live-chat .model-working .chat-thinking > [role="status"] > span[aria-hidden] > span {animation-duration:1.8s!important;}
+@media(prefers-reduced-motion:reduce){
+  .live-chat .model-working .chat-thinking > [role="status"] > span:nth-child(2),
+  .live-chat .model-working .chat-thinking > [role="status"] > span[aria-hidden] > span {animation:none!important;}
+}
 .chat-error { color:#822; padding:15px 30px; font-size:13px; }
 .live-chat .chat-empty p { max-width:420px; line-height:1.7; }
 .live-chat .beautiful-ui button:disabled { opacity:.4; cursor:not-allowed; }
@@ -107,8 +116,36 @@
 @media(max-width:480px){.suggested-carousel-cards{grid-template-columns:1fr;}.suggested-carousel-stage{min-height:310px;}.suggested-task-card{min-height:148px;}.suggested-carousel-head button{min-width:32px;min-height:32px;}}
 .chat-sleep-toggle{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;height:28px;font-size:11px;border-radius:6px;color:var(--off-muted);}
 .chat-sleep-toggle:hover{background:var(--off-hover);}
-.chat-sleep-toggle[aria-pressed=true]{background:var(--off-ink);color:var(--off-surface);}
+.chat-sleep-toggle[aria-pressed=true]{background:transparent;color:var(--off-muted);}
+.chat-sleep-toggle svg{transition:fill 160ms,color 160ms,transform 240ms;}
+.chat-sleep-toggle[aria-pressed=true] svg{fill:var(--off-ink);color:var(--off-ink);transform:rotate(-12deg);}
 .sleep-chat-hint{margin:8px 4px 0;color:var(--off-muted);font-size:10px;line-height:1.6;}
 .sleep-response-label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--off-muted);margin-bottom:12px;}
 
 @media(max-width:480px){.chat-composer .prompt-extra-controls{grid-column:2 / 4;grid-row:3;}}
+
+.agent-activity .tool-activity-row{height:auto;min-height:34px;gap:10px;}
+.agent-activity .tool-activity-label{flex:0 1 auto;min-width:0;font-size:13px;font-weight:400;line-height:1.5;}
+.agent-activity .tool-activity-status{flex:0 0 auto;width:auto;margin-left:4px;background:transparent;box-shadow:none;font-size:10px;color:var(--off-muted);}
+.agent-activity .tool-activity-row>span:first-child{width:28px;height:28px;}
+
+.chat-reconnecting{color:var(--off-muted);font-size:12px;line-height:1.5;padding:8px 0;}
+
+.agent-approval{padding:16px!important;border:1px solid var(--off-line)!important;border-radius:12px!important;box-shadow:none!important;}
+.approval-service-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.approval-service-row h3{margin:0!important;font-size:13px;font-weight:500;}
+.approval-decision{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.approval-decision p{font-size:13px;margin:0;color:var(--off-muted);}
+.approval-decision-actions{display:flex;gap:8px;}
+.approval-request-details{font-size:11px;color:var(--off-muted);margin:8px 0;}
+
+/* No model connected: say why the chat is off and how to turn it on. */
+.live-chat .connect-model-notice { display:flex; gap:12px; align-items:flex-start; margin:0 0 14px; padding:14px 16px; border:1px solid var(--off-line); border-radius:14px; background:var(--off-surface); color:var(--off-ink); }
+.live-chat .connect-model-notice > svg { flex:none; margin-top:3px; color:var(--off-muted); }
+.live-chat .connect-model-notice h2 { margin:0 0 4px; font-size:15px; font-weight:600; letter-spacing:-.2px; }
+.live-chat .connect-model-notice p { margin:0 0 10px; max-width:none; font-size:13px; line-height:1.55; color:var(--off-muted); }
+.live-chat .connect-model-notice .install-command { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; }
+.live-chat .connect-model-notice code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; padding:2px 7px; border-radius:6px; background:var(--off-inset); color:var(--off-ink); user-select:all; }
+.live-chat .connect-model-notice .text-button { display:inline-flex; align-items:center; gap:4px; }
+.live-chat .connect-model-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.live-chat .connect-model-actions .button { display:inline-flex; align-items:center; gap:6px; }

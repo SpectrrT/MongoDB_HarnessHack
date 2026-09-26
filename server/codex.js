@@ -1,16 +1,18 @@
+import {findCodex,codexInstalled,CODEX_INSTALL,CODEX_MISSING} from './codex-installation.js';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 const exec = promisify(execFile);
-const binary = process.env.OFFLOAD_CODEX_BIN || path.join(os.homedir(), '.local/bin/codex');
 const environment = () => Object.fromEntries(['HOME','PATH','USER','TMPDIR','CODEX_HOME'].filter(k => process.env[k]).map(k => [k, process.env[k]]));
 let cached;
 export function clearCodexCache(){cached=null;}
 export async function codexStatus() {
+  // Looked up on every check, so installing Codex and pressing Check again works without a restart.
+  if (!codexInstalled()) return {connected:false, installed:false, install:CODEX_INSTALL, models:[], message:CODEX_MISSING};
   try {
-    const {stdout,stderr} = await exec(binary, ['login','status'], {env:environment(), timeout:5000});
+    const {stdout,stderr} = await exec(findCodex(), ['login','status'], {env:environment(), timeout:5000});
     const authenticated = /Logged in using ChatGPT/.test(stdout + stderr);
     if (!authenticated) return {connected:false, models:[], message:'Sign in with ChatGPT using codex login on this Mac.'};
     if (!cached || Date.now() - cached.at > 120000) cached = {at:Date.now(), models:await listModels()};
@@ -19,7 +21,7 @@ export async function codexStatus() {
 }
 function listModels() {
   return new Promise((resolve,reject) => {
-    const child = spawn(binary, ['app-server','--stdio'], {env:environment(), stdio:['pipe','pipe','ignore']});
+    const child = spawn(findCodex(), ['app-server','--stdio'], {env:environment(), stdio:['pipe','pipe','ignore']});
     let buffer='', done=false;
     const finish = (error, value) => {if(done)return; done=true; clearTimeout(timer);child.kill();error?reject(error):resolve(value);};
     const timer=setTimeout(()=>finish(Error('Model list timed out.')),15000);

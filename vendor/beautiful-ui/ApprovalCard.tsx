@@ -146,6 +146,7 @@ export default function ApprovalCard({
   onAnswerChange,
   resettable = true,
   manual = false,
+  variant,
   onSkipped,
 }: {
   questions?: ApprovalQuestion[];
@@ -250,6 +251,13 @@ export default function ApprovalCard({
     setOpen(true);
     measured.current = false;
   };
+
+  if(variant==='decision')return <div className="approval-decision">
+    <p>{questions[0]?.q}</p><div className="approval-decision-actions">
+      <Button type="button" variant="secondary" onClick={()=>onSkipped?.()}>Decline</Button>
+      <Button type="button" onClick={()=>onSubmitted?.({0:[0]}, {})}>Allow once</Button>
+    </div>
+  </div>;
 
   if (!open) {
     return (

@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { mountRem } from "./rem.js";
 import { REM_ADMIN_PATHS, remAdminGuard } from "./rem-guard.js";
+import { mountRemRehearsal } from "./rem-rehearse.js";
 import {
   createWorkspace,
   transition,
@@ -27,6 +28,8 @@ const types = [
   "overnight",
   "chat-start",
   "conversation-sleep",
+  "conversation-state",
+  "conversation-title",
   "chat-sleep-start",
   "chat-finish",
   "onboard",
@@ -60,6 +63,8 @@ const schema = z
 const id = z.string().min(1).max(100),
   text = z.string().trim().min(1).max(4000);
 const payloads = {
+  "conversation-state":z.object({id,action:z.enum(["archive","delete","restore"])}).strict(),
+  "conversation-title":z.object({id,title:z.string().min(1).max(70)}).strict(),
   "conversation-sleep": z.object({id,enabled:z.boolean()}).strict(),
   "chat-sleep-start":z.object({id,jobId:id,model:id,effort:z.enum(["low","medium","high","xhigh","max","ultra"]).optional()}).strict(),
   "request-connection": z.object({id, requested: z.boolean()}).strict(),
@@ -204,10 +209,12 @@ export function createApp({
         .createHash("sha256")
         .update(token)
         .digest("hex");
-      const key = req.workspaceKey,
+      // Eight simultaneous runs and multiple tabs poll independently. Reads must not exhaust the action budget.
+      const polling=req.method==='GET'||(req.method==='POST'&&req.path==='/model/titles');
+      const key = req.workspaceKey+(polling?':poll':':action'),
         now = Date.now(),
         recent = (rate.get(key) || []).filter((t) => now - t < 60000);
-      if (recent.length > 180)
+      if (recent.length >= (polling?6000:180))
         return res
           .status(429)
           .json({ error: "Too many requests. Try again shortly." });
@@ -307,6 +314,7 @@ export function createApp({
     }
   });
   app.use(REM_ADMIN_PATHS, remAdminGuard());
+  mountRemRehearsal(app);
   mountRem(app);
   if (serveStatic) {
     const dist = path.join(here, "../dist");

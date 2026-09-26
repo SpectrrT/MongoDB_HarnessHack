@@ -294,7 +294,9 @@ function tagsFor(t, run, verdict, genome) {
   return tags;
 }
 
-export async function runGymTask(t, genome, { model, embedder, skills = [] }) {
+// `grade`: a completion gate. When set, the finished run is also scored by the gate, once with the end-state checks as
+// evidence and once blind (no checks), without changing the run. Calibrate compares those scores to the checkers.
+export async function runGymTask(t, genome, { model, embedder, skills = [], grade = null }) {
   const db = createMemoryDb({ name: `gym_${t.id}` });
   await ensureIndexes(db, { search: false });
   const clock = createClock(GYM_EPOCH);
@@ -333,6 +335,7 @@ export async function runGymTask(t, genome, { model, embedder, skills = [] }) {
     run = await agent.resumeRun(run.runId);
   }
   const verdict = checkRun({ kind: t.kind, params: t.params, truth: t.workspace.truth, world, run });
+  const gate = grade ? await gradeRun(grade, run, genome, verdict) : null;
   return {
     taskId: t.id,
     split: t.split,
@@ -355,13 +358,23 @@ export async function runGymTask(t, genome, { model, embedder, skills = [] }) {
     inputTokens: run.usage.inputTokens,
     tokens: run.usage.inputTokens + run.usage.outputTokens,
     costByTier: run.usage.byTier,
+    ...(gate ? { gate } : {}),
   };
 }
 
-export async function runGym(genome, { model, embedder, skills = [], split = "all" }) {
+async function gradeRun(gate, run, genome, verdict) {
+  const final = run.final ?? "";
+  const failures = [...verdict.failures, ...verdict.collateral.map((c) => `collateral: ${c}`)];
+  const checked = await gate.check({ cp: run, final, genome, evidence: { failures, pass: verdict.pass } });
+  const blind = await gate.check({ cp: run, final, genome, evidence: null });
+  return { source: blind.source, checked: checked.p, blind: blind.p };
+}
+
+// `extra`: more tasks to run after the gym's own (Rehearse's kept variants, which are train tasks).
+export async function runGym(genome, { model, embedder, skills = [], split = "all", grade = null, extra = [] }) {
   const tasks = split === "train" ? GYM.train : split === "heldOut" ? GYM.heldOut : [...GYM.train, ...GYM.heldOut];
   const results = [];
-  for (const t of tasks) results.push(await runGymTask(t, genome, { model, embedder, skills }));
+  for (const t of [...tasks, ...(split === "heldOut" ? [] : extra)]) results.push(await runGymTask(t, genome, { model, embedder, skills, grade }));
   return { results, fitness: fitness(results) };
 }
 

@@ -5,9 +5,8 @@ async function onboard(page) {
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await page.getByRole("button", { name: "Open my workspace" }).click();
-  // Onboarding lands on the Overview; the chat greeting lives at /app/chat.
-  await expect(page.getByRole("heading", { name: "Your workspace, at a glance." })).toBeVisible();
-  await expect(page.getByText(/^Good (morning|afternoon|evening), Alex\.$/)).toBeVisible();
+  await expect(page).toHaveURL(/\/app\/chat$/);
+  await expect(page.getByRole("heading", { name: "Hello Alex What can I help you with?" })).toBeVisible();
 }
 test("landing, onboarding, suggestions and memory persist", async ({
   page,
@@ -23,10 +22,13 @@ test("landing, onboarding, suggestions and memory persist", async ({
     fullPage: true,
   });
   await onboard(page);
-  // The Overview shows the first two personal suggestions; "View all" opens the chat.
-  await expect(page.locator(".home-tasks > button")).toHaveCount(2);
-  await expect(page.getByRole("heading", { name: "Find my homework for the week" })).toBeVisible();
-  await page.getByRole("button", { name: "View all" }).click();
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/app\/chat$/);
+  await page.goto("/app/overview");
+  await expect(page.getByRole("heading", { name: "Overview", exact: true })).toBeVisible();
+  await expect(page.getByText("No conversations yet. Start a new chat when you have something to work on.")).toBeVisible();
+  await expect(page.locator('.overview-stats a[href="/app/memory"] strong')).toHaveText("0");
+  await page.locator('.workspace-overview').getByRole("link", { name: "New chat", exact: true }).click();
   await expect(page).toHaveURL(/\/app\/chat$/);
   await expect(
     page.getByRole("heading", { name: "Hello Alex What can I help you with?" }),
@@ -48,6 +50,9 @@ test("landing, onboarding, suggestions and memory persist", async ({
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBeTruthy();
+  await page.goto("/app/overview");
+  await expect(page.locator('.overview-stats a[href="/app/memory"] strong')).toHaveText("1");
+  await expect(page.locator('.overview-stats a[href="/app/chat"] strong')).toHaveText("0");
   expect(errors).toEqual([]);
 });
 test("connection setup and unconfigured Sleep preserve existing briefs", async ({ page }) => {
@@ -58,6 +63,8 @@ test("connection setup and unconfigured Sleep preserve existing briefs", async (
   await page.getByRole('button',{name:'Add to workspace',exact:true}).click();
   await expect(page.getByText('Added · setup needed')).toBeVisible();
   await page.goto('/app/sleep');
+  // Sleep opens on the conversations left for later; overnight tasks have their own tab.
+  await page.getByRole('button',{name:'Overnight tasks',exact:true}).click();
   await expect(page.getByText('MongoDB task storage is not configured.',{exact:false})).toBeVisible();
   await page.getByRole('button',{name:'Add a task',exact:true}).click();
   await page.getByLabel('Task',{exact:true}).fill('Prepare a project update');
@@ -71,6 +78,7 @@ test("connection setup and unconfigured Sleep preserve existing briefs", async (
     localStorage.setItem(key,JSON.stringify(state));
   });
   await page.reload();
+  await page.getByRole('button',{name:'Overnight tasks',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Previously saved briefs'})).toBeVisible();
   await expect(page.getByRole('heading',{name:'Saved before worker integration'})).toBeVisible();
   await page.getByRole('button',{name:'Add output checks to assign'}).click();

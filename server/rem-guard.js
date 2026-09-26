@@ -1,9 +1,10 @@
 import crypto from "node:crypto";
 
-// /api/rem/reset wipes REM's store and /api/rem/simulate runs days of work. Both stay open on this machine (the demo,
-// `npm run dev` through the Vite proxy, the API tests). From anywhere else they need REM_ADMIN_TOKEN in the
-// x-rem-admin-token header; without that variable set they are refused, so a public deploy is closed by default.
-export const REM_ADMIN_PATHS = ["/api/rem/reset", "/api/rem/simulate"];
+// /api/rem/reset wipes REM's store, /api/rem/simulate runs days of work and /api/rem/rehearse stress-tests the
+// harness. All three stay open on this machine (the demo, `npm run dev` through the Vite proxy, the API tests). From
+// anywhere else they need REM_ADMIN_TOKEN in the x-rem-admin-token header; without that variable set they are
+// refused, so a public deploy is closed by default.
+export const REM_ADMIN_PATHS = ["/api/rem/reset", "/api/rem/simulate", "/api/rem/rehearse"];
 
 const LOOPBACK = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 

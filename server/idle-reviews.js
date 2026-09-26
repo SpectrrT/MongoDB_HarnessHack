@@ -84,7 +84,7 @@ export function createIdleReviews({ dataDir, launch, getJob, cancel, isBusy, now
       await ready; if (ticking) return; ticking = true;
       try { for (const row of rows.values()) {
         await reconcile(row);
-        if (!row.enabled || !row.latest || isBusy(row.owner)) continue;
+        if (!row.enabled || !row.latest || isBusy(row.owner,row.id)) continue;
         const recovering = ['running','starting'].includes(row.state) && row.runPayload;
         if (!recovering && (row.state !== 'waiting' || row.nextAt > now())) continue;
         const generation = row.generation;

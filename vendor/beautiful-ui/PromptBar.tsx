@@ -147,6 +147,7 @@ export default function PromptBar({
   variant = "Rounded",
   local = true,
   tall = false,
+  modelDisabled,
   placeholder,
   onSend,
   models, modelValue, onModelChange, disabled = false, controls, onAttach, hasAttachments = false,
@@ -163,6 +164,7 @@ export default function PromptBar({
   local?: boolean;
   /** hero sizing: a multi-line input with controls on their own row */
   tall?: boolean;
+  modelDisabled?: boolean;
   placeholder?: string;
   onSend?: (text: string) => void | boolean | Promise<void | boolean>;
 }) {
@@ -667,7 +669,7 @@ export default function PromptBar({
             type="button"
             aria-expanded={modelOpen}
             aria-label="Choose model"
-            disabled={disabled}
+            disabled={modelDisabled ?? disabled}
             onClick={() => {
               setPlusOpen(false);
               setModelOpen((current) => !current);
