@@ -1,0 +1,60 @@
+.ascii-site { --ascii-font: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+.ascii-site .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.ascii-site .hero { display: grid; grid-template-columns: 1.05fr 1fr; align-items: center; gap: 20px; padding-top: 65px; padding-bottom: 75px; }
+.ascii-site .hero-copy:before { display: none; }
+.ascii-site .net-background { opacity: .065; inset: 0; }
+.ascii-site .hero h1 { font-size: clamp(70px, 7.1vw, 108px); }
+.ascii-site .hero .eyebrow { font-family: var(--ascii-font); font-size: 11px; letter-spacing: .03em; }
+.ascii-sculpture { min-width: 0; position: relative; z-index: 1; margin: 0; width: 100%; container-type: inline-size; }
+.ascii-frame-label { display: flex; justify-content: space-between; gap: 12px; font: 9px/1.5 var(--ascii-font); letter-spacing: .08em; color: #686868; }
+.ascii-sculpture pre { font-family: var(--ascii-font); font-size: 1.85cqw; line-height: 1.85cqw; letter-spacing: 0; margin: 25px 0; white-space: pre; color: #222; font-variant-ligatures: none; user-select: none; }
+.ascii-sculpture figcaption { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #dedede; padding-top: 12px; color: #606060; font: 10px/1.5 var(--ascii-font); }
+.ascii-sculpture button { font: inherit; min-height: 44px; min-width: 70px; padding: 6px 0 6px 10px; color: #171717; }
+.ascii-sequence { max-width: 1110px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 27px 0; border-bottom: 1px solid #e5e5e5; font: 10px/1.5 var(--ascii-font); letter-spacing: .02em; color: #555; }
+.ascii-sequence span:nth-child(even) { color: #999; overflow: hidden; }
+.ascii-sequence span:nth-child(odd) { white-space: nowrap; }
+.ascii-site .preview-window { border-radius: 0; box-shadow: none; }
+.ascii-site .preview-top { background: #fff; }
+.ascii-small { font: 10px/1.6 var(--ascii-font); letter-spacing: .035em; }
+.ascii-row-arrow { font: 24px var(--ascii-font); transition: transform .2s; }
+.ascii-site .preview-row:hover .ascii-row-arrow { transform: translate(3px,-3px); }
+.ascii-memory { max-width: 1210px; margin: 0 auto 60px; padding: 60px 50px; display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: center; }
+.ascii-memory-copy .ascii-small { color: #666; }
+.ascii-memory h2 { font-family: "Instrument Serif"; font-size: 53px; line-height: 1.09; letter-spacing: -.02em; margin: 20px 0; font-weight: 400; }
+.ascii-memory-copy p { font-size: 14px; color: #606060; line-height: 1.8; margin-bottom: 22px; }
+.ascii-memory .text-link { min-height: 44px; padding: 8px 0; }
+.ascii-memory-visual { border-top: 1px solid #222; border-bottom: 1px solid #dedede; padding: 18px 0; min-width: 0; }
+.ascii-memory-visual pre { font: 12px/2.3 var(--ascii-font); white-space: pre; margin: 24px 0; min-height: 222px; }
+.ascii-memory-result { font: 11px/1.8 var(--ascii-font); margin: 0 0 8px; }
+.ascii-memory-visual > .ascii-small { color: #707070; font-size: 9px; }
+.ascii-horizon { font: 11px/1.7 var(--ascii-font); margin: 0 0 35px; color: #737373; }
+.ascii-site .site-close { border-top: 1px solid #e9e9e9; }
+@media (max-width: 1250px) {
+  .ascii-sequence { margin: 0 6%; }
+  .ascii-memory { gap: 45px; }
+  .ascii-memory-visual pre { font-size: 10px; }
+}
+@media (max-width: 900px) {
+  .ascii-site .hero { grid-template-columns: 1fr; padding-bottom: 45px; }
+  .ascii-site .hero-copy { max-width: 100%; }
+  .ascii-sculpture { max-width: 570px; justify-self: center; margin-top: 28px; }
+  .ascii-sculpture pre { margin: 0; }
+  .ascii-memory { grid-template-columns: 1fr; gap: 35px; }
+  .ascii-memory-visual pre { font-size: 12px; }
+  .ascii-memory h2 { font-size: 43px; }
+}
+@media (max-width: 600px) {
+  .ascii-site .hero { padding: 42px 25px 25px; gap: 15px; }
+  .ascii-site .hero h1 { font-size: clamp(64px, 17vw, 86px); }
+  .ascii-sculpture { margin-top: 14px; }
+  .ascii-sculpture figcaption { font-size: 9px; }
+  .ascii-frame-label { font-size: 8px; }
+  .ascii-sequence { margin: 0 25px; gap: 8px; font-size: 8px; padding: 22px 0; }
+  .ascii-sequence span:nth-child(even) { flex: 1; min-width: 4px; max-width: 14px; }
+  .ascii-memory { padding: 20px 25px 45px; margin-bottom: 15px; }
+  .ascii-memory-visual pre { font-size: clamp(9px, 2.65vw, 12px); line-height: 2.7; }
+  .ascii-horizon { font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ascii-site .ascii-row-arrow { transition: none; }
+}

@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
-import { ArrowUpRight, ArrowRight, Check, Plus } from "lucide-react";
+import { ArrowUpRight, ArrowRight, Plus } from "lucide-react";
 import { ThinkingOrb } from "thinking-orbs";
 import Net from "../components/Net";
+import AsciiField from "../components/AsciiField";
+import AsciiMemory from "../components/AsciiMemory";
+import "../landing-ascii.css";
 export default function Landing() {
   return (
-    <div className="site">
+    <div className="site ascii-site">
       <nav className="site-nav">
         <Link to="/" className="wordmark">
           offload
@@ -21,7 +24,7 @@ export default function Landing() {
         <section className="hero">
           <Net />
           <div className="hero-copy">
-            <p className="eyebrow">A little less to do.</p>
+            <p className="eyebrow"><span aria-hidden="true">[ + ] </span>A little less to do.</p>
             <h1>
               You have done
               <br />
@@ -39,15 +42,9 @@ export default function Landing() {
               Your workspace stays on this device.
             </span>
           </div>
-          <div className="hero-aside">
-            <ThinkingOrb state="breathing" size={64} theme="light" />
-            <span>
-              Paying attention.
-              <br />
-              Giving you space.
-            </span>
-          </div>
+          <AsciiField />
         </section>
+        <div className="ascii-sequence" aria-hidden="true"><span>[ observe ]</span><span>··············&gt;</span><span>[ remember ]</span><span>··············&gt;</span><span>[ suggest ]</span><span>··············&gt;</span><span>[ offload ]</span></div>
         <section className="site-preview" id="how">
           <div className="section-heading">
             <h2>
@@ -64,7 +61,7 @@ export default function Landing() {
             <div className="preview-top">
               <span className="wordmark">offload</span>
               <span>Suggested for you</span>
-              <span>Sample workspace</span>
+              <span className="ascii-small">[ SAMPLE WORKSPACE ]</span>
             </div>
             <div className="preview-content">
               <div className="preview-message">
@@ -107,13 +104,14 @@ export default function Landing() {
                       <strong>{t}</strong>
                       <p>{d}</p>
                     </div>
-                    <ArrowUpRight size={17} />
+                    <span className="ascii-row-arrow" aria-hidden="true">↗</span>
                   </Link>
                 ))}
               </div>
             </div>
           </div>
         </section>
+        <AsciiMemory />
         <section className="site-story" id="control">
           <div>
             <p className="eyebrow">On your terms</p>
@@ -170,6 +168,7 @@ export default function Landing() {
           ))}
         </section>
         <section className="site-close">
+          <pre className="ascii-horizon" aria-hidden="true">{"          .        +        .\n      .   :   .    :    .   :   .\n  . : . : + : . : + : . : + : . : .\n------[ less on your plate ]------"}</pre>
           <h2>
             Something you can
             <br />
