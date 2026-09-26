@@ -36,6 +36,9 @@ Before judging (10 minutes ahead):
   old dev server holds ports 5193 and 5194, so the default ports fail or show the old app.
 - The REM page header must read "MongoDB Atlas · rem · search atlas-auto". Without Atlas, History and Sleep show
   "Connect MongoDB" cards instead of data.
+- Computer history shows the data of the computer's user name. On Atlas only the sample weeks for `tensae` (150
+  sessions) and `floydkorzan` (80) exist, all labeled seed; on Ryan's Mac start with `ACTIVITY_WORKSPACE=tensae` in
+  front of the command above, or History is empty. Say it is a sample week if asked.
 - Connect a model (OpenRouter key) so the chat box is not disabled.
 - Open on the REM page. Do not open on Overview or Tasks: they are near empty on a fresh workspace.
 - Run day 1 once (about 30 s on Atlas). DO NOT press Reset engine during the demo.
