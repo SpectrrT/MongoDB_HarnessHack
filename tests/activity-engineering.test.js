@@ -31,8 +31,9 @@ test('engineering history produces a weekly routine without replacing other acti
   try {
     await client.connect();
     const activity = await new ActivityStore(client.db('engineering_demo_test'), { timeZone: 'America/New_York' }).initialize({searchIndexes:false});
+    const now = new Date(`${activity.today()}T16:00:00Z`);
     await activity.ingest('test', 'other-device', [{ts:new Date(),app:'Terminal',title:'Unrelated fixture',source:'collector'}]);
-    const result = await seedEngineeringHistory(activity, {workspace:'test'});
+    const result = await seedEngineeringHistory(activity, {workspace:'test',now});
     assert.equal(result.samples,1128);
     assert.equal(result.sessions,14);
     assert.equal(result.routines.length,1);
@@ -43,8 +44,8 @@ test('engineering history produces a weekly routine without replacing other acti
     assert.equal(today.sessions.length,2);
     assert.deepEqual(today.sessions.map(s => s.app), ['zoom.us','Notion']);
     assert.ok(today.sessions.every(s => s.source === 'seed' && s.title.startsWith('Example:')));
-    assert.equal((await seedEngineeringHistory(activity,{workspace:'test'})).skipped,true);
-    await seedEngineeringHistory(activity,{workspace:'test',reset:true});
+    assert.equal((await seedEngineeringHistory(activity,{workspace:'test',now})).skipped,true);
+    await seedEngineeringHistory(activity,{workspace:'test',now,reset:true});
     assert.equal(await activity.sessions.countDocuments({device:ENGINEERING_SAMPLE_DEVICE}),14);
     assert.equal(await activity.events.countDocuments({source:'collector'}),1);
   } finally {await client.close();await mongo.stop();}
