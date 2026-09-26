@@ -43,3 +43,14 @@ On `continue`, pass the reminder with the existing task constraints and relevant
 `tests/harness-process.test.js` uses a disposable real MongoDB server and three separate Node processes. It kills the first worker with SIGKILL after the context checkpoint commits and a draft call starts. The second worker waits for the unchanged lease to expire and completes the handoff. Four unique receipts remain, the old lease cannot commit, and the third worker makes no further provider call for the terminal run. The draft provider is a fixture and runs twice because the first draft call was interrupted.
 
 This verifies the durable handoff worker's checkpoint and fencing behavior under real process death. It does not establish exactly-once external provider effects, live Atlas availability, or persistence of the separate REM simulated world.
+
+
+# Persistent REM fixture provider
+
+Mongo-backed REM selects `createPersistentWorld`; memory-backed demos and gym scratch worlds remain isolated in-memory fixtures. `engine.world` reports `mongo-fixture` or `memory-fixture`. This does not add Gmail/Drive credentials or call an external service.
+
+A transaction commits the mutated fixture snapshot and its uniquely keyed provider receipt together. Replaying a key returns the prior result, including a zero-result delete; different arguments under the same key reject. Sequence numbers survive startup, and transactional simulated human restoration prevents a corrected deletion from returning after restart. Changed fixture versions fail explicitly instead of silently resetting stored state. The existing explicit demo reset clears these collections along with other demo data.
+
+`tests/persistent-world.test.js` covers facade selection, snapshots, concurrent adapters, argument conflict, no-op receipts, correction persistence and rollback. `tests/rem-process.test.js` kills an actual worker after its provider transaction and before the effects ledger commit, then resumes in a different process after natural lease expiry. The model is scripted and completion scoring is off in this durability test: its success assertion concerns checkpoint recovery and one simulated send, not task quality or model calibration.
+
+The provider snapshot is one bounded demo document and remains subject to MongoDB's document size limit. This adapter does not make unsupported exactly-once claims for real external services. Those require service-side idempotency or a reliable external reconciliation API.

@@ -297,8 +297,8 @@ const listing = (f) => ({ id: f.id, title: f.title, folder: f.folder, week: f.we
 const EFFECT_HEADER = "X-Effect-Key";
 
 // Per-run scratch copy: tools mutate this copy only; the fixture stays frozen.
-export function createWorld(workspace) {
-  const state = {
+export function createWorld(workspace, snapshot = null) {
+  const state = snapshot ? clone(snapshot.state) : {
     files: clone(workspace.files),
     threads: clone(workspace.threads),
     calendar: clone(workspace.calendar),
@@ -306,8 +306,8 @@ export function createWorld(workspace) {
     drafts: [],
     sent: [],
   };
-  const executed = [];
-  let seq = 0;
+  const executed = snapshot ? clone(snapshot.executed) : [];
+  let seq = snapshot?.sequence || 0;
   const liveFiles = () => state.files.filter((f) => !f.trashed);
   const thread = (id) => {
     const t = state.threads.find((x) => x.id === id);
@@ -395,6 +395,7 @@ export function createWorld(workspace) {
     workspace,
     state,
     executed,
+    snapshot: () => clone({ state, executed, sequence: seq }),
     user: workspace.user,
     isEffect: (name) => Boolean(TOOLS[name]?.effect),
     async call(name, args) {

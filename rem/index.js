@@ -14,6 +14,7 @@ import { runNight } from "./night.js";
 import { createCatalogProposer, trackRecord } from "./proposer.js";
 import { OFFLOAD_ALIASES, TASK_KINDS, describeTask, taskParams } from "./tasks.js";
 import { createWorld } from "./world.js";
+import { createPersistentWorld } from "./persistent-world.js";
 import { createCompletionGate } from "./completion.js";
 import { checkRun } from "./tasks.js";
 import { settleSearch } from "./search.js";
@@ -43,9 +44,9 @@ export async function createRem({
   // Traced model calls (model id, token usage, cost): a pass-through when tracing is off, so this
   // touches every model.chat call in the day, gym, evolve validation and skill practice alike.
   model = traceModel(model, { costOf });
-  await ensureIndexes(db, { dims: embedder.dims || 1024 });
+  await ensureIndexes(db, { dims: embedder.dims || 1024, search: db.kind !== "mongo" || db.atlasSearch !== false });
   const ctx = { db, model, embedder, clock, workspace, proposer, chaos: null, day: 1, onEvent };
-  ctx.world = createWorld(workspace);
+  ctx.world = db.kind === "mongo" ? await createPersistentWorld(db, workspace) : createWorld(workspace);
   ctx.agent = createAgent({
     db,
     world: ctx.world,
@@ -158,6 +159,7 @@ export async function createRem({
           model: model.name || "scripted",
           completion: completion?.name || "off",
           compaction: compactor?.name || "off",
+          world: ctx.world.persistence || "memory-fixture",
         },
         recall: recallOf(harness.genome),
         completionThreshold: completionThresholdOf(harness.genome),
