@@ -1,168 +1,167 @@
 {
- "finding": {
-  "hour": 23,
-  "window": "11:17 PM",
-  "days": 5,
-  "minutesPerDay": 21,
-  "switchesPerDay": 8,
-  "apps": [
-   {
-    "label": "mail.google.com",
-    "name": "Gmail",
-    "logo": "gmail",
-    "visitsPerDay": 4,
-    "minutesPerDay": 8
-   },
-   {
-    "label": "calendar.google.com",
-    "name": "Google Calendar",
-    "logo": "calendar",
-    "visitsPerDay": 4,
-    "minutesPerDay": 8
-   },
-   {
-    "label": "Codex",
-    "name": "Codex",
-    "logo": "openai",
-    "visitsPerDay": 2,
-    "minutesPerDay": 5
-   }
-  ],
-  "topTitle": "Re: Scheduling: Atlas Vector Search sync (Sydney + Dublin)",
-  "topTitleVisitsPerDay": 4,
-  "meetingTimes": [
-   "12:00 AM",
-   "12:30 AM"
-  ],
-  "places": [
-   "Sydney",
-   "Dublin",
-   "New York"
-  ],
-  "timeline": [
-   {
-    "label": "mail.google.com",
-    "name": "Gmail",
-    "minutes": 1
-   },
-   {
-    "label": "calendar.google.com",
-    "name": "Google Calendar",
-    "minutes": 2
-   },
-   {
-    "label": "calendar.google.com",
-    "name": "Google Calendar",
-    "minutes": 2
-   },
-   {
-    "label": "mail.google.com",
-    "name": "Gmail",
-    "minutes": 2
-   },
-   {
-    "label": "mail.google.com",
-    "name": "Gmail",
-    "minutes": 3
-   },
-   {
-    "label": "calendar.google.com",
-    "name": "Google Calendar",
-    "minutes": 2
-   },
-   {
-    "label": "Codex",
-    "name": "Codex",
-    "minutes": 4
-   },
-   {
-    "label": "mail.google.com",
-    "name": "Gmail",
-    "minutes": 2
-   },
-   {
-    "label": "calendar.google.com",
-    "name": "Google Calendar",
-    "minutes": 2
-   },
-   {
-    "label": "Codex",
-    "name": "Codex",
-    "minutes": 2
-   },
-   {
-    "label": "mail.google.com",
-    "name": "Gmail",
-    "minutes": 2
-   },
-   {
-    "label": "calendar.google.com",
-    "name": "Google Calendar",
-    "minutes": 2
-   },
-   {
-    "label": "calendar.google.com",
-    "name": "Google Calendar",
-    "minutes": 2
-   },
-   {
-    "label": "mail.google.com",
-    "name": "Gmail",
-    "minutes": 2
-   }
-  ],
-  "sample": true,
-  "sessions": 50
- },
- "summary": "On 5 nights in the last two weeks, around 11:17 PM, you spent about 21 minutes bouncing between Gmail, Google Calendar and Codex, switching 8 times each night.",
- "workflow": {
-  "kind": "scheduling",
-  "title": "Schedule across time zones for you",
-  "problem": "Scheduling by hand with Sydney, Dublin and New York, and the meeting still lands at 12:00 AM.",
-  "trigger": "A scheduling thread arrives in Gmail, like \"Re: Scheduling: Atlas Vector Search sync (Sydney + Dublin)\"",
-  "steps": [
-   {
-    "app": "Gmail",
-    "logo": "gmail",
-    "label": "Read the thread",
-    "detail": "Pull out who needs to meet, how long, and the times already proposed"
-   },
-   {
-    "app": "Google Calendar",
-    "logo": "calendar",
-    "label": "Find the overlap",
-    "detail": "Check free and busy time for Sydney, Dublin and New York, inside working hours"
-   },
-   {
-    "app": "Codex",
-    "logo": "openai",
-    "label": "Draft the reply",
-    "detail": "Offer three slots in each person’s time zone, in your voice"
-   },
-   {
-    "app": "You",
-    "logo": null,
-    "label": "Ask you once",
-    "detail": "Show the draft and the slots before anything is sent",
-    "ask": true
-   },
-   {
-    "app": "Google Calendar",
-    "logo": "calendar",
-    "label": "Book and confirm",
-    "detail": "Send the invite, and flag it when 12:00 AM is the only overlap"
-   }
-  ],
-  "proactive": [
-   "Stop booking you at 12:00 AM: propose the next morning’s overlap instead",
-   "Keep a standing slot that works for every time zone",
-   "Answer “does this time work?” threads while you sleep"
-  ],
-  "needs": [
-   "Gmail: read and send",
-   "Google Calendar: read and write"
-  ],
-  "saves": "about 21 minutes and 8 app switches a night"
- },
- "source": "snapshot"
+  "finding": {
+    "hour": 11,
+    "lookbackDays": 28,
+    "timeZone": "America/New_York",
+    "provenance": "seed",
+    "sourceCounts": {
+      "seed": 12,
+      "captured": 0,
+      "unknown": 0
+    },
+    "sourceIds": [
+      "83555b123b06:1788706800000",
+      "83555b123b06:1788707115000",
+      "83555b123b06:1788707430000",
+      "83555b123b06:1788707745000",
+      "83555b123b06:1789311600000",
+      "83555b123b06:1789311915000",
+      "83555b123b06:1789312230000",
+      "83555b123b06:1789312545000",
+      "83555b123b06:1789916400000",
+      "83555b123b06:1789916715000",
+      "83555b123b06:1789917030000",
+      "83555b123b06:1789917345000"
+    ],
+    "window": "11:05 AM",
+    "days": 3,
+    "minutesPerDay": 20,
+    "switchesPerDay": 3,
+    "apps": [
+      {
+        "label": "cloud.mongodb.com",
+        "name": "MongoDB Atlas",
+        "logo": "mongodb",
+        "visitsPerDay": 1,
+        "minutesPerDay": 5
+      },
+      {
+        "label": "github.com",
+        "name": "GitHub",
+        "logo": "github",
+        "visitsPerDay": 1,
+        "minutesPerDay": 5
+      },
+      {
+        "label": "linear.app",
+        "name": "Linear",
+        "logo": "linear",
+        "visitsPerDay": 1,
+        "minutesPerDay": 5
+      }
+    ],
+    "topTitle": "Example: Atlas slow query review | orders service | p95 180 ms | timeouts 0.6%",
+    "topTitleVisitsPerDay": 1,
+    "meetingTimes": [],
+    "places": [],
+    "timeline": [
+      {
+        "label": "cloud.mongodb.com",
+        "name": "MongoDB Atlas",
+        "minutes": 5
+      },
+      {
+        "label": "github.com",
+        "name": "GitHub",
+        "minutes": 5
+      },
+      {
+        "label": "linear.app",
+        "name": "Linear",
+        "minutes": 5
+      },
+      {
+        "label": "Notion",
+        "name": "Notion",
+        "minutes": 5
+      },
+      {
+        "label": "cloud.mongodb.com",
+        "name": "MongoDB Atlas",
+        "minutes": 5
+      },
+      {
+        "label": "github.com",
+        "name": "GitHub",
+        "minutes": 5
+      },
+      {
+        "label": "linear.app",
+        "name": "Linear",
+        "minutes": 5
+      },
+      {
+        "label": "Notion",
+        "name": "Notion",
+        "minutes": 5
+      },
+      {
+        "label": "cloud.mongodb.com",
+        "name": "MongoDB Atlas",
+        "minutes": 5
+      },
+      {
+        "label": "github.com",
+        "name": "GitHub",
+        "minutes": 5
+      },
+      {
+        "label": "linear.app",
+        "name": "Linear",
+        "minutes": 5
+      },
+      {
+        "label": "Notion",
+        "name": "Notion",
+        "minutes": 5
+      }
+    ],
+    "sample": true,
+    "sessions": 12
+  },
+  "summary": "On 3 days in the last 28 days, around 11:05 AM, you spent about 20 minutes bouncing between MongoDB Atlas, GitHub and Linear, switching 3 times each day.",
+  "workflow": {
+    "kind": "engineering",
+    "title": "Prepare a database query review",
+    "problem": "Repeated activity across Atlas and the source repository suggests a query-review workflow to confirm.",
+    "trigger": "Before the next confirmed query review",
+    "steps": [
+      {
+        "app": "MongoDB Atlas",
+        "label": "Collect supplied evidence",
+        "detail": "Gather the supplied query shape, baseline metrics and existing issue notes. Mark missing inputs."
+      },
+      {
+        "app": "GitHub",
+        "label": "Compare staging plans",
+        "detail": "Review owner-provided explain plans against query code. Do not execute queries or create indexes."
+      },
+      {
+        "app": "Offload",
+        "label": "Draft rollout and rollback",
+        "detail": "Prepare a local checklist with proposed checks and unknown owners or thresholds clearly marked."
+      },
+      {
+        "app": "You",
+        "label": "Review the draft",
+        "detail": "Confirm the plan and permissions before any database or issue changes.",
+        "ask": true
+      }
+    ],
+    "proactive": [
+      "Prepare review notes from supplied evidence",
+      "Suggest next steps after the review"
+    ],
+    "needs": [
+      "Selected query and meeting notes",
+      "Permission for a local draft"
+    ],
+    "observation": "Observed: about 20 minutes and 3 app switches per recorded day. Time savings have not been measured.",
+    "executionStatus": "proposal"
+  },
+  "source": "planner",
+  "savedAnalysis": {
+    "recordedAt": "2026-09-26",
+    "source": "Atlas aggregation over the engineering sample dataset"
+  }
 }
