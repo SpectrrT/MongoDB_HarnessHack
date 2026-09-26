@@ -150,6 +150,7 @@ Environment variables switch on the external services:
 | Accounts and reviewer | a fixture Drive, Gmail and Calendar workspace with a deterministic revoke; day-one corrections come from the gym's checkers | no real OAuth yet |
 | Durable harness | integration tests against a disposable local `mongod` | `MONGODB_URI`, `OPENROUTER_API_KEY`, `OFFLOAD_MODEL` |
 | Sleep v2 | integration tests against a local `mongod`, with exact cosine in process instead of `$vectorSearch` | the harness variables plus `VOYAGE_API_KEY` |
+| REM tracing | nothing: every trace call in `rem/trace.js` is a plain pass-through, no LangSmith call is made | `LANGSMITH_API_KEY` traces day runs, planning, recall, tool calls, effects, the completion gate, model calls and night phases as nested LangSmith runs; `npm run rem:langsmith` also runs the gym as two comparable LangSmith experiments |
 
 Limits, stated plainly:
 
@@ -221,7 +222,7 @@ The composer has Light, Medium, High, Extra high, Max and Ultra reasoning option
 ## Tests
 
 ```sh
-npm test          # 53 unit and integration tests
+npm test          # 82 unit and integration tests
 npm run test:e2e  # Playwright in Google Chrome, desktop and mobile; start npm run dev first
 npm run build
 ```
@@ -249,11 +250,13 @@ keep `VITE_STORAGE_MODE=browser` for a public demo, since the static site does n
 | Path | What |
 | --- | --- |
 | `rem/` | REM engine: day loop, ledger, night, evolution, gym, asks, database adapters |
+| `rem/trace.js` | optional LangSmith tracing (`traceable`, `annotate`, `traceModel`); a no-op without `LANGSMITH_API_KEY` |
 | `server/index.js` | Express API: workspace, durable harness, Sleep v2, and REM (`server/rem.js`) |
 | `server/harness/`, `server/sleep/` | durable harness and Sleep v2 |
 | `src/` | React 19 + Vite app and landing site |
 | `shared/workspace.js` | the mock engine behind the Offload workspace |
 | `scripts/rem-demo.mjs` | the terminal demo |
+| `scripts/rem-langsmith.mjs` | `npm run rem:langsmith`: uploads the gym as a LangSmith dataset and runs two genomes as two LangSmith experiments |
 | `desktop/` | Electron wrapper |
 | `.mcp.json`, `scripts/mongodb-mcp.mjs` | a MongoDB MCP server for Claude Code sessions, read-only on the same `MONGODB_URI` |
 | `tests/` | `node:test` suites and Playwright specs |

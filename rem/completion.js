@@ -1,3 +1,5 @@
+import { traceable } from "./trace.js";
+
 // Probabilistic termination: before a day run may finish, estimate P(goal satisfied | evidence).
 // Jev (TypeSafe's decision model, through OpenRouter's decisions endpoint) answers one yes/no
 // question with a probability. The stub is deterministic, used by tests and whenever Jev is off
@@ -74,7 +76,13 @@ export function createJevGate({ apiKey = process.env.OPENROUTER_API_KEY, model =
   };
 }
 
+// Child run: the completion gate's verdict (p, threshold, passed) for one finishing turn.
+function traceGate(gate) {
+  return { ...gate, check: traceable(gate.check.bind(gate), { name: "completion-gate", run_type: "chain" }) };
+}
+
 // REM_COMPLETION=jev uses Jev when OPENROUTER_API_KEY exists; stub otherwise (and by default).
 export function createCompletionGate() {
-  return process.env.REM_COMPLETION === "jev" && process.env.OPENROUTER_API_KEY ? createJevGate() : createStubGate();
+  const gate = process.env.REM_COMPLETION === "jev" && process.env.OPENROUTER_API_KEY ? createJevGate() : createStubGate();
+  return traceGate(gate);
 }

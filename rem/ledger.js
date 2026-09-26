@@ -1,5 +1,6 @@
 // Effects ledger: every external side effect is claimed under a unique effect key BEFORE it runs.
 import { canonicalJson, createRng, sha256 } from "./util.js";
+import { traceable } from "./trace.js";
 
 export function effectKeyFor(runId, step, call) {
   const argsHash = sha256(canonicalJson({ tool: call.name, args: call.args ?? {} }));
@@ -39,7 +40,7 @@ export function commitEffect(db, { effectKey, result, outcome, now }, session) {
 
 // committed → skip and return the recorded result (exactly-once);
 // pending → reconcile against the world (effect key header) and commit without re-executing.
-export async function runEffect({ db, world, runId, step, call, now, chaos }) {
+async function runEffectImpl({ db, world, runId, step, call, now, chaos }) {
   const effectKey = effectKeyFor(runId, step, call);
   const claim = await claimEffect(db, { effectKey, runId, step, call, now });
   if (claim.state === "committed")
@@ -53,6 +54,14 @@ export async function runEffect({ db, world, runId, step, call, now, chaos }) {
   await chaos?.point("after-effect");
   return { effectKey, result, outcome: "executed" };
 }
+// Child run: claim-before-execute and the effects ledger commit for one effect (tool, effect key,
+// status). The claim happens before the tool runs; the outcome (executed / replayed / reconciled)
+// is exactly-once.
+export const runEffect = traceable(runEffectImpl, {
+  name: "effect",
+  run_type: "tool",
+  processInputs: ({ runId, step, call }) => ({ runId, step, tool: call.name, args: call.args }),
+});
 
 export class CrashError extends Error {
   constructor(point) {
