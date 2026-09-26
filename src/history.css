@@ -567,3 +567,11 @@
 .hx-app-icon {display:inline-flex;align-items:center;justify-content:center;flex:none;vertical-align:middle;}
 .hx-app-label,.hx-apps .hx-app-name {display:inline-flex;align-items:center;gap:7px;}
 .hx-app-icon img {object-fit:contain;flex:none;}
+.hx-next-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:0 0 22px; }
+.hx-next-actions p { margin:0; color:var(--ink-soft); font-size:13px; line-height:1.65; }
+.hx-next-actions .button { flex-shrink:0; }
+.hx-setup .button-row { margin-top:18px; }
+.hx-setup-details { margin-top:18px; color:var(--ink-soft); font-size:13px; }
+.hx-setup-details summary { cursor:pointer; }
+.hx-setup-details p { margin-top:10px; }
+.hx-handoff a { text-decoration:underline; text-underline-offset:3px; }

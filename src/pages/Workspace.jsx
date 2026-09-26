@@ -238,7 +238,7 @@ export default function Workspace() {
           {page === "overview" && <Overview />}
           {page === "chat" && <LiveChat id={route[1]} onRevealSidebar={()=>setSidebar(true)} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
-          {page === "memory" && <Navigate to="/app/sleep?view=memory" replace />}
+          {page === "memory" && <Navigate to={"/app/sleep?view=" + ({sleep: "conversations", rem: "rem"}[new URLSearchParams(location.search).get("tab")] || "memory")} replace />}
           {page === "archive" && <ConversationArchive/>}
           {page === "history" && <HistoryPage />}
           {page === "sleep" && <SlowMode memory={<Memory />} review={<Sleep />} rem={<Rem />} />}
