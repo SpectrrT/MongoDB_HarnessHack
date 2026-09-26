@@ -1,12 +1,14 @@
 // The harness around a model: context from the genome, guardrails before every tool call, effects
 // through the ledger, a checkpoint after every step, and an episode per step.
 import { AuthError, PROVIDERS, TOOLS, ToolError, parseLine } from "./world.js";
-import { allowedTools, checkGuardrails, renderSystemPrompt } from "./harness.js";
+import { allowedTools, buildLessons, checkGuardrails, completionThresholdOf, recallOf, renderSystemPrompt } from "./harness.js";
 import { commitEffect, runEffect } from "./ledger.js";
 import { costOf, latencyOf, modelFor } from "./models.js";
 import { searchCollection } from "./search.js";
 
 export const TOOL_LATENCY_MS = 250;
+// A run whose completion check fails gets this many extra executor turns before it finishes anyway.
+export const COMPLETION_RETRIES = 1;
 export const RECONNECT_WAIT_MS = 90000;
 const GRANTED = {
   drive: ["drive.readonly", "drive.file"],
@@ -124,6 +126,8 @@ export function createAgent({
   chaos = null,
   episodes = true,
   runPrefix = "run",
+  completion = null,
+  evidence = null,
   onEvent = () => {},
 }) {
   const checkpoints = db.collection("checkpoints");
@@ -179,22 +183,43 @@ export function createAgent({
     };
   }
 
+  const recallHits = async (query, genome, k) => {
+    const recall = { ...recallOf(genome), ...(k ? { k } : {}) };
+    const hits = await searchCollection(db, "memories", { query, embedder, filter: { active: true }, recall, now: clock.now() });
+    return hits.map((x) => ({
+      id: String(x.doc._id),
+      text: x.doc.text,
+      kind: x.doc.kind ?? null,
+      provenance: (x.doc.provenance || []).map(String),
+      score: Math.round(x.score * 1000) / 1000,
+      fusion: x.fusion,
+    }));
+  };
+
+  // Where each active rule came from: the accepted edit (and night, pattern) that added it.
+  async function ruleSources(genome) {
+    if (!genome.rules.length) return [];
+    const edits = await db
+      .collection("edits")
+      .find({ target: { $in: genome.rules.map((r) => r.id) }, "outcome.status": "accepted" })
+      .toArray();
+    return genome.rules.map((r) => {
+      const e = edits.find((x) => x.target === r.id);
+      return { id: r.id, editId: e ? String(e._id) : null, night: e?.night ?? null, pattern: e?.pattern ?? null };
+    });
+  }
+
   async function buildContext(cp, h) {
     const { genome } = h;
-    let memories = [];
-    if (genome.contextPolicy.injectMemories) {
-      const hits = await searchCollection(db, "memories", {
-        query: cp.instruction,
-        embedder,
-        filter: { active: true },
-        k: genome.contextPolicy.memoryTopK,
-      });
-      memories = hits.map((x) => ({ id: String(x.doc._id), text: x.doc.text }));
-    }
+    const recall = recallOf(genome);
+    const recalled = genome.contextPolicy.injectMemories ? await recallHits(cp.instruction, genome) : [];
+    const lessons = buildLessons({ genome, memories: recalled, ruleSources: await ruleSources(genome), budgetChars: recall.budgetChars });
+    const memories = lessons.memories;
     const { skill, candidate } = await findSkill(cp.instruction, genome);
     return {
       tools: allowedTools(genome),
       memories,
+      lessons: { sources: lessons.sources, injectedIds: lessons.injectedIds, dropped: lessons.dropped, chars: lessons.chars, budgetChars: lessons.budgetChars, recall },
       skill: skill
         ? { name: skill.name, status: skill.status, steps: skill.steps, parameters: skill.parameters, constraints: skill.constraints }
         : null,
@@ -213,10 +238,21 @@ export function createAgent({
         tools: context.tools,
         memories: context.memories,
         skills: context.skill ? [context.skill] : [],
+        lessonSources: context.lessons?.sources || [],
       }),
     },
     { role: "user", content: cp.instruction },
     ...transcriptMessages(cp.transcript),
+    ...(role === "executor" && cp.completion && !cp.completion.passed
+      ? [
+          {
+            role: "user",
+            content: `Completion check: P(goal satisfied | evidence) = ${cp.completion.p.toFixed(2)}, below ${cp.completion.threshold}. ${
+              cp.completion.reasons?.length ? `Open: ${cp.completion.reasons.join("; ")}. ` : ""
+            }Keep working until the goal is met, or say what blocks it.`,
+          },
+        ]
+      : []),
   ];
 
   async function plan(cp, h) {
@@ -230,6 +266,15 @@ export function createAgent({
         context,
         plan: String(reply.final || "").split("\n").filter(Boolean),
         harnessVersion: h.version,
+        // What this run was given: recalled memory ids, rule ids, the recall policy and the block size.
+        injected: {
+          memoryIds: context.lessons.injectedIds,
+          dropped: context.lessons.dropped,
+          ruleIds: h.genome.rules.map((r) => r.id),
+          recall: context.lessons.recall,
+          chars: context.lessons.chars,
+          budgetChars: context.lessons.budgetChars,
+        },
         updatedAt: now(),
       },
       $inc: account(reply.usage, modelId, tier),
@@ -285,11 +330,14 @@ export function createAgent({
     return { providers: out };
   }
 
-  async function callTool(cp, call) {
+  async function callTool(cp, call, genome) {
     const args = call.args || {};
     if (call.name === "memory.search") {
-      const hits = await searchCollection(db, "memories", { query: String(args.query || ""), embedder, filter: { active: true }, k: args.k || 5 });
-      return { memories: hits.map((x) => ({ id: String(x.doc._id), text: x.doc.text })) };
+      // The genome's recall policy governs explicit searches too (mode, decay, minScore, kinds).
+      const k = Number.isInteger(args.k) && args.k > 0 && args.k <= 20 ? args.k : undefined;
+      const hits = await recallHits(String(args.query || ""), genome, k);
+      await checkpoints.updateOne({ runId: cp.runId }, { $addToSet: { "injected.searchedIds": { $each: hits.map((m) => m.id) } } });
+      return { memories: hits.map(({ id, text, score }) => ({ id, text, score })) };
     }
     if (call.name === "ask.owner") {
       const item = String(args.item || "").trim();
@@ -338,10 +386,10 @@ export function createAgent({
     return checkpoints.findOne({ runId: cp.runId });
   }
 
-  async function finish(cp, status, final, spent) {
+  async function finish(cp, status, final, spent, gate = null) {
     await checkpoints.updateOne(
       { runId: cp.runId },
-      { $set: { status, final, finishedAt: now(), updatedAt: now() }, $inc: { turns: 1, ...spent } },
+      { $set: { status, final, finishedAt: now(), updatedAt: now(), ...(gate ? { completion: gate } : {}) }, $inc: { turns: 1, ...spent } },
     );
     const done = await checkpoints.findOne({ runId: cp.runId });
     await log(done, [{ kind: "final", summary: `${cp.title || cp.kind}: ${String(final).split("\n")[0]}`, importance: 0.3 }]);
@@ -375,7 +423,24 @@ export function createAgent({
         modelId = modelFor(tier);
       const reply = await model.chat({ model: modelId, messages: prompt(cp, h, "executor"), tools: toolSchemas(cp.context.tools) });
       const spent = account(reply.usage, modelId, tier);
-      if (!reply.toolCall) return finish(cp, "done", reply.final ?? "", spent);
+      if (!reply.toolCall) {
+        if (!completion) return finish(cp, "done", reply.final ?? "", spent);
+        // Probabilistic termination: finish only when P(goal satisfied | evidence) clears the genome's
+        // threshold, or after COMPLETION_RETRIES extra turns (the record says it did not clear).
+        const final = reply.final ?? "";
+        const found = evidence ? await evidence(cp, final) : null;
+        const verdict = await completion.check({ cp, final, genome: h.genome, evidence: found });
+        const threshold = completionThresholdOf(h.genome);
+        const attempts = (cp.completion?.attempts || 0) + 1;
+        const gate = { p: verdict.p, threshold, passed: verdict.p >= threshold, attempts, source: verdict.source, reasons: verdict.reasons || [], tokens: verdict.tokens ?? 0, at: now() };
+        onEvent({ type: "completion", runId, ...gate });
+        if (!gate.passed && attempts <= COMPLETION_RETRIES && cp.turns + 1 < h.genome.contextPolicy.stepBudget) {
+          await checkpoints.updateOne({ runId }, { $set: { completion: gate, updatedAt: now() }, $inc: { turns: 1, ...spent } });
+          cp = await checkpoints.findOne({ runId });
+          continue;
+        }
+        return finish(cp, "done", final, spent, gate);
+      }
       const call = { name: reply.toolCall.name, args: reply.toolCall.args || {} };
       const entry = { step: cp.step + 1, call, at: now() };
       const spec = TOOLS[call.name];
@@ -392,7 +457,7 @@ export function createAgent({
             const e = await runEffect({ db, world, runId, step: entry.step, call, now: clock.now(), chaos });
             Object.assign(entry, { result: e.result, effectKey: e.effectKey, effectOutcome: e.outcome });
             onEvent({ type: "effect", runId, step: entry.step, tool: call.name, outcome: e.outcome, effectKey: e.effectKey });
-          } else entry.result = await callTool(cp, call);
+          } else entry.result = await callTool(cp, call, h.genome);
           clock.advance(TOOL_LATENCY_MS);
         } catch (error) {
           if (error instanceof AuthError) return pause(cp, error.provider, spent, call);
