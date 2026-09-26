@@ -328,8 +328,8 @@ handoff page still works at http://127.0.0.1:5194/app/harness, but it is no long
 | `POST /api/rem/reset` | start a fresh instance; on Atlas this drops the REM database |
 | `GET /api/rem/stream` | Server-Sent Events from change streams |
 
-The API is one shared demo instance with no authentication. The server listens on 127.0.0.1 only. Add authentication
-before exposing it anywhere.
+The API is one shared local demo instance. Every REM route checks the loopback peer, Host and Origin; mutations
+require the local client header. Production mode disables the shared API. These checks are not multi-user authentication.
 
 ### ChatGPT on this Mac
 
@@ -339,9 +339,9 @@ The composer lists models from Codex's `model/list`. GPT-5.5 has completed a liv
 
 Chat uses the original Beautiful UI Prompt Bar, Streaming Text, Loading State and Context Cards. The sidebar uses its published Sidebar Nav. Offload sends its identity, up to four relevant notes of 360 characters each, and at most five earlier messages. Retrieval uses keyword matches with a small preference for saved rules. There is no embedding service. Codex adds its own system context, which appears in the token receipt.
 
-The local bridge accepts only the loopback app origins and requires the app request header. It runs one model task at a time. Child runs use read-only permissions, an empty temporary folder, and disabled shell, app, plugin, hook, image, web and agent tools. It does not copy credentials into the browser. The bridge is disabled when `NODE_ENV=production`. This is a single-user local integration, not a public authentication service.
+The local bridge accepts loopback app origins and requires the app request header. Foreground Codex tasks use scoped working folders and per-turn approvals. Opt-in idle Sleep uses the bounded local draft executor described below. The bridge is disabled in production and is not public authentication.
 
-Overnight tasks save a brief, deadline and token target. They do not execute until an overnight worker is connected. Native chat context compaction and external app authorization remain separate work; the REM Sleep selector is documented above.
+Overnight tasks execute through the connected Sleep worker with a deadline, token budget, output permissions and acceptance checks. Native OpenRouter context selection is opt-in and documented above. Codex manages its own context.
 
 ### Appearance and reasoning
 
