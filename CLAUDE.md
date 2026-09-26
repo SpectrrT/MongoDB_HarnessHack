@@ -39,7 +39,7 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - `.mcp.json` gives Claude Code a MongoDB MCP server that reads the same `MONGODB_URI`, read-only unless `.env` sets
   `MDB_MCP_READ_ONLY=false`. It loads when a session starts, so start a new one after editing `.env`.
 
-## Where things stand (Sat Sep 26, about 1:45 PM ET)
+## Where things stand (Sat Sep 26, about 2:30 PM ET)
 
 - Merged and green: the UI and polish pass, Floyd's transitions, ASCII landing, ChatGPT chat through the local Codex
   CLI and SlowMode's overnight queue, REM, Ryan's durable harness, Floyd's local agent tools, image
@@ -69,13 +69,30 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
   completion gate never clears end `incomplete` instead of `done`) and `ryan/suggestive-tasks` (evidence-backed task
   suggestions). `ryan/jev-context` also re-adds `server/sleep/` for Sleep task execution, which the 1:43 PM cleanup
   removed; decide that before merging it.
+  `ryan/jev-context` also builds idle Sleep: after a conversation goes quiet, consented, bounded work on the owner's
+  own goal with checkable output. When merging it, take its side of `tests/e2e/app.spec.js` (Sleep tab steps).
+- Night phases are now Replay, Merge, Distill, Rehearse, Evolve, Calibrate, Asks.
+  - Rehearse (`rem/rehearse.js`) stress-tests the harness: truth-preserving attacks stacked on train tasks it already
+    passes, ranked by how likely they are to break it (`REM_REHEARSE_JUDGE=jev` asks Jev), top six run. A break is kept
+    and Evolve validates every edit against it until a version passes it; when all hold, the next level is harder.
+    Held-out tasks are never rehearsed. Idle rehearsal is opt-in (`REM_REHEARSE_IDLE=1`) so idle time goes to idle
+    Sleep. On the scripted model nothing breaks after night 1 (it is a parser); with real models at the medium tier,
+    one session (Calibrate plus Rehearse, 2:20 PM) cost $0.02 and found a break: Project recap under all six attacks
+    missed a shipped item.
+  - Calibrate (`rem/calibrate.js`) grades the completion gate against the checkers each night: false accepts, false
+    rejects and Brier, with the checks as evidence and blind. It commits a new `completionThreshold` only if blind
+    errors fall on train and do not rise on held-out. Real models, stub gate, blind: 4 false accepts on train, 5 on
+    held-out.
+  - `REM_PROPOSER=llm` lets a model on OpenRouter propose edits beyond the catalog, validated like any other.
+  - Open: ask Jev three questions (required items present, no collateral, final answer matches evidence) and take the
+    lowest. `rem/completion.js` belongs to `ryan/jev-context` right now, so that change goes there.
 - LangSmith: `rem/trace.js` traces day runs, night phases, recall, effects and model calls when `LANGSMITH_API_KEY` is
   set, and does nothing without it. `npm run rem:langsmith` runs the gym as two LangSmith experiments side by side.
-- Tests: `npm test` runs 107 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
+- Tests: `npm test` runs 132 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
   `OFFLOAD_SKIP_ENV=1` (point `PW_BASE_URL` at it). Floyd's 1:12 PM redesign lands onboarding on the Overview and drops
   the in-app recording checkbox (the browser's permission prompt remains); the e2e suite follows both.
-- The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). `/api/rem/reset` and `/api/rem/simulate`
-  only answer requests from this machine (`server/rem-guard.js`); set `REM_ADMIN_TOKEN` and send it as
+- The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). `/api/rem/reset`, `/api/rem/simulate` and
+  `/api/rem/rehearse` only answer requests from this machine (`server/rem-guard.js`); set `REM_ADMIN_TOKEN` and send it as
   `x-rem-admin-token` to allow them on a public deploy. The other REM routes stay open.
 - Submission: public repo, demo link, one-minute video, by 5:00 PM ET. All three teammates are on the repo. At 1:45 PM
   the repo was still private (only Tensae is an admin), with no demo link or video yet.
