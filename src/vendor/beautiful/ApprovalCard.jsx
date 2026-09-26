@@ -106,7 +106,9 @@ function ApprovalCard({
   labels,
   onSubmitted,
   onAnswerChange,
-  resettable = true
+  resettable = true,
+  manual = false,
+  onSkipped
 } = {}) {
   const t = { ...DEFAULT_LABELS, ...labels };
   const [qi, setQi] = useState(0);
@@ -152,7 +154,7 @@ function ApprovalCard({
   const send = () => {
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     setSent(true);
-    onSubmitted?.(answers);
+    onSubmitted?.(answers, custom);
   };
   const advance = () => {
     if (last) send();
@@ -166,7 +168,7 @@ function ApprovalCard({
       onAnswerChange?.(qi, next);
       return { ...current, [qi]: next };
     });
-    if (type === "radio") {
+    if (type === "radio" && !manual) {
       setCustom((current) => ({ ...current, [qi]: "" }));
       if (advanceTimer.current) clearTimeout(advanceTimer.current);
       advanceTimer.current = setTimeout(() => {
@@ -201,7 +203,7 @@ function ApprovalCard({
       {
         type: "button",
         "aria-label": "Dismiss",
-        onClick: () => setOpen(false),
+        onClick: () => onSkipped ? onSkipped() : setOpen(false),
         className: "primitive-icon-button absolute right-2.5 top-2.5 z-10 text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink",
         children: /* @__PURE__ */ jsx(Ico, { size: 14, sw: 2.2, path: /* @__PURE__ */ jsx("path", { d: "M18 6L6 18M6 6l12 12" }) })
       }
@@ -330,7 +332,7 @@ function ApprovalCard({
         )
       ] }),
       /* @__PURE__ */ jsxs("div", { className: "-mr-0.5 flex items-center gap-1.5", children: [
-        /* @__PURE__ */ jsx(Button, { variant: "ghost", size: "sm", onClick: () => last ? setOpen(false) : goTo(qi + 1), children: t.skip }),
+        /* @__PURE__ */ jsx(Button, { variant: "ghost", size: "sm", onClick: () => onSkipped ? onSkipped() : last ? setOpen(false) : goTo(qi + 1), children: t.skip }),
         /* @__PURE__ */ jsx(Button, { variant: "accent", size: "sm", disabled: !hasAnswer, onClick: advance, children: last ? t.send : t.continue })
       ] })
     ] })

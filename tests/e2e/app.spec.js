@@ -74,27 +74,20 @@ test("connection setup and overnight tasks persist", async ({ page }) => {
   await page.getByRole('button',{name:'Pause task',exact:true}).click();
   await expect(page.getByText('Paused',{exact:true})).toBeVisible();
 });
-test("notes session works and chat requires account setup", async ({
-  page,
-}, info) => {
+test("capture modes require consent and chat requires account setup", async ({ page }, info) => {
   await onboard(page);
-  await page
-    .getByRole("button", { name: "Start a session", exact: true })
-    .click();
-  await page
-    .getByRole("button", { name: "Start session", exact: true })
-    .click();
-  await page
-    .getByRole("textbox", { name: "Add a decision or detail" })
-    .fill("Ask Sam to review the draft.");
-  await page.getByRole("button", { name: "Save to memory" }).click();
-  await page.getByRole("button", { name: "End session" }).click();
-  await page.getByRole("button", { name: "Close dialog" }).click();
-  await page.goto("/app/chat");
-  await expect(page.getByRole('button',{name:'Send',exact:true})).toBeDisabled();
-  await page.screenshot({
-    path: `test-results/workspace-${info.project.name}.png`,
-  });
+  await page.getByRole('button', { name: 'Start a session', exact: true }).click();
+  for (const name of ['Screen', 'Microphone', 'Both']) {
+    await page.getByRole('button', { name, exact: true }).click();
+    await expect(page.getByRole('button', { name, exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: 'Start session', exact: true })).toBeDisabled();
+  }
+  await page.getByRole('checkbox', { name: 'Everyone involved agrees to this recording.' }).check();
+  await expect(page.getByRole('button', { name: 'Start session', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Close dialog' }).click();
+  await page.goto('/app/chat');
+  await expect(page.getByRole('button', { name: 'Send', exact: true })).toBeDisabled();
+  await page.screenshot({ path: `test-results/workspace-${info.project.name}.png` });
 });
 
 test("sleep cancellation, scheduling, evidence and history persist", async ({ page }) => {

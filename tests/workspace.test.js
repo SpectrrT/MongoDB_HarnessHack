@@ -150,7 +150,7 @@ test('existing workspaces gain new apps without losing prior work', () => {
   const next = advanceWorkspace(s, 1);
   assert.equal(next.profile.name, 'Existing user');
   assert.equal(next.connections.find(c => c.id === 'drive').status, 'connected');
-  assert.equal(next.connections.length, 20);
+  assert.equal(next.connections.length, 21);
   assert.deepEqual(next.overnight, []);
   assert.equal(advanceWorkspace(next, 2), next);
 });
@@ -174,4 +174,11 @@ test('overnight tasks persist without pretending to execute', () => {
   assert.throws(() => transition(s, {type:'overnight', payload:{id,status:'queued'}}, 50004), /cancelled/);
   assert.throws(() => transition(s, {type:'overnight', payload:{...payload,deadline:0}}, 1), /deadline/);
   assert.throws(() => transition(s, {type:'overnight', payload:{...payload,budget:1}}, 1), /budget/);
+});
+
+test('profile updates persist and reject remote avatar URLs',()=>{
+ let s=createWorkspace();s=transition(s,{type:'profile',payload:{name:'Taylor',email:'taylor@example.com',avatar:'data:image/webp;base64,YWJj'}});
+ assert.equal(s.profile.email,'taylor@example.com');assert.equal(s.profile.name,'Taylor');
+ assert.throws(()=>transition(s,{type:'profile',payload:{name:'Taylor',avatar:'https://tracker.example/avatar'}}));
+ assert.throws(()=>transition(s,{type:'profile',payload:{name:'Taylor',email:'invalid'}}));
 });

@@ -293,10 +293,10 @@ export default function SidebarNav({
             }}
             className="sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]"
           >
-            <span className="sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink">
+            {workspaceLogo !== null && <span className="sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink">
               {workspaceLogo || <IconPopsicle2 size={18} />}
-            </span>
-            <span className="sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2">
+            </span>}
+            <span className={`sidebar-copy ${workspaceLogo === null ? "" : "ml-1.5"} min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2`}>
               {workspaceName}
             </span>
             <span className="sidebar-copy ml-1 flex shrink-0 text-ink-3">
@@ -441,7 +441,7 @@ export default function SidebarNav({
           </GlideGroup>
         </div>
 
-        <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
+        {footerLabel && <div className="sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3">
           <button
             type="button"
             onClick={onFooterClick ?? onNewChat}
@@ -450,7 +450,7 @@ export default function SidebarNav({
             {footerIcon}
             {footerLabel}
           </button>
-        </div>
+        </div>}
       </div>
     </aside>
   );

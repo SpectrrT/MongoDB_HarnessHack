@@ -1,7 +1,8 @@
+import Session from "../components/Session";
 import Harness from "./Harness";
 import Adapt from "./Adapt";
 import Sleep from "./Sleep";
-import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   PanelLeft,
@@ -61,6 +62,8 @@ import "../beautiful-workspace.css";
 import "../themes.css";
 import {resolveTheme,themeStyle} from "../../shared/themes";
 import Appearance from "../components/Appearance";
+import AgentSettings from "../components/AgentSettings";
+import ProfileMenu,{ProfileEditor} from "../components/ProfileMenu";
 const Gallery = lazy(() => import("./Gallery"));
 const nav = [
   ["", "Overview", Home],
@@ -81,8 +84,17 @@ export default function Workspace() {
     [session, setSession] = useState(false),
     [search, setSearch] = useState(false),
     [connect, setConnect] = useState(null);
+  useEffect(()=>{const narrow=matchMedia('(max-width: 900px)');const resize=()=>{if(narrow.matches){setSidebar(false);setSuggestions(false);}};narrow.addEventListener('change',resize);return()=>narrow.removeEventListener('change',resize);},[]);
   const [systemDark,setSystemDark] = useState(matchMedia("(prefers-color-scheme: dark)").matches);
   useEffect(()=>{const media=matchMedia("(prefers-color-scheme: dark)");const update=()=>setSystemDark(media.matches);media.addEventListener("change",update);return()=>media.removeEventListener("change",update);},[]);
+  const palette=resolveTheme(state.settings.theme,systemDark,state.settings.themeCustom);
+  useLayoutEffect(()=>{
+    const root=document.documentElement;
+    const previous=root.style.getPropertyValue('--workspace-canvas');
+    root.style.setProperty('--workspace-canvas',palette.surface);
+    root.setAttribute('data-offload-workspace','');
+    return()=>{root.removeAttribute('data-offload-workspace');if(previous)root.style.setProperty('--workspace-canvas',previous);else root.style.removeProperty('--workspace-canvas');};
+  },[palette.surface]);
   const navigate = useNavigate(),
     location = useLocation();
   useEffect(() => {
@@ -135,7 +147,7 @@ export default function Workspace() {
   return (
     <div
       data-palette={state.settings.theme}
-      style={themeStyle(resolveTheme(state.settings.theme,systemDark,state.settings.themeCustom))}
+      style={themeStyle(palette)}
       className={`workspace ${sidebar ? "with-sidebar" : ""} ${suggestions ? "with-suggestions" : ""}`}
     >
       {sidebar && (
@@ -146,7 +158,7 @@ export default function Workspace() {
             onClick={() => setSidebar(false)}
           />
           <div className="beautiful-sidebar beautiful-ui">
-            <SidebarNav fill workspaceName="offload" workspaceLogo={<img src="/favicon.svg" width="18" height="18" alt=""/>}
+            <SidebarNav fill workspaceName="offload" workspaceLogo={null}
               navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18}/>}))}
               activeNav={page} activeTitle={state.conversations.find(c=>c.id===route[1])?.title || null}
               onNewChat={newChat} onCollapse={()=>setSidebar(false)}
@@ -154,7 +166,7 @@ export default function Workspace() {
               onNavigate={key=>{navigate("/app"+(key?"/"+key:""));if(innerWidth<900)setSidebar(false);}}
               onPick={id=>{navigate("/app/chat/"+id);if(innerWidth<900)setSidebar(false);}}
               recents={state.conversations.map(c=>({id:c.id,label:c.title}))}
-              footerLabel="Settings" footerIcon={<Settings size={16}/>} onFooterClick={()=>navigate("/app/settings")}/>
+              footerLabel="" footerIcon={<Settings size={16}/>} onFooterClick={()=>navigate("/app/settings")}/>
           </div>
         </>
       )}
@@ -209,6 +221,7 @@ export default function Workspace() {
               <PanelRight size={18} />
               {count > 0 && <span className="count-dot">{count}</span>}
             </button>
+            <ProfileMenu/>
           </div>
         </header>
         {error && (
@@ -243,7 +256,7 @@ export default function Workspace() {
       {suggestions && (
         <Suggestions onClose={() => setSuggestions(false)} onRun={run} />
       )}
-      {session && <Session onClose={() => setSession(false)} />}
+      <Session open={session} onClose={() => setSession(false)} />
       {search && <SearchDialog onClose={() => setSearch(false)} onRun={run} />}
       {connect && (
         <ConnectDialog id={connect} onClose={() => setConnect(null)} />
@@ -842,207 +855,6 @@ function Memory() {
     </div>
   );
 }
-function Session({ onClose }) {
-  const { state, act } = useWorkspace();
-  const current = state.sessions.find((x) => x.status === "active");
-  const [consent, setConsent] = useState(false),
-    [mode, setMode] = useState("notes"),
-    [text, setText] = useState(""),
-    [error, setError] = useState(""),
-    [recording, setRecording] = useState(false),
-    [url, setUrl] = useState(null);
-  const media = useRef(null),
-    recorder = useRef(null),
-    chunks = useRef([]);
-  const currentRef = useRef(current);
-  currentRef.current = current;
-  const stopMedia = () => {
-    if (recorder.current?.state === "recording") recorder.current.stop();
-    media.current?.getTracks().forEach((t) => t.stop());
-    media.current = null;
-    setRecording(false);
-  };
-  useEffect(
-    () => () => {
-      stopMedia();
-      if (url) URL.revokeObjectURL(url);
-      if (currentRef.current && currentRef.current.mode !== "notes")
-        act("session-end", { id: currentRef.current.id }).catch(() => {});
-    },
-    [],
-  );
-  const start = async () => {
-    setError("");
-    try {
-      let stream;
-      if (mode === "audio") {
-        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      }
-      if (mode === "screen") {
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: { frameRate: 2 },
-          audio: false,
-        });
-      }
-      if (stream) {
-        media.current = stream;
-        chunks.current = [];
-        const r = new MediaRecorder(stream);
-        recorder.current = r;
-        r.ondataavailable = (e) => {
-          if (e.data.size) chunks.current.push(e.data);
-        };
-        r.onstop = () => {
-          const blob = new Blob(chunks.current, { type: r.mimeType });
-          setUrl(URL.createObjectURL(blob));
-        };
-        stream.getTracks()[0].onended = () => {
-          stopMedia();
-          if (currentRef.current)
-            act("session-end", { id: currentRef.current.id }).catch(() => {});
-        };
-        r.start(1000);
-        setRecording(true);
-      }
-      await act("session-start", {
-        mode,
-        consented: consent,
-        name:
-          mode === "notes"
-            ? "Notes session"
-            : mode === "audio"
-              ? "Audio session"
-              : "Screen session",
-      });
-    } catch (e) {
-      stopMedia();
-      setError(
-        e.name === "NotAllowedError"
-          ? "Permission was not granted. You can use a notes session instead."
-          : e.message,
-      );
-    }
-  };
-  const end = async () => {
-    stopMedia();
-    if (current) await act("session-end", { id: current.id });
-  };
-  return (
-    <Modal
-      title={current ? "Your work session" : "Start a work session"}
-      onClose={onClose}
-      wide
-    >
-      {!current ? (
-        <>
-          <p>
-            Choose the context you want to keep. Capture begins only after you
-            start.
-          </p>
-          <div className="session-modes">
-            {[
-              ["notes", "Notes", FileText],
-              ["audio", "Microphone", Mic],
-              ["screen", "Selected screen", Monitor],
-            ].map(([id, label, Icon]) => (
-              <button
-                className={mode === id ? "selected" : ""}
-                key={id}
-                onClick={() => setMode(id)}
-              >
-                <Icon size={18} />
-                {label}
-              </button>
-            ))}
-          </div>
-          <p className="small-copy">
-            {mode === "notes"
-              ? "Save decisions as you work. No recording permission is needed."
-              : "Record locally while this window stays open. Automatic transcription and screen interpretation are not connected. Closing this window ends capture."}
-          </p>
-          {mode !== "notes" && (
-            <label className="check-label">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-              />
-              Everyone involved agrees to this recording.
-            </label>
-          )}
-          <button
-            className="button"
-            disabled={mode !== "notes" && !consent}
-            onClick={start}
-          >
-            Start session <Play size={16} />
-          </button>
-        </>
-      ) : (
-        <>
-          <div className="session-live">
-            <ThinkingOrb state="listening" size={64} />
-            <div>
-              <h3>{current.name}</h3>
-              <p>
-                {recording
-                  ? "Recording on this device"
-                  : "Notes only. No microphone or screen capture."}
-              </p>
-            </div>
-            <button className="button secondary small" onClick={end}>
-              <Square size={14} />
-              End session
-            </button>
-          </div>
-          <label>
-            Add a decision or detail
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="What should Offload remember?"
-            />
-          </label>
-          <button
-            className="button small"
-            disabled={!text.trim()}
-            onClick={async () => {
-              try {
-                await act("session-note", { id: current.id, text });
-                setText("");
-              } catch {}
-            }}
-          >
-            Save to memory <Plus size={15} />
-          </button>
-          <div className="session-notes">
-            {current.notes.map((n, i) => (
-              <p key={i}>{n}</p>
-            ))}
-          </div>
-        </>
-      )}
-      {error && (
-        <p role="alert" className="error-text">
-          {error}
-        </p>
-      )}
-      {url && (
-        <div className="recording-result">
-          <p>Recording ready. Download it before closing this window.</p>
-          <a
-            className="button secondary"
-            href={url}
-            download={"offload-session." + (mode === "audio" ? "webm" : "webm")}
-          >
-            <Download size={16} />
-            Download recording
-          </a>
-        </div>
-      )}
-    </Modal>
-  );
-}
 function SearchDialog({ onClose, onRun }) {
   const { state } = useWorkspace();
   const [q, setQ] = useState("");
@@ -1088,26 +900,12 @@ function SearchDialog({ onClose, onRun }) {
 }
 function SettingsPage() {
   const { state, act, reset, mode } = useWorkspace();
-  const [name, setName] = useState(state.profile.name),
-    [confirm, setConfirm] = useState(false);
+  const [confirm, setConfirm] = useState(false);
   return (
     <div className="standard-page">
       <PageTitle title="Settings" description="Make this space yours." />
-      <section className="settings-section">
-        <h2>Your workspace</h2>
-        <label>
-          Name
-          <div className="inline-input">
-            <input value={name} onChange={(e) => setName(e.target.value)} />
-            <button
-              className="button small"
-              onClick={() => act("profile", { name }).catch(() => {})}
-            >
-              Save
-            </button>
-          </div>
-        </label>
-      </section>
+      <ProfileEditor/>
+      <AgentSettings/>
       <section className="settings-section">
         <h2>Suggestions and sleep</h2>
         <label className="setting-row">

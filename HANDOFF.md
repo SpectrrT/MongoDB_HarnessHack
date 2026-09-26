@@ -1,3 +1,28 @@
+# Session update — new repository history
+
+Repository: `SpectrrT/MongoDB_HarnessHack`. Branch: `floyd/session-capture`, based on its `main` at `1a94250`. The previous agent/UI changes were reapplied as a new commit, without merging the old repository ancestry. `rem/`, `server/harness/`, and `server/sleep/` are preserved.
+
+Screen, Microphone, and Both now record until Stop, browser Stop sharing, or closing the app tab. Closing only the panel keeps recording active. Chunks persist in IndexedDB for download. An image-capable model can receive the current screen with a message; microphone transcription remains separate work.
+
+The server loads `.env` only at executable startup, so imported API tests never pick up the venue Atlas credentials.
+
+---
+
+# Current checkpoint — September 26
+
+This section supersedes the historical notes below.
+
+- ChatGPT/Codex: persistent App Server sessions, live tool calls, image attachments, working folders, approvals, Stop, and downloadable outputs.
+- OpenRouter: PKCE account connection, model catalog, vision support, local file/command tools, and manual write/command approvals. Credentials stay local.
+- Atlas: connection and read/write checks passed. API workspace storage supports Atlas with optimistic concurrency. Current browser-local data is unchanged; set `VITE_STORAGE_MODE=api` to opt into server storage.
+- UI: smooth reasoning control, right-side profile/settings menu, editable profile image/name/email, wider suggestions, consistent dark frame and bottom edge, functional attachment button.
+- Local HTTPS setup: documented in `docs/LOCAL-HTTPS.md`; hosts-file and certificate-trust installation still require administrator approval on each Mac.
+- Verified: native image recognition → file write → follow-up file read, OpenRouter file tool approval, Atlas read/write, unit/API suite, and web build.
+- Still outstanding: real third-party app integrations, Jev compaction in the runtime, unattended overnight scheduling, consented transcription, team authentication, rebuilt/signed desktop distribution. Jev decisions API was tested separately; it is not integrated.
+- No public deployment. Secrets, tokens, certificates, user workspaces and generated files are excluded from Git.
+
+---
+
 # Offload handoff
 
 September 26 product update: see [INTEGRATION.md](INTEGRATION.md) for the `MyName` branch's transition changes and the agreed Atlas, agent memory, Vector Search, and per-user local Codex requirements. The backend descriptions below still describe the mock prototype.

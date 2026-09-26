@@ -6,14 +6,16 @@ import { Modal } from '../components/Modal';
 import { ConnectionLogo } from '../components/ConnectionLogo';
 import '../connections.css';
 import ModelConnection from '../components/ModelConnection';
+import OpenRouterConnection from '../components/OpenRouterConnection';
 import '../live-chat.css';
 export function Connections({ onConnect }) {
   const { state } = useWorkspace();
   const [query, setQuery] = useState(''), [category, setCategory] = useState('All');
-  const list = CONNECTIONS.filter(c => (category === 'All' || category === c.category) && `${c.name} ${c.detail}`.toLowerCase().includes(query.toLowerCase()));
+  const list = CONNECTIONS.filter(c => c.id !== "openrouter" && (category === 'All' || category === c.category) && `${c.name} ${c.detail}`.toLowerCase().includes(query.toLowerCase()));
   return <div className="standard-page services-page">
     <header className="services-heading"><h1>Connect your tools</h1><p>Choose the apps you want Offload to work with.</p></header>
     <ModelConnection/>
+    <OpenRouterConnection/>
     <div className="catalog-search"><Search size={18}/><input aria-label="Search connections" placeholder="Find an app…" value={query} onChange={e => setQuery(e.target.value)}/><span>{list.length}</span></div>
     <div className="filter-strip catalog-filters">{['All', 'Work', 'Development', 'Design', 'Models', 'Personal'].map(c => <button key={c} className={category === c ? 'active' : ''} onClick={() => setCategory(c)}>{c}</button>)}</div>
     <div className="service-catalog">{list.map(c => {

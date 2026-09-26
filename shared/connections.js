@@ -15,6 +15,7 @@ export const CONNECTIONS = [
   ['vercel', 'Vercel', 'Projects and deployments', 'Development'],
   ['mongodb', 'MongoDB', 'Durable memory and task checkpoints', 'Development'],
   ['supabase', 'Supabase', 'Application data and storage', 'Development'],
+  ['openrouter', 'OpenRouter', 'Models from multiple providers', 'Models'],
   ['openai', 'OpenAI', 'Reasoning and task execution', 'Models'],
   ['anthropic', 'Anthropic', 'Reasoning and task execution', 'Models'],
   ['elevenlabs', 'ElevenLabs', 'Voice and transcription', 'Models'],

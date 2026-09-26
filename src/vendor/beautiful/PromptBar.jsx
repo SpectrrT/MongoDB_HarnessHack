@@ -108,13 +108,16 @@ function PromptBar({
   modelValue,
   onModelChange,
   disabled = false,
-  controls
+  controls,
+  onAttach,
+  hasAttachments = false
 }) {
   const pill = variant === "Pill";
   const [draft, setDraft] = useState("");
   const [dismissed, setDismissed] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
+  const [modelQuery, setModelQuery] = useState("");
   const modelOptions = models?.length ? models : MODELS;
   const [pickedModel, setPickedModel] = useState(modelOptions[1] || modelOptions[0]);
   const model = modelOptions.find((m) => m.key === modelValue) || pickedModel;
@@ -303,10 +306,10 @@ function PromptBar({
     setDismissed(false);
     inputRef.current?.focus();
   };
-  const canSend = !disabled && (draft.trim().length > 0 || attachments.length > 0);
-  const send = () => {
+  const canSend = !disabled && (draft.trim().length > 0 || attachments.length > 0 || hasAttachments);
+  const send = async () => {
     if (!canSend) return;
-    onSend?.(draft.trim());
+    if (await onSend?.(draft.trim()) === false) return;
     setDraft("");
     setAttachments([]);
     closeMenus();
@@ -326,6 +329,7 @@ function PromptBar({
             className: "absolute inset-x-0 bottom-full z-10 mb-2 rounded-[10px] bg-surface p-1 shadow-raised",
             style: { animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom center" },
             children: [
+              modelOptions.length > 10 && /* @__PURE__ */ jsx("input", { "aria-label": "Find a model", placeholder: "Find a model\u2026", value: modelQuery, onChange: (e) => setModelQuery(e.target.value), className: "w-full rounded-md p-2 text-[12px]" }),
               /* @__PURE__ */ jsx(
                 "span",
                 {
@@ -390,9 +394,10 @@ function PromptBar({
           "div",
           {
             onMouseLeave: () => setModelHovered(null),
-            className: "absolute z-10 w-44 rounded-[10px] bg-surface p-1 shadow-raised",
+            className: "absolute z-10 w-64 rounded-[10px] bg-surface p-1 shadow-raised",
             style: { left: modelMenuLeft, bottom: modelMenuBottom, animation: "pop-in 180ms cubic-bezier(0.23,1,0.32,1) both", transformOrigin: "bottom left" },
             children: [
+              modelOptions.length > 10 && /* @__PURE__ */ jsx("input", { "aria-label": "Find a model", placeholder: "Find a model\u2026", value: modelQuery, onChange: (e) => setModelQuery(e.target.value), className: "w-full rounded-md p-2 text-[12px]" }),
               /* @__PURE__ */ jsx(
                 "span",
                 {
@@ -406,7 +411,7 @@ function PromptBar({
                   }
                 }
               ),
-              modelOptions.map((m, i) => /* @__PURE__ */ jsxs(
+              /* @__PURE__ */ jsx("div", { style: { maxHeight: 280, overflowY: "auto" }, children: modelOptions.filter((m) => m.name.toLowerCase().includes(modelQuery.toLowerCase())).map((m, i) => /* @__PURE__ */ jsxs(
                 "button",
                 {
                   type: "button",
@@ -427,7 +432,7 @@ function PromptBar({
                   ]
                 },
                 m.key
-              ))
+              )) })
             ]
           }
         ),
@@ -490,9 +495,13 @@ function PromptBar({
                       {
                         type: "button",
                         "aria-label": "Add attachments and sources",
-                        disabled: !local,
-                        "aria-expanded": plusOpen,
+                        disabled: disabled || !local && !onAttach,
+                        "aria-expanded": local ? plusOpen : void 0,
                         onClick: () => {
+                          if (onAttach) {
+                            onAttach();
+                            return;
+                          }
                           setModelOpen(false);
                           setPlusOpen((current) => !current);
                           inputRef.current?.focus();
