@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mongodb": {
+      "command": "node",
+      "args": ["--env-file-if-exists=.env", "scripts/mongodb-mcp.mjs"]
+    }
+  }
+}

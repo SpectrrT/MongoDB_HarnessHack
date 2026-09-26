@@ -37,6 +37,8 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - `npm ci`, then `npm run dev` (web on 5193, API on 5194), `npm test`, `npm run test:e2e`, `npm run build`.
 - `npm run rem:demo`: the three-minute REM story in the terminal, with real numbers from the engine.
 - `npm run harness:server`, `npm run harness:worker`, `npm run sleep:worker`: need a `.env` with `MONGODB_URI`.
+- `.mcp.json` gives Claude Code a MongoDB MCP server that reads the same `MONGODB_URI`, read-only unless `.env` sets
+  `MDB_MCP_READ_ONLY=false`. It loads when a session starts, so start a new one after editing `.env`.
 
 ## Where things stand (Sat Sep 26, about 11:20 AM ET)
 
