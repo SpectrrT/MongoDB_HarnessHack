@@ -1,12 +1,75 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createMemoryDb, ensureIndexes } from '../rem/db/index.js';
-import { retireEpisodes, readEpisode, listEpisodeArchive, ARCHIVE_PART_BYTES } from '../rem/episode-archive.js';
+import { retireEpisodes, readEpisode, readEpisodePage, listEpisodeArchive, archiveLegacyEpisodes, ARCHIVE_PART_BYTES, MAX_EPISODE_JSON_CHARS } from '../rem/episode-archive.js';
 
 const now = Date.parse('2026-09-26T18:00:00Z');
 const make = async () => { const db = createMemoryDb(); await ensureIndexes(db); return db; };
 const episode = (id, kind = 'correction') => ({ _id: id, kind, runId: 'r1', summary: 'Preserve the original constraint exactly.',
   facts: [{ kind: 'preference', text: 'Never send without approval.' }], ts: new Date(now), consolidated: false, expireAt: null, metadata: { source: 'user' } });
+
+test('startup archives surviving legacy TTL records without replacing existing original versions', async () => {
+  const { createRem } = await import('../rem/index.js');
+  const db = await make();
+  const current = episode('current');
+  const legacy = { ...episode('legacy'), consolidated: true, expireAt: new Date(now + 1000) };
+  await db.collection('episodes').insertMany([current, legacy]);
+  await retireEpisodes(db, { _id: 'current' }, { now, expireAt: now + 1000 });
+  const rem = await createRem({ db, now });
+  try {
+    assert.equal(await archiveLegacyEpisodes(db, { now }), 0);
+    await db.sweepExpired(now + 2000);
+    assert.deepEqual((await readEpisode(db, 'legacy')).episode, legacy);
+    assert.equal((await readEpisode(db, 'legacy')).reason, 'legacy-consolidated');
+    assert.deepEqual((await readEpisode(db, 'current')).episode, current);
+    assert.equal(await db.collection('episode_archive').countDocuments(), 2);
+  } finally { await rem.close(); }
+});
+
+test('legacy archive migration pages only identifiers and flags and is idempotent across multiple batches', async () => {
+  const db = await make();
+  const originals = Array.from({ length: 61 }, (_, i) => ({ ...episode(`legacy-${i}`), consolidated: true, expireAt: new Date(now + 1000) }));
+  await db.collection('episodes').insertMany(originals);
+  let pages = 0, rawReads = 0;
+  const measured = { ...db, withTransaction: db.withTransaction.bind(db), collection: name => {
+    const collection = db.collection(name);
+    if (name !== 'episodes') return collection;
+    return new Proxy(collection, { get(target, key) {
+      if (key === 'find') return (filter, options) => {
+        assert.deepEqual(options.projection, { _id: 1, consolidated: 1 }); assert.equal(options.limit, 25); pages++;
+        return target.find(filter, options);
+      };
+      if (key === 'findOne') return (...args) => { rawReads++; return target.findOne(...args); };
+      const value = Reflect.get(target, key); return typeof value === 'function' ? value.bind(target) : value;
+    } });
+  } };
+  assert.equal(await archiveLegacyEpisodes(measured, { now }), 61);
+  assert.equal(pages, 4); assert.equal(rawReads, 61);
+  assert.equal(await archiveLegacyEpisodes(measured, { now }), 0);
+  assert.equal(rawReads, 61, 'already archived records do not reload raw bodies');
+  await db.sweepExpired(now + 2000);
+  for (const original of originals) assert.deepEqual((await readEpisode(db, original._id)).episode, original);
+});
+
+test('escaped JSON pages remain recoverable beyond the old 32MiB offset boundary', async t => {
+  const db = await make();
+  const original = { ...episode('escaped'), raw: '\u0000'.repeat(5593400) };
+  await db.collection('episodes').insertOne(original);
+  await retireEpisodes(db, {}, { now, remove: true });
+  const manifest = await db.collection('episode_archive').findOne({ _id: original._id });
+  const expected = JSON.stringify(original), start = 33552000;
+  let offset = start, recovered = '', pages = 0;
+  do {
+    const page = await readEpisodePage(db, original._id, { offset, limit: 8000 });
+    assert.ok(page.text.length <= 8000); assert.ok(page.totalChars <= MAX_EPISODE_JSON_CHARS);
+    if (page.nextOffset !== null) assert.ok(page.nextOffset <= MAX_EPISODE_JSON_CHARS);
+    recovered += page.text; offset = page.nextOffset; pages++;
+  } while (offset !== null);
+  assert.ok(expected.length > 33560000); assert.equal(pages, 2);
+  assert.equal(recovered, expected.slice(start));
+  t.diagnostic(JSON.stringify({ fixture: 'escaped-json-tail', bsonBytes: manifest.bytes, jsonChars: expected.length,
+    startOffset: start, pages, returnedChars: recovered.length, finalNextOffset: offset }));
+});
 
 test('raw correction, demonstration and trajectory survive hot-episode TTL expiry exactly', async () => {
   const db = await make();
@@ -88,6 +151,12 @@ test('real Mongo archive survives a new connection and rolls back partial archiv
     await retireEpisodes(db, {}, { now, remove: true });
     restored = await createMongoDb({ uri: mongo.getUri(), dbName: 'episode_archive' });
     assert.deepEqual((await readEpisode(restored, String(original._id))).episode, original);
+    const legacy = { ...episode(new ObjectId()), consolidated: true, expireAt: new Date(Date.now() + 600000), raw: 'Legacy source. '.repeat(10000) };
+    await db.collection('episodes').insertOne(legacy);
+    assert.equal(await archiveLegacyEpisodes(restored, { now }), 1);
+    assert.equal(await archiveLegacyEpisodes(restored, { now }), 0);
+    await db.collection('episodes').deleteOne({ _id: legacy._id });
+    assert.deepEqual((await readEpisode(restored, String(legacy._id))).episode, legacy);
     const rollback = { ...episode(new ObjectId()), raw: 'Preserve this source. '.repeat(10000) };
     await db.collection('episodes').insertOne(rollback);
     const before = await db.collection('episode_archive_parts').countDocuments();

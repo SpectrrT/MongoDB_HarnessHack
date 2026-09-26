@@ -29,6 +29,7 @@ export const INDEXES = Object.freeze({
     { key: { expireAt: 1 }, name: "episodes_ttl", expireAfterSeconds: 0 },
     { key: { day: 1, runId: 1, seq: 1 }, name: "episodes_day_run" },
     { key: { kind: 1, consolidated: 1 }, name: "episodes_kind" },
+    { key: { consolidated: 1, _id: 1 }, name: "episodes_consolidated_id" },
   ],
   memories: [
     { key: { subject: 1, active: 1 }, name: "memories_subject" },
