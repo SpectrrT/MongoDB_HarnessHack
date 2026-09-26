@@ -18,7 +18,12 @@ test('history proposals preserve observed provenance and never claim execution o
   assert.equal(finding.days,3);assert.equal(finding.switchesPerDay,3);assert.equal(finding.lookbackDays,28);assert.equal(finding.provenance,'seed');assert.equal(finding.sourceCounts.seed,12);assert.equal(finding.sourceIds.length,12);
   const plan=planWorkflow(finding);assert.equal(plan.kind,'engineering');assert.equal(plan.executionStatus,'proposal');assert.equal(plan.saves,undefined);assert.match(plan.observation,/not been measured/);
   assert.match(describe(finding),/last 28 days/);assert.ok(plan.steps.some(step=>step.ask));assert.match(plan.steps.map(step=>step.detail).join(' '),/Do not execute queries or create indexes/);
-  await activity.sessions.updateOne({_id:(await activity.sessions.findOne({}))._id},{$set:{source:'collector'}});
+  // Provenance belongs to the selected pattern, not unrelated sessions from today.
+  const outside=await activity.sessions.updateOne({workspace:workspaceId(),_id:{$nin:finding.sourceIds}},{$set:{source:'collector'}});
+  assert.equal(outside.matchedCount,1);
+  const unchanged=await findFriction(activity,workspaceId());assert.equal(unchanged.provenance,'seed');assert.equal(unchanged.sourceCounts.seed,12);assert.equal(unchanged.sourceCounts.captured,0);
+  const included=await activity.sessions.updateOne({workspace:workspaceId(),_id:finding.sourceIds[0]},{$set:{source:'collector'}});
+  assert.equal(included.matchedCount,1);
   const mixed=await findFriction(activity,workspaceId());assert.equal(mixed.provenance,'mixed');assert.equal(mixed.sample,false);assert.equal(mixed.sourceCounts.captured,1);assert.equal(mixed.sourceCounts.seed,11);
   const app=createApp({serveStatic:false,activity});
   await request(app).post('/api/activity/workflow').send({}).expect(403);
