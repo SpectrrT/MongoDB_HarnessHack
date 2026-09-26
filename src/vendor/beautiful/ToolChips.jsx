@@ -95,7 +95,8 @@ function ToolChips({
   labels,
   className,
   onOpenChange,
-  onToggleRow
+  onToggleRow,
+  live = false
 } = {}) {
   const copy = { ...DEFAULT_LABELS, ...labels };
   const [step, setStep] = useState(0);
@@ -115,10 +116,10 @@ function ToolChips({
   const closePreview = (file) => () => setPreview((current) => current?.file === file ? null : current);
   const total = steps.length + 1;
   useEffect(() => {
-    if (step >= total) return;
+    if (live || step >= total) return;
     const t = setTimeout(() => setStep((s) => s + 1), STEP_MS);
     return () => clearTimeout(t);
-  }, [step, total]);
+  }, [step, total, live]);
   const toggleRow = (label) => setOpenRows((current) => {
     const next = new Set(current);
     next.has(label) ? next.delete(label) : next.add(label);
@@ -143,7 +144,7 @@ function ToolChips({
       }
     ),
     /* @__PURE__ */ jsx("div", { className: "grid transition-[grid-template-rows,opacity] duration-300", style: { gridTemplateRows: open ? "1fr" : "0fr", opacity: open ? 1 : 0 }, children: /* @__PURE__ */ jsxs("div", { className: "-mx-1 overflow-hidden px-1.5 pb-1", children: [
-      /* @__PURE__ */ jsx("div", { className: "mt-1.5 flex flex-col gap-1", children: steps.slice(0, step).map((row) => {
+      /* @__PURE__ */ jsx("div", { className: "mt-1.5 flex flex-col gap-1", children: steps.slice(0, live ? steps.length : step).map((row) => {
         const rowOpen = openRows.has(row.label);
         return /* @__PURE__ */ jsxs("div", { style: { animation: "fade-up 300ms cubic-bezier(0.23,1,0.32,1) both" }, children: [
           /* @__PURE__ */ jsxs(

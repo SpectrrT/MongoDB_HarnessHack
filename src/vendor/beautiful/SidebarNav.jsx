@@ -242,8 +242,8 @@ function SidebarNav({
               },
               className: "sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]",
               children: [
-                /* @__PURE__ */ jsx("span", { className: "sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink", children: workspaceLogo || /* @__PURE__ */ jsx(IconPopsicle2, { size: 18 }) }),
-                /* @__PURE__ */ jsx("span", { className: "sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2", children: workspaceName }),
+                workspaceLogo !== null && /* @__PURE__ */ jsx("span", { className: "sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink", children: workspaceLogo || /* @__PURE__ */ jsx(IconPopsicle2, { size: 18 }) }),
+                /* @__PURE__ */ jsx("span", { className: `sidebar-copy ${workspaceLogo === null ? "" : "ml-1.5"} min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2`, children: workspaceName }),
                 /* @__PURE__ */ jsx("span", { className: "sidebar-copy ml-1 flex shrink-0 text-ink-3", children: /* @__PURE__ */ jsx(IconChevronDownSmall, { size: 16 }) })
               ]
             }
@@ -393,7 +393,7 @@ function SidebarNav({
             query && visibleRecents.length === 0 && /* @__PURE__ */ jsx("div", { className: "sidebar-copy mx-2 px-2 py-2 text-[12.5px] text-ink-3", children: "No chats found" })
           ] })
         ] }),
-        /* @__PURE__ */ jsx("div", { className: "sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3", children: /* @__PURE__ */ jsxs(
+        footerLabel && /* @__PURE__ */ jsx("div", { className: "sidebar-copy mx-2 mt-3 w-[208px] border-t border-line pt-3", children: /* @__PURE__ */ jsxs(
           "button",
           {
             type: "button",

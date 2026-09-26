@@ -1,3 +1,5 @@
+import "./env.js";
+import {createAtlasStore} from "./atlas.js";
 import { THEME_IDS } from "../shared/themes.js";
 import { mountModel } from "./model.js";
 import express from "express";
@@ -58,13 +60,13 @@ const payloads = {
     z.object({title: z.string().trim().min(1).max(160), brief: text, deadline: z.number().finite(), budget: z.number().int().min(1000).max(1000000)}).strict(),
     z.object({id, status: z.enum(["queued", "paused", "cancelled"])}).strict(),
   ]),
-  "chat-start": z.object({id,jobId:id,model:id,effort:z.enum(["low","medium","high","xhigh","max","ultra"]).optional(),text,notes:z.array(z.object({id,source:z.string().max(80),text:z.string().max(360)})).max(4)}),
-  "chat-finish": z.object({id,jobId:id,text:z.string().max(20000).optional(),error:z.string().max(500).optional(),usage:z.record(z.string(),z.number()).optional()}),
+  "chat-start": z.object({id,jobId:id,model:id,effort:z.enum(["low","medium","high","xhigh","max","ultra"]).optional(),text:z.string().min(1).max(20000),displayText:z.string().max(20000).optional(),files:z.array(z.object({name:z.string().max(120),characters:z.number().int().min(0).max(16000),preview:z.string().max(60000).regex(/^data:image\/webp;base64,[A-Za-z0-9+/]+=*$/).optional()})).max(6).optional(),notes:z.array(z.object({id,source:z.string().max(80),text:z.string().max(360)})).max(4)}),
+  "chat-finish": z.object({id,jobId:id,text:z.string().max(20000).optional(),error:z.string().max(500).optional(),usage:z.record(z.string(),z.number()).optional(),agent:z.any().optional()}),
   onboard: z.object({
     name: z.string().trim().min(1).max(60),
     role: z.string().max(80).optional(),
   }),
-  profile: z.object({ name: z.string().trim().min(1).max(60) }),
+  profile: z.object({ name: z.string().trim().min(1).max(60), email: z.union([z.email().max(254),z.literal("")]).optional(), avatar:z.string().max(40000).regex(/^(?:data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+=*)?$/).optional() }).strict(),
   settings: z
     .object({
       suggestions: z.boolean().optional(),
@@ -74,7 +76,10 @@ const payloads = {
         .string()
         .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/)
         .optional(),
+      agentFolder:z.string().max(1000).optional(),
       modelConnected: z.boolean().optional(),
+      modelProvider:z.enum(["codex","openrouter"]).optional(),
+      openrouterModel:z.string().max(100).optional(),
       modelSelection: z.string().max(100).optional(),
       theme: z.enum(THEME_IDS).optional(),
       reasoningEffort: z.enum(["low","medium","high","xhigh","max","ultra"]).optional(),
@@ -120,6 +125,7 @@ export function createApp({
   serveStatic = true,
   harnessStore = null,
   sleep = null,
+  atlas = null,
 } = {}) {
   const app = express(),
     queues = new Map(),
@@ -141,7 +147,7 @@ export function createApp({
       },
     }),
   );
-  app.use(express.json({ limit: "128kb" }));
+  app.use(express.json({ limit: "16mb" }));
   app.use("/api", (req, res, next) => {
     res.set("Cache-Control", "no-store");
     const origin = req.get("origin");
@@ -164,6 +170,7 @@ export function createApp({
     res.json({ ok: true, mode: "local", schema: 1 }),
   );
   app.use("/api", async (req, res, next) => {
+    if(req.path === "/openrouter/callback") return next();
     try {
       let token = req.headers.cookie
         ?.split(";")
@@ -175,7 +182,7 @@ export function createApp({
         res.cookie("offload_demo", token, {
           httpOnly: true,
           sameSite: "strict",
-          secure: process.env.NODE_ENV === "production",
+          secure: process.env.NODE_ENV === "production" || req.get("host") === "offload.ai",
           maxAge: 30 * 86400000,
         });
       }
@@ -228,6 +235,9 @@ export function createApp({
         await fs.mkdir(dataDir, { recursive: true, mode: 0o700 });
         const file = path.join(dataDir, key + ".json");
         let state;
+        if(atlas){
+          return atlas.update(key,s=>fn(advanceWorkspace(s)));
+        }
         try {
           state = JSON.parse(await fs.readFile(file, "utf8"));
         } catch (e) {
@@ -248,7 +258,7 @@ export function createApp({
       if (queues.get(key) === task) queues.delete(key);
     }
   }
-  mountModel(app);
+  mountModel(app,{dataDir});
   app.get("/api/state", async (req, res, next) => {
     try {
       res.json(await access(req, (s) => s));
@@ -289,7 +299,7 @@ export function createApp({
     );
   }
   app.use((err, req, res, next) => {
-    console.error("Request failed:", err.message);
+    console.error("Request failed:", err.name);
     res
       .status(err.status || 500)
       .json({
@@ -306,7 +316,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const connection = process.env.MONGODB_URI ? await connectStore() : null;
   const sleep = connection && process.env.VOYAGE_API_KEY
     ? await (await import('./sleep/index.js')).createSleep(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon')) : null;
-  createApp({ harnessStore: connection?.store, sleep }).listen(port, "127.0.0.1", () =>
+  const atlas=process.env.MONGODB_URI?createAtlasStore():null;
+  if(atlas)await atlas.ping();
+  createApp({ harnessStore: connection?.store, sleep, atlas }).listen(port, "127.0.0.1", () =>
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
 }

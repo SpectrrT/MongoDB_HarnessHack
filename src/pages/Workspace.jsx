@@ -1,7 +1,7 @@
 import Harness from "./Harness";
 import Adapt from "./Adapt";
 import Sleep from "./Sleep";
-import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
   PanelLeft,
@@ -61,6 +61,8 @@ import "../beautiful-workspace.css";
 import "../themes.css";
 import {resolveTheme,themeStyle} from "../../shared/themes";
 import Appearance from "../components/Appearance";
+import AgentSettings from "../components/AgentSettings";
+import ProfileMenu,{ProfileEditor} from "../components/ProfileMenu";
 const Gallery = lazy(() => import("./Gallery"));
 const nav = [
   ["", "Overview", Home],
@@ -81,8 +83,17 @@ export default function Workspace() {
     [session, setSession] = useState(false),
     [search, setSearch] = useState(false),
     [connect, setConnect] = useState(null);
+  useEffect(()=>{const narrow=matchMedia('(max-width: 900px)');const resize=()=>{if(narrow.matches){setSidebar(false);setSuggestions(false);}};narrow.addEventListener('change',resize);return()=>narrow.removeEventListener('change',resize);},[]);
   const [systemDark,setSystemDark] = useState(matchMedia("(prefers-color-scheme: dark)").matches);
   useEffect(()=>{const media=matchMedia("(prefers-color-scheme: dark)");const update=()=>setSystemDark(media.matches);media.addEventListener("change",update);return()=>media.removeEventListener("change",update);},[]);
+  const palette=resolveTheme(state.settings.theme,systemDark,state.settings.themeCustom);
+  useLayoutEffect(()=>{
+    const root=document.documentElement;
+    const previous=root.style.getPropertyValue('--workspace-canvas');
+    root.style.setProperty('--workspace-canvas',palette.surface);
+    root.setAttribute('data-offload-workspace','');
+    return()=>{root.removeAttribute('data-offload-workspace');if(previous)root.style.setProperty('--workspace-canvas',previous);else root.style.removeProperty('--workspace-canvas');};
+  },[palette.surface]);
   const navigate = useNavigate(),
     location = useLocation();
   useEffect(() => {
@@ -135,7 +146,7 @@ export default function Workspace() {
   return (
     <div
       data-palette={state.settings.theme}
-      style={themeStyle(resolveTheme(state.settings.theme,systemDark,state.settings.themeCustom))}
+      style={themeStyle(palette)}
       className={`workspace ${sidebar ? "with-sidebar" : ""} ${suggestions ? "with-suggestions" : ""}`}
     >
       {sidebar && (
@@ -146,7 +157,7 @@ export default function Workspace() {
             onClick={() => setSidebar(false)}
           />
           <div className="beautiful-sidebar beautiful-ui">
-            <SidebarNav fill workspaceName="offload" workspaceLogo={<img src="/favicon.svg" width="18" height="18" alt=""/>}
+            <SidebarNav fill workspaceName="offload" workspaceLogo={null}
               navItems={nav.map(([key,label,Icon]) => ({key,label,icon:<Icon size={18}/>}))}
               activeNav={page} activeTitle={state.conversations.find(c=>c.id===route[1])?.title || null}
               onNewChat={newChat} onCollapse={()=>setSidebar(false)}
@@ -154,7 +165,7 @@ export default function Workspace() {
               onNavigate={key=>{navigate("/app"+(key?"/"+key:""));if(innerWidth<900)setSidebar(false);}}
               onPick={id=>{navigate("/app/chat/"+id);if(innerWidth<900)setSidebar(false);}}
               recents={state.conversations.map(c=>({id:c.id,label:c.title}))}
-              footerLabel="Settings" footerIcon={<Settings size={16}/>} onFooterClick={()=>navigate("/app/settings")}/>
+              footerLabel="" footerIcon={<Settings size={16}/>} onFooterClick={()=>navigate("/app/settings")}/>
           </div>
         </>
       )}
@@ -209,6 +220,7 @@ export default function Workspace() {
               <PanelRight size={18} />
               {count > 0 && <span className="count-dot">{count}</span>}
             </button>
+            <ProfileMenu/>
           </div>
         </header>
         {error && (
@@ -1088,26 +1100,12 @@ function SearchDialog({ onClose, onRun }) {
 }
 function SettingsPage() {
   const { state, act, reset, mode } = useWorkspace();
-  const [name, setName] = useState(state.profile.name),
-    [confirm, setConfirm] = useState(false);
+  const [confirm, setConfirm] = useState(false);
   return (
     <div className="standard-page">
       <PageTitle title="Settings" description="Make this space yours." />
-      <section className="settings-section">
-        <h2>Your workspace</h2>
-        <label>
-          Name
-          <div className="inline-input">
-            <input value={name} onChange={(e) => setName(e.target.value)} />
-            <button
-              className="button small"
-              onClick={() => act("profile", { name }).catch(() => {})}
-            >
-              Save
-            </button>
-          </div>
-        </label>
-      </section>
+      <ProfileEditor/>
+      <AgentSettings/>
       <section className="settings-section">
         <h2>Suggestions and sleep</h2>
         <label className="setting-row">
