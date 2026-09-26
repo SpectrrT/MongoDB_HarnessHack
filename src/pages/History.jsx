@@ -122,7 +122,7 @@ function describeRoutine(r) {
     ? `around ${hourLabel(new Date(2000, 0, 1, ((Math.round(r.typicalHour) % 24) + 24) % 24))}`
     : "";
   const text = [
-    [weekdayPattern(r.weekdays), hour].filter(Boolean).join(" "),
+    [weekdayPattern(r.weekdays), hour, r.timeZone].filter(Boolean).join(" "),
     r.minutes ? `about ${duration(r.minutes * 60)}` : "",
     r.count > r.dayCount ? `seen ${r.count} times on ${r.dayCount} days` : `seen on ${plural(r.dayCount, "day")}`,
   ]
@@ -749,9 +749,11 @@ function Routine({ routine: r, busy, onDecide }) {
       </ol>
       <p className="hx-when">
         <span>{describeRoutine(r)}</span>
+        {r.cadence === "weekly" && <Tag>Weekly pattern</Tag>}
         {r.source === "seed" && <Tag />}
         {r.source === "mixed" && <Tag>Includes demo history</Tag>}
       </p>
+      {r.cadence === "weekly" && <p className="hx-ask">Inferred from app activity across at least three weeks. No task is scheduled.</p>}
       {approved ? (
         <div className="hx-handoff" role="status">
           <Check size={16} aria-hidden="true" />

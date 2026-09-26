@@ -12,7 +12,7 @@ test('History distinguishes samples and saving a routine from running a task', a
   await prepare(page);
   let approved = false, requestHeader;
   const start = new Date(); start.setHours(9, 0, 0, 0); const end = new Date(+start + 1800000);
-  const routine = { _id: 'fixture-routine', steps: ['calendar.google.com', 'docs.google.com'], titles: ['Fixture meeting', 'Fixture notes'], source: 'seed', count: 3, dayCount: 3, weekdays: [1, 2, 3], typicalHour: 9, minutes: 30 };
+  const routine = { _id: 'fixture-routine', steps: ['calendar.google.com', 'docs.google.com'], titles: ['Fixture meeting', 'Fixture notes'], source: 'seed', cadence: 'weekly', timeZone: 'America/New_York', count: 3, dayCount: 3, weekdays: [1], typicalHour: 9, minutes: 30 };
   await page.route('**/api/activity/**', route => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith('/stream')) return route.fulfill({ contentType: 'text/event-stream', body: ': fixture\n\n' });
@@ -27,6 +27,8 @@ test('History distinguishes samples and saving a routine from running a task', a
   await page.goto('/app/history');
   await expect(page.getByText('No samples from this computer yet.')).toBeVisible();
   await expect(page.getByText('Sample week', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Weekly pattern', { exact: true })).toBeVisible();
+  await expect(page.getByText('Inferred from app activity across at least three weeks. No task is scheduled.')).toBeVisible();
   await page.getByRole('button', { name: /^Save routine:/ }).click();
   expect(requestHeader).toBe('local');
   await expect(page.getByText('Routine saved. No task has run.', { exact: false })).toBeVisible();
