@@ -1,8 +1,14 @@
 /* Computer history to workflow: the launcher above the chat box and the card it opens. Theme variables only. */
 .history-workflow-launch { margin: 0 0 10px; }
-.history-workflow-launch button { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; border: 1px solid var(--off-line); border-radius: 999px; background: var(--off-surface); color: var(--off-ink); font: inherit; font-size: 13px; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
-.history-workflow-launch button:hover { background: var(--off-hover); }
-.history-workflow-launch button small { color: var(--off-muted); font-size: 12px; }
+.history-workflow-launch button { display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border: 1px solid var(--off-line); border-radius: 999px; background: var(--off-surface); color: var(--off-ink); font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer; transition: background .15s ease, border-color .15s ease; }
+.history-workflow-launch .launch-icon { display: inline-grid; place-items: center; width: 26px; height: 26px; border: 1px solid var(--off-line); border-radius: 999px; background: var(--off-inset); }
+.history-workflow-launch button small { color: var(--off-muted); font-size: 12.5px; font-weight: 400; }
+.history-workflow-launch .launch-arrow { color: var(--off-muted); transition: transform .15s ease, color .15s ease; }
+.history-workflow-launch button:hover { background: var(--off-hover); border-color: color-mix(in srgb, var(--off-ink) 22%, var(--off-line)); }
+.history-workflow-launch button:hover .launch-arrow { transform: translateX(2px); color: var(--off-ink); }
+.history-workflow-launch button:focus-visible { outline: 2px solid var(--off-ink); outline-offset: 2px; }
+@media (max-width: 480px) { .history-workflow-launch button small { display: none; } }
+@media (prefers-reduced-motion: reduce) { .history-workflow-launch .launch-arrow { transition: none; } }
 .history-workflow-launch p { margin: 8px 2px 0; font-size: 12.5px; color: var(--off-muted); }
 
 .history-workflow { margin: 0 0 14px; padding: 16px 18px; border: 1px solid var(--off-line); border-radius: 16px; background: var(--off-surface); color: var(--off-ink); animation: history-workflow-in .28s ease-out; }

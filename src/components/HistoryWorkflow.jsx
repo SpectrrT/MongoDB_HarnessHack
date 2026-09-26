@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppWindow, Check, Clock3, Maximize2, Minimize2, Sparkles, SquareTerminal, UserRound, X } from 'lucide-react';
+import { AppWindow, ArrowRight, Check, Clock3, History, Maximize2, Minimize2, Sparkles, SquareTerminal, UserRound, X } from 'lucide-react';
 import TaskRows from '../vendor/beautiful/TaskRows';
 import { ConnectionLogo } from './ConnectionLogo';
 import { OrbLoading } from './ScreenTransition';
@@ -121,9 +121,10 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
     return (
       <div className="history-workflow-launch">
         <button type="button" onClick={build}>
-          <Sparkles size={15} aria-hidden="true" />
+          <span className="launch-icon"><History size={14} aria-hidden="true" /></span>
           <span>Find work to hand off</span>
           <small>from saved activity</small>
+          <ArrowRight className="launch-arrow" size={14} aria-hidden="true" />
         </button>
         {phase === 'empty' && <p role="status">No repeated workflow found in the saved activity. You can use the example in Sleep without enabling capture.</p>}
       </div>
