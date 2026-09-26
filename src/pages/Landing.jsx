@@ -24,19 +24,19 @@ export default function Landing() {
         <section className="hero">
           <Net />
           <div className="hero-copy">
-            <p className="eyebrow"><span aria-hidden="true">[ + ] </span>A little less to do.</p>
+            <p className="eyebrow"><span aria-hidden="true">[ + ] </span>Work with fewer interruptions</p>
             <h1>
-              You have done
+              Your agent should
               <br />
-              <em>this before.</em>
+              <em>finish the job.</em>
             </h1>
             <p className="hero-description">
-              Offload learns the work you repeat.
+              Keep the context for work you repeat.
               <br />
-              So the next time, you can hand it over.
+              Choose a task now, or leave a brief for the morning.
             </p>
             <Link to="/app" className="button">
-              Try the local demo <ArrowUpRight size={17} />
+              Open your workspace <ArrowUpRight size={17} />
             </Link>
             <span className="hero-note">
               Your workspace stays on this device.
@@ -48,20 +48,20 @@ export default function Landing() {
         <section className="site-preview" id="how">
           <div className="section-heading">
             <h2>
-              A useful suggestion.
-              <br />A reason behind it.
+              The work you repeat,
+              <br />ready to hand over.
             </h2>
             <p>
-              Not another list of things you might do.
+              See a task and the context behind it.
               <br />
-              Work that already belongs to your day.
+              Decide what to work on next.
             </p>
           </div>
           <div className="preview-window">
             <div className="preview-top">
               <span className="wordmark">offload</span>
               <span>Suggested for you</span>
-              <span className="ascii-small">[ SAMPLE WORKSPACE ]</span>
+              <span className="ascii-small">[ EXAMPLE WORKSPACE ]</span>
             </div>
             <div className="preview-content">
               <div className="preview-message">
@@ -69,12 +69,12 @@ export default function Landing() {
                 <h3>
                   The Friday update,
                   <br />
-                  already on your mind.
+                  ready for a draft.
                 </h3>
                 <p>
                   You have prepared it four times this month.
                   <br />
-                  Offload can help with the next draft.
+                  Keep the instructions for the next one.
                 </p>
                 <Link to="/app" className="text-link">
                   See your workspace <ArrowRight size={16} />
@@ -114,40 +114,39 @@ export default function Landing() {
         <AsciiMemory />
         <section className="site-story" id="control">
           <div>
-            <p className="eyebrow">On your terms</p>
+            <p className="eyebrow">Your permissions</p>
             <h2>
-              Help with the work.
+              Choose what
               <br />
-              You keep the say.
+              Offload can access.
             </h2>
           </div>
           <div className="story-details">
             <article>
-              <h3>A session you start.</h3>
+              <h3>Start and stop recording</h3>
               <p>
-                Choose when to capture context. Pause when you want.
-                Conversations require everyone’s agreement.
+                Choose a microphone or screen session. Stop it when you finish.
+                Ask everyone in the conversation before recording.
               </p>
             </article>
             <article>
-              <h3>A routine you approve.</h3>
+              <h3>Review before sending</h3>
               <p>
-                The sleep review tests a routine before you approve it. Drafts
-                stay drafts until you decide what happens next.
+                Review a routine before you enable it. Read each draft before you send it.
               </p>
             </article>
           </div>
         </section>
         <section className="faq">
-          <h2>A few things to know.</h2>
+          <h2>Before you start</h2>
           {[
             [
               "Does this connect to my real accounts?",
-              "This version uses sample account connections and a local demo engine. It does not read your email or send messages. Live integrations are the next build phase.",
+              "You can use your ChatGPT account through Codex on this Mac. Other app connections can be added now, but their account authorization is not connected yet.",
             ],
             [
               "Where does my work go?",
-              "The web demo saves its workspace in your browser on this device. You can export or delete it in Settings. The optional local API saves to your computer.",
+              "Offload saves your workspace in this browser. Export or delete it in Settings. If you run the optional local server, it saves to your computer.",
             ],
             [
               "Can I use it on my computer?",
@@ -168,11 +167,11 @@ export default function Landing() {
           ))}
         </section>
         <section className="site-close">
-          <pre className="ascii-horizon" aria-hidden="true">{"          .        +        .\n      .   :   .    :    .   :   .\n  . : . : + : . : + : . : + : . : .\n------[ less on your plate ]------"}</pre>
+          <pre className="ascii-horizon" aria-hidden="true">{"          .        +        .\n      .   :   .    :    .   :   .\n  . : . : + : . : + : . : + : . : .\n------[ ready for the morning ]------"}</pre>
           <h2>
-            Something you can
+            Have a task for
             <br />
-            <em>take off your plate.</em>
+            <em>tomorrow morning?</em>
           </h2>
           <Link to="/app" className="button">
             Open Offload <ArrowUpRight size={17} />
@@ -181,7 +180,7 @@ export default function Landing() {
       </main>
       <footer>
         <span className="wordmark">offload</span>
-        <span>Built for the work between the work.</span>
+        <span>Your work stays on this device.</span>
         <Link to="/app/settings">Privacy & local data</Link>
       </footer>
     </div>

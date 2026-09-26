@@ -87,7 +87,41 @@ test("notes session has explicit lifecycle and stores decisions", () => {
     type: "session-note",
     payload: { id: "one", text: "Exclude the customer name." },
   });
-  assert.equal(s.memory[0].sample, false);
+  assert.equal(s.memory[0].example, false);
   s = transition(s, { type: "session-end", payload: { id: "one" } });
   assert.equal(s.sessions[0].status, "ended");
+});
+
+test('existing workspaces gain new apps without losing prior work', () => {
+  let s = createWorkspace(0);
+  s.connections = [{id:'drive', name:'Google Drive', status:'connected'}];
+  delete s.overnight;
+  s.profile.name = 'Existing user';
+  const next = advanceWorkspace(s, 1);
+  assert.equal(next.profile.name, 'Existing user');
+  assert.equal(next.connections.find(c => c.id === 'drive').status, 'connected');
+  assert.equal(next.connections.length, 20);
+  assert.deepEqual(next.overnight, []);
+  assert.equal(advanceWorkspace(next, 2), next);
+});
+test('adding an app never grants account access', () => {
+  const s = transition(createWorkspace(0), {type:'request-connection', payload:{id:'slack', requested:true}}, 1);
+  assert.equal(s.connections.find(c => c.id === 'slack').requested, true);
+  assert.equal(s.connections.find(c => c.id === 'slack').status, 'disconnected');
+});
+test('overnight tasks persist without pretending to execute', () => {
+  const payload = {title:'Prepare update', brief:'Include open bugs. Leave out customer names.', deadline:86400000, budget:10000};
+  let s = transition(createWorkspace(0), {type:'overnight',payload}, 1);
+  assert.equal(s.overnight[0].runner, 'unconfigured');
+  s = advanceWorkspace(s, 50000);
+  assert.equal(s.overnight[0].tokensUsed, 0);
+  assert.equal(s.overnight[0].status, 'queued');
+  const id = s.overnight[0].id;
+  s = transition(s, {type:'overnight', payload:{id,status:'paused'}}, 50001);
+  s = transition(s, {type:'overnight', payload:{id,status:'queued'}}, 50002);
+  assert.equal(s.overnight.length, 1);
+  s = transition(s, {type:'overnight', payload:{id,status:'cancelled'}}, 50003);
+  assert.throws(() => transition(s, {type:'overnight', payload:{id,status:'queued'}}, 50004), /cancelled/);
+  assert.throws(() => transition(s, {type:'overnight', payload:{...payload,deadline:0}}, 1), /deadline/);
+  assert.throws(() => transition(s, {type:'overnight', payload:{...payload,budget:1}}, 1), /budget/);
 });

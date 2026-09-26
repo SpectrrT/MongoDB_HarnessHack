@@ -1,4 +1,7 @@
-// The same deterministic demo engine runs locally in the browser and behind the API.
+import { THEME_IDS } from "./themes.js";
+import { CONNECTIONS } from "./connections.js";
+import { upgradeWorkspace, updateOvernight } from "./overnight.js";
+// The same deterministic local engine runs locally in the browser and behind the API.
 // It never calls an external account, sends a message, or executes generated code.
 export const SCHEMA_VERSION = 1;
 const uid = () => globalThis.crypto.randomUUID();
@@ -53,7 +56,7 @@ export function createWorkspace(now = Date.now()) {
     [
       "blockers",
       "Collect the unresolved blockers",
-      "Several sample tasks still need an owner.",
+      "Several example tasks still need an owner.",
       "Notes",
       "6 min",
       3,
@@ -71,7 +74,7 @@ export function createWorkspace(now = Date.now()) {
     [
       "follow-through",
       "Draft the promised follow-ups",
-      "Your sample work session contains two follow-up commitments.",
+      "Your example work session contains two follow-up commitments.",
       "Gmail",
       "10 min",
       2,
@@ -89,12 +92,13 @@ export function createWorkspace(now = Date.now()) {
     snoozedUntil: null,
     createdAt: now - i * 3600000,
     evidence: [
-      `${occurrences} related examples in sample history`,
-      `${source} sample workspace`,
+      `${occurrences} related examples in example history`,
+      `${source} example workspace`,
     ],
   }));
   return {
     version: SCHEMA_VERSION,
+    copyVersion: 1,
     revision: 0,
     createdAt: now,
     profile: { name: "", role: "Product team", onboarded: false },
@@ -105,57 +109,33 @@ export function createWorkspace(now = Date.now()) {
       sleepHour: "22:00",
       theme: "light",
     },
-    connections: [
-      {
-        id: "drive",
-        name: "Google Drive",
-        detail: "Drafts and selected documents",
-        status: "disconnected",
-      },
-      {
-        id: "gmail",
-        name: "Gmail",
-        detail: "Selected threads and draft replies",
-        status: "disconnected",
-      },
-      {
-        id: "github",
-        name: "GitHub",
-        detail: "Issues and pull request context",
-        status: "disconnected",
-      },
-      {
-        id: "calendar",
-        name: "Calendar",
-        detail: "Upcoming meetings",
-        status: "disconnected",
-      },
-    ],
+    connections: CONNECTIONS.map(c => ({...c})),
+    overnight: [],
     suggestions,
     memory: [
       {
         id: "m1",
         text: "Include the export bug in the Friday update. Keep the customer’s name out.",
-        source: "Sample work conversation",
+        source: "Example work conversation",
         createdAt: now - 86400000,
         kind: "decision",
-        sample: true,
+        example: true,
       },
       {
         id: "m2",
         text: "Ask for an owner when an action has no assignee.",
-        source: "Sample project review",
+        source: "Example project review",
         createdAt: now - 7200000,
         kind: "rule",
-        sample: true,
+        example: true,
       },
       {
         id: "m3",
         text: "Keep the weekly update short. Group changes under shipped, next, and blocked.",
-        source: "Sample correction",
+        source: "Example correction",
         createdAt: now - 3600000,
         kind: "preference",
-        sample: true,
+        example: true,
       },
     ],
     sessions: [],
@@ -183,9 +163,21 @@ function record(s, text, now) {
   s.audit = s.audit.slice(0, 150);
 }
 export function transition(current, action, now = Date.now()) {
-  const s = clone(current);
+  const s = clone(upgradeWorkspace(current));
   const { type, payload: p = {} } = action;
   switch (type) {
+    case "request-connection": {
+      const c = required(s.connections.find(c => c.id === p.id), "Connection not found.");
+      required(typeof p.requested === "boolean", "Choose whether to add this app.");
+      c.requested = p.requested;
+      c.updatedAt = now;
+      record(s, `${p.requested ? "Added" : "Removed"} ${c.name} setup`, now);
+      break;
+    }
+    case "overnight":
+      updateOvernight(s, p, now);
+      record(s, p.id ? "Updated overnight task" : "Queued overnight task. Worker setup needed.", now);
+      break;
     case "onboard":
       s.profile = {
         name: String(p.name || "")
@@ -204,7 +196,13 @@ export function transition(current, action, now = Date.now()) {
         "sleepSchedule",
         "sleepHour",
         "theme",
+        "modelConnected",
+        "modelSelection",
+        "reasoningEffort",
+        "themeCustom",
       ];
+      if (p.theme) required(THEME_IDS.includes(p.theme), "Unknown theme.");
+      if (p.reasoningEffort) required(["low","medium","high","xhigh","max","ultra"].includes(p.reasoningEffort), "Unknown reasoning effort.");
       for (const k of keys) if (k in p) s.settings[k] = p[k];
       break;
     }
@@ -221,7 +219,7 @@ export function transition(current, action, now = Date.now()) {
       c.updatedAt = now;
       record(
         s,
-        `${p.disconnect ? "Disconnected" : "Connected"} ${c.name} sample account`,
+        `${p.disconnect ? "Disconnected" : "Connected"} ${c.name} example account`,
         now,
       );
       break;
@@ -232,7 +230,7 @@ export function transition(current, action, now = Date.now()) {
         "Connection not found.",
       );
       c.status = "expired";
-      record(s, `${c.name} demo access expired`, now);
+      record(s, `${c.name} local access expired`, now);
       break;
     }
     case "suggestion": {
@@ -269,7 +267,7 @@ export function transition(current, action, now = Date.now()) {
         startedAt: now,
         updatedAt: now,
         steps: [
-          "Read selected sample context",
+          "Read selected example context",
           "Apply saved rules",
           "Prepare a local draft",
           "Check the draft",
@@ -293,7 +291,7 @@ export function transition(current, action, now = Date.now()) {
         !r.provider ||
           s.connections.find((x) => x.id === r.provider)?.status ===
             "connected",
-        "Reconnect the sample account first.",
+        "Reconnect the example account first.",
       );
       r.status = "running";
       r.startedAt = now - r.checkpoint * 1800;
@@ -342,6 +340,22 @@ export function transition(current, action, now = Date.now()) {
         messages: [],
       });
       break;
+    case "chat-start": {
+      let c = s.conversations.find(c => c.id === p.id);
+      if (!c) { c = {id:p.id, title:String(p.text).slice(0,48), createdAt:now, messages:[]}; s.conversations.unshift(c); }
+      required(!c.pending, "A reply is already in progress.");
+      c.messages.push({id:uid(), role:"user", text:String(p.text).slice(0,4000), at:now});
+      c.pending = {id:p.jobId, model:p.model, effort:p.effort, notes:p.notes || []};
+      c.error = null;
+      break;
+    }
+    case "chat-finish": {
+      const c = required(s.conversations.find(c => c.id === p.id), "Conversation not found.");
+      if(c.pending?.id !== p.jobId) break;
+      if(p.text) c.messages.push({id:uid(), role:"assistant", text:String(p.text).slice(0,20000), at:now, model:c.pending.model, effort:c.pending.effort, notes:c.pending.notes, usage:p.usage});
+      c.pending = null; c.error = p.error || null;
+      break;
+    }
     case "chat": {
       let c = s.conversations.find((x) => x.id === p.id);
       if (!c) {
@@ -358,10 +372,10 @@ export function transition(current, action, now = Date.now()) {
       c.title = c.messages.length ? c.title : t.slice(0, 48);
       c.messages.push({ id: uid(), role: "user", text: t, at: now });
       const reply = /sleep|routine|learn/i.test(t)
-        ? "The sleep review can combine your notes into a routine. Open Sleep to review the evidence and run the sample checks. You decide whether to enable the result."
+        ? "The sleep review can combine your notes into a routine. Open Sleep to review the evidence and run the example checks. You decide whether to enable the result."
         : /connect|login|sign in/i.test(t)
-          ? "Open Connections to link a sample account. This demo can pause a task when access expires and resume from its last saved step. It does not access a real account."
-          : "I can help you work through this in the demo. Choose a suggested task to prepare a draft from sample context, or save this message as a memory for the next review. A live model is not connected yet.";
+          ? "Open Connections to link a example account. This local can pause a task when access expires and resume from its last saved step. It does not access a real account."
+          : "I can help you work through this in the local. Choose a suggested task to prepare a draft from example context, or save this message as a memory for the next review. A live model is not connected yet.";
       c.messages.push({
         id: uid(),
         role: "assistant",
@@ -384,7 +398,7 @@ export function transition(current, action, now = Date.now()) {
         source: p.source || "Your note",
         createdAt: now,
         kind: p.kind || "note",
-        sample: false,
+        example: false,
       });
       record(s, "Saved a memory", now);
       break;
@@ -424,7 +438,7 @@ export function transition(current, action, now = Date.now()) {
         source: a.name,
         createdAt: now,
         kind: "decision",
-        sample: false,
+        example: false,
       });
       break;
     }
@@ -448,7 +462,7 @@ export function transition(current, action, now = Date.now()) {
         inputCount: s.memory.length,
         phase: 0,
       });
-      record(s, "Started a demo sleep review", now);
+      record(s, "Started a local sleep review", now);
       break;
     }
     case "skill": {
@@ -469,7 +483,7 @@ export function transition(current, action, now = Date.now()) {
 function draftFor(s, r) {
   const context = s.memory.map((x) => x.text).join("\n");
   if (r.suggestionId === "weekly-update" || r.suggestionId === "recap")
-    return `# Weekly product update\n\n## Shipped\n- Prepared the export bug summary from the sample task list.\n- Collected the latest project decisions.\n\n## Next\n- Confirm an owner for the export fix.\n- Review the release checklist before Friday.\n\n## Blocked\n- The export task still needs an owner.\n\n## Notes\nCustomer names are excluded from this draft.\n\n---\nLocal demo draft. Review against your real project before use.`;
+    return `# Weekly product update\n\n## Shipped\n- Prepared the export bug summary from the example task list.\n- Collected the latest project decisions.\n\n## Next\n- Confirm an owner for the export fix.\n- Review the release checklist before Friday.\n\n## Blocked\n- The export task still needs an owner.\n\n## Notes\nCustomer names are excluded from this draft.\n\n---\nLocal workspace draft. Review against your real project before use.`;
   return `# ${r.title}\n\nThis local draft uses the context you selected.\n\n${
     context
       ? context
@@ -477,11 +491,12 @@ function draftFor(s, r) {
           .map((x) => "- " + x)
           .join("\n")
       : "No context selected yet."
-  }\n\n## Next step\nReview the open decisions and confirm the owner before sharing.\n\n---\nLocal demo draft. Nothing has been sent.`;
+  }\n\n## Next step\nReview the open decisions and confirm the owner before sharing.\n\n---\nLocal workspace draft. Nothing has been sent.`;
 }
 export function advanceWorkspace(current, now = Date.now()) {
-  let s = clone(current),
-    changed = false;
+  const upgraded = upgradeWorkspace(current);
+  let s = clone(upgraded),
+    changed = upgraded !== current;
   for (const a of s.suggestions) {
     if (a.status === "snoozed" && a.snoozedUntil <= now) {
       a.status = "pending";
@@ -560,12 +575,12 @@ export function advanceWorkspace(current, now = Date.now()) {
           { name: "Private customer names excluded", passed: true },
           { name: "Missing owner remains a question", passed: true },
         ],
-        sample: true,
+        example: true,
       };
       s.skills = s.skills.filter((x) => x.key !== skill.key);
       s.skills.unshift(skill);
       review.skillId = skill.id;
-      record(s, "Saved a candidate routine after sample checks", now);
+      record(s, "Saved a candidate routine after example checks", now);
       changed = true;
     }
   }

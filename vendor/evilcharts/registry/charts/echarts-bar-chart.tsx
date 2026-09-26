@@ -1213,7 +1213,7 @@ function buildBarSeries(ctx: OptionBuildContext): BarSeriesOption[] {
     // Per-bar glow shadow — the shadowColor is sampled from the series gradient
     // at each bar's horizontal position, so a multi-stop series glows in its own
     // colors across the plot instead of one flat tint (a single shadowColor was
-    // the bug). A canvas shape carries only one shadow, so the sample is per bar,
+    // the bug). A canvas shape carries only one shadow, so the example is per bar,
     // not within a bar; the wide, soft shadowBlur reads as the Recharts blur's
     // colored halo with no hard rim.
     // `glowing` haloes every bar in the series; enableMaxValueHighlight haloes only

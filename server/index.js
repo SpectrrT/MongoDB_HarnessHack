@@ -1,3 +1,5 @@
+import { THEME_IDS } from "../shared/themes.js";
+import { mountModel } from "./model.js";
 import express from "express";
 import helmet from "helmet";
 import crypto from "node:crypto";
@@ -12,6 +14,10 @@ import {
 } from "../shared/workspace.js";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const types = [
+  "request-connection",
+  "overnight",
+  "chat-start",
+  "chat-finish",
   "onboard",
   "settings",
   "profile",
@@ -42,6 +48,13 @@ const schema = z
 const id = z.string().min(1).max(100),
   text = z.string().trim().min(1).max(4000);
 const payloads = {
+  "request-connection": z.object({id, requested: z.boolean()}).strict(),
+  overnight: z.union([
+    z.object({title: z.string().trim().min(1).max(160), brief: text, deadline: z.number().finite(), budget: z.number().int().min(1000).max(1000000)}).strict(),
+    z.object({id, status: z.enum(["queued", "paused", "cancelled"])}).strict(),
+  ]),
+  "chat-start": z.object({id,jobId:id,model:id,effort:z.enum(["low","medium","high","xhigh","max","ultra"]).optional(),text,notes:z.array(z.object({id,source:z.string().max(80),text:z.string().max(360)})).max(4)}),
+  "chat-finish": z.object({id,jobId:id,text:z.string().max(20000).optional(),error:z.string().max(500).optional(),usage:z.record(z.string(),z.number()).optional()}),
   onboard: z.object({
     name: z.string().trim().min(1).max(60),
     role: z.string().max(80).optional(),
@@ -56,7 +69,11 @@ const payloads = {
         .string()
         .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/)
         .optional(),
-      theme: z.enum(["light"]).optional(),
+      modelConnected: z.boolean().optional(),
+      modelSelection: z.string().max(100).optional(),
+      theme: z.enum(THEME_IDS).optional(),
+      reasoningEffort: z.enum(["low","medium","high","xhigh","max","ultra"]).optional(),
+      themeCustom: z.object({surface:z.string().regex(/^#[0-9a-f]{6}$/i),ink:z.string().regex(/^#[0-9a-f]{6}$/i),accent:z.string().regex(/^#[0-9a-f]{6}$/i),mode:z.enum(["light","dark"])}).strict().optional(),
     })
     .strict(),
   connect: z.object({
@@ -136,7 +153,7 @@ export function createApp({
     next();
   });
   app.get("/api/health", (_, res) =>
-    res.json({ ok: true, mode: "demo", schema: 1 }),
+    res.json({ ok: true, mode: "local", schema: 1 }),
   );
   app.use("/api", async (req, res, next) => {
     try {
@@ -200,6 +217,7 @@ export function createApp({
       if (queues.get(key) === task) queues.delete(key);
     }
   }
+  mountModel(app);
   app.get("/api/state", async (req, res, next) => {
     try {
       res.json(await access(req, (s) => s));

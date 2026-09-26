@@ -100,22 +100,33 @@ function parseToken(draft) {
 }
 function PromptBar({
   variant = "Rounded",
-  demo = true,
+  local = true,
   tall = false,
   placeholder,
-  onSend
+  onSend,
+  models,
+  modelValue,
+  onModelChange,
+  disabled = false,
+  controls
 }) {
   const pill = variant === "Pill";
   const [draft, setDraft] = useState("");
   const [dismissed, setDismissed] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);
-  const [model, setModel] = useState(MODELS[1]);
+  const modelOptions = models?.length ? models : MODELS;
+  const [pickedModel, setPickedModel] = useState(modelOptions[1] || modelOptions[0]);
+  const model = modelOptions.find((m) => m.key === modelValue) || pickedModel;
+  const setModel = (next) => {
+    setPickedModel(next);
+    onModelChange?.(next.key);
+  };
   const [attachments, setAttachments] = useState([]);
   const [connected, setConnected] = useState(false);
   const [active, setActive] = useState(0);
   const [listening, setListening] = useState(false);
-  const [auto, setAuto] = useState(demo);
+  const [auto, setAuto] = useState(local);
   const [autoStep, setAutoStep] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const wide = expanded || tall;
@@ -140,7 +151,7 @@ function PromptBar({
     if (auto && event.target === inputRef.current) setDraft("");
   };
   const token = dismissed ? null : parseToken(draft);
-  const menu = demo ? plusOpen ? "at" : token?.kind ?? null : null;
+  const menu = local ? plusOpen ? "at" : token?.kind ?? null : null;
   const query = plusOpen ? "" : token?.query ?? "";
   const rows = menu === "at" ? SOURCES.filter((s) => s.name.toLowerCase().includes(query)) : menu === "slash" ? COMMANDS.filter((c) => c.name.slice(1).startsWith(query)) : [];
   useEffect(() => {
@@ -151,7 +162,7 @@ function PromptBar({
     const target = rowRefs.current[active];
     if (target) setRowBox({ top: target.offsetTop, height: target.offsetHeight });
   }, [menu, query, active, connected, rows.length]);
-  const modelIndex = MODELS.findIndex((m) => m.key === model.key);
+  const modelIndex = modelOptions.findIndex((m) => m.key === model.key);
   useLayoutEffect(() => {
     if (!modelOpen) return;
     const target = modelRowRefs.current[modelHovered ?? modelIndex];
@@ -245,13 +256,13 @@ function PromptBar({
   }, [listening]);
   useLayoutEffect(() => {
     const input = inputRef.current;
-    const controls = controlsRef.current;
+    const controls2 = controlsRef.current;
     const measure = measureRef.current;
     const modelButton = modelRef.current;
-    if (!input || !controls || !measure || !modelButton) return;
+    if (!input || !controls2 || !measure || !modelButton) return;
     const fixedControlsWidth = 28 * 3 + modelButton.offsetWidth;
     const inlineGaps = 4 * 4;
-    const inlineInputWidth = controls.clientWidth - fixedControlsWidth - inlineGaps;
+    const inlineInputWidth = controls2.clientWidth - fixedControlsWidth - inlineGaps;
     const needsFullWidth = draft.includes("\n") || measure.offsetWidth + 8 > inlineInputWidth;
     if (needsFullWidth !== expanded) {
       setExpanded(needsFullWidth);
@@ -292,7 +303,7 @@ function PromptBar({
     setDismissed(false);
     inputRef.current?.focus();
   };
-  const canSend = draft.trim().length > 0 || attachments.length > 0;
+  const canSend = !disabled && (draft.trim().length > 0 || attachments.length > 0);
   const send = () => {
     if (!canSend) return;
     onSend?.(draft.trim());
@@ -304,7 +315,7 @@ function PromptBar({
     "div",
     {
       "data-promptbar": true,
-      className: demo ? "flex min-h-[384px] w-full max-w-105 flex-col justify-end pb-8" : "w-full",
+      className: local ? "flex min-h-[384px] w-full max-w-105 flex-col justify-end pb-8" : "w-full",
       onPointerDownCapture: takeOver,
       onKeyDownCapture: takeOver,
       children: /* @__PURE__ */ jsxs("div", { ref: composerAnchorRef, className: "relative", children: [
@@ -395,7 +406,7 @@ function PromptBar({
                   }
                 }
               ),
-              MODELS.map((m, i) => /* @__PURE__ */ jsxs(
+              modelOptions.map((m, i) => /* @__PURE__ */ jsxs(
                 "button",
                 {
                   type: "button",
@@ -479,6 +490,7 @@ function PromptBar({
                       {
                         type: "button",
                         "aria-label": "Add attachments and sources",
+                        disabled: !local,
                         "aria-expanded": plusOpen,
                         onClick: () => {
                           setModelOpen(false);
@@ -536,6 +548,7 @@ function PromptBar({
                         type: "button",
                         "aria-expanded": modelOpen,
                         "aria-label": "Choose model",
+                        disabled,
                         onClick: () => {
                           setPlusOpen(false);
                           setModelOpen((current) => !current);
@@ -547,11 +560,13 @@ function PromptBar({
                         ]
                       }
                     ),
+                    controls && /* @__PURE__ */ jsx("div", { className: wide ? "col-start-3 row-start-2 justify-self-start" : "col-start-4 row-start-1", children: controls }),
                     /* @__PURE__ */ jsx(
                       "button",
                       {
                         type: "button",
                         "aria-label": listening ? "Stop dictation" : "Start dictation",
+                        disabled: !local,
                         "aria-pressed": listening,
                         onClick: () => setListening((current) => !current),
                         className: `flex size-7 shrink-0 items-center justify-center transition-[background-color,color,transform] duration-150 active:scale-[0.94] ${pill ? "rounded-full" : "rounded-[8px]"} ${listening ? "bg-accent-tint text-accent-ink" : "text-ink-3 hover:bg-hover hover:text-ink"} ${wide ? "col-start-4 row-start-2" : "col-start-4 row-start-1"}`,

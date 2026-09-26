@@ -1,0 +1,23 @@
+export const CONNECTIONS = [
+  ['drive', 'Google Drive', 'Documents, spreadsheets and slides', 'Work', 'drive.svg'],
+  ['gmail', 'Gmail', 'Threads, replies and follow-ups', 'Work', 'gmail.svg'],
+  ['github', 'GitHub', 'Repositories, issues and pull requests', 'Development', 'github.svg'],
+  ['calendar', 'Google Calendar', 'Meetings and time to focus', 'Work', 'calendar.png'],
+  ['slack', 'Slack', 'Team conversations and decisions', 'Work'],
+  ['notion', 'Notion', 'Notes, projects and team knowledge', 'Work'],
+  ['outlook', 'Outlook', 'Email and meeting context', 'Work', 'microsoftoutlook.svg'],
+  ['teams', 'Microsoft Teams', 'Conversations and shared work', 'Work', 'microsoftteams.svg'],
+  ['dropbox', 'Dropbox', 'Files and shared folders', 'Work'],
+  ['box', 'Box', 'Documents and shared content', 'Work'],
+  ['figma', 'Figma', 'Design files and review comments', 'Design'],
+  ['canva', 'Canva', 'Presentations and brand assets', 'Design'],
+  ['linear', 'Linear', 'Issues, cycles and project updates', 'Development'],
+  ['vercel', 'Vercel', 'Projects and deployments', 'Development'],
+  ['mongodb', 'MongoDB', 'Durable memory and task checkpoints', 'Development'],
+  ['supabase', 'Supabase', 'Application data and storage', 'Development'],
+  ['openai', 'OpenAI', 'Reasoning and task execution', 'Models'],
+  ['anthropic', 'Anthropic', 'Reasoning and task execution', 'Models'],
+  ['elevenlabs', 'ElevenLabs', 'Voice and transcription', 'Models'],
+  ['spotify', 'Spotify', 'Music for your workday', 'Personal'],
+].map(([id, name, detail, category, logo]) => ({id, name, detail, category, logo: logo || `${id}.svg`, status: 'disconnected'}));
+export const connectionBySource = (source) => CONNECTIONS.find(c => c.name === source || (source === 'Calendar' && c.id === 'calendar'));

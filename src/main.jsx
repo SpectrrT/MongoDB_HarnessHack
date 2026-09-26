@@ -49,7 +49,9 @@ function AppScreens() {
     </ScreenTransition>
   );
 }
-createRoot(document.getElementById("root")).render(
+const root = import.meta.hot?.data.root || createRoot(document.getElementById("root"));
+if(import.meta.hot) import.meta.hot.data.root = root;
+root.render(
   <AppBoundary>
     <BrowserRouter>
       <WorkspaceProvider>

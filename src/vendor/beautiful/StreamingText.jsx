@@ -57,6 +57,7 @@ const DEFAULT_LABELS = {
   followUps: "Follow-ups"
 };
 function StreamingText({
+  live = false,
   content = TOKENS,
   sources = SOURCES,
   followUps = FOLLOW_UPS,
@@ -67,10 +68,11 @@ function StreamingText({
   onFollowUp
 } = {}) {
   const l = { ...DEFAULT_LABELS, ...labels };
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(live ? content.length : 0);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const done = count >= content.length;
   useEffect(() => {
+    if (live) return;
     if (done && !loop) {
       onDone?.();
       return;
@@ -82,7 +84,7 @@ function StreamingText({
     return () => clearTimeout(t);
   }, [count, done, loop]);
   return /* @__PURE__ */ jsxs("div", { className: fill ? "w-full" : "min-h-[15.5rem] w-full max-w-95", children: [
-    /* @__PURE__ */ jsxs("p", { className: "text-[13px] leading-relaxed text-ink", children: [
+    /* @__PURE__ */ jsxs("p", { className: "whitespace-pre-wrap text-[13px] leading-relaxed text-ink", children: [
       content.slice(0, count).map(
         (token, i) => token.cite ? /* @__PURE__ */ jsx(SourceChip, { source: sources[0] }, i) : /* @__PURE__ */ jsxs("span", { className: "inline", children: [
           token.text,
@@ -103,11 +105,15 @@ function StreamingText({
         className: "mt-2 flex items-center gap-0.5 transition-opacity duration-400",
         style: { opacity: done ? 1 : 0, pointerEvents: done ? "auto" : "none" },
         children: [
-          ACTION_ICONS.map((icon, i) => /* @__PURE__ */ jsx(
+          ACTION_ICONS.filter((_, i) => !live || i === 0).map((icon, i) => /* @__PURE__ */ jsx(
             "button",
             {
               type: "button",
-              "aria-label": "Action",
+              "aria-label": i === 0 ? "Copy response" : "Action",
+              onClick: () => {
+                if (i === 0) navigator.clipboard.writeText(content.map((t) => t.text).join(" ")).catch(() => {
+                });
+              },
               className: "flex size-6 items-center justify-center rounded-[6px] text-ink-3\n              transition-colors duration-100 hover:bg-hover-2 hover:text-ink-2",
               children: /* @__PURE__ */ jsx("svg", { width: "15", height: "15", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", children: icon })
             },
@@ -117,6 +123,7 @@ function StreamingText({
             "button",
             {
               type: "button",
+              hidden: !sources.length,
               "aria-expanded": sourcesOpen,
               onClick: () => setSourcesOpen((current) => !current),
               className: "ml-1.5 flex items-center gap-1.5 rounded-[6px] px-1 py-0.5 text-left transition-colors duration-150 hover:bg-hover",
@@ -169,7 +176,7 @@ function StreamingText({
         className: "mt-2.5 transition-opacity duration-400",
         style: { opacity: done ? 1 : 0, pointerEvents: done ? "auto" : "none" },
         children: [
-          /* @__PURE__ */ jsx("p", { className: "text-[12px] font-medium text-ink-2", children: l.followUps }),
+          followUps.length > 0 && /* @__PURE__ */ jsx("p", { className: "text-[12px] font-medium text-ink-2", children: l.followUps }),
           /* @__PURE__ */ jsx("div", { className: "mt-0.5 flex flex-col", children: followUps.map((text, i) => /* @__PURE__ */ jsxs(
             "button",
             {

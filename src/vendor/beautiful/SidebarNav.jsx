@@ -151,6 +151,11 @@ function WorkspaceMenu({
 }
 function SidebarNav({
   activeTitle,
+  navItems = NAV_ITEMS,
+  workspaceName = WORKSPACE.name,
+  workspaceLogo,
+  onCollapse,
+  onWorkspaceClick,
   className = "",
   fill = false,
   onNewChat,
@@ -193,6 +198,7 @@ function SidebarNav({
     if (searchOpen) searchRef.current?.focus();
   }, [searchOpen]);
   const collapse = () => {
+    onCollapse?.();
     setCollapsed(true);
     setWorkspaceOpen(false);
     setSearchOpen(false);
@@ -224,6 +230,10 @@ function SidebarNav({
               "aria-hidden": collapsed,
               tabIndex: collapsed ? -1 : 0,
               onClick: () => {
+                if (onWorkspaceClick) {
+                  onWorkspaceClick();
+                  return;
+                }
                 if (!workspaceOpen && workspaceButtonRef.current) {
                   const rect = workspaceButtonRef.current.getBoundingClientRect();
                   setWorkspacePosition({ top: rect.bottom + 6, left: rect.left });
@@ -232,8 +242,8 @@ function SidebarNav({
               },
               className: "sidebar-workspace-control absolute left-2 top-1 flex h-8 w-[164px] items-center rounded-[8px] px-2 text-left transition-[background-color,transform] duration-100 hover:bg-hover-2 active:scale-[0.99]",
               children: [
-                /* @__PURE__ */ jsx("span", { className: "sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink", children: /* @__PURE__ */ jsx(IconPopsicle2, { size: 18 }) }),
-                /* @__PURE__ */ jsx("span", { className: "sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2", children: WORKSPACE.name }),
+                /* @__PURE__ */ jsx("span", { className: "sidebar-logo flex size-5 shrink-0 items-center justify-center text-ink", children: workspaceLogo || /* @__PURE__ */ jsx(IconPopsicle2, { size: 18 }) }),
+                /* @__PURE__ */ jsx("span", { className: "sidebar-copy ml-1.5 min-w-0 flex-1 truncate text-[14px] font-medium text-ink-2", children: workspaceName }),
                 /* @__PURE__ */ jsx("span", { className: "sidebar-copy ml-1 flex shrink-0 text-ink-3", children: /* @__PURE__ */ jsx(IconChevronDownSmall, { size: 16 }) })
               ]
             }
@@ -277,7 +287,7 @@ function SidebarNav({
               }
             }
           ),
-          NAV_ITEMS.map((item) => /* @__PURE__ */ jsx(
+          navItems.map((item) => /* @__PURE__ */ jsx(
             RailButton,
             {
               icon: item.icon,
