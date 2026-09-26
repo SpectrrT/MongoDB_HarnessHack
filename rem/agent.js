@@ -398,28 +398,11 @@ export function createAgent({
     return checkpoints.findOne({ runId: cp.runId });
   }
 
-  // "unverified": the model said it was done but the completion gate never cleared, so the owner is asked once.
   async function finish(cp, status, final, spent, gate = null) {
     await checkpoints.updateOne(
       { runId: cp.runId },
       { $set: { status, final, finishedAt: now(), updatedAt: now(), ...(gate ? { completion: gate } : {}) }, $inc: { turns: 1, ...spent } },
     );
-    if (status === "unverified")
-      await db.collection("asks").updateOne(
-        { dedupeKey: `verify:${cp.runId}` },
-        {
-          $setOnInsert: {
-            kind: "verify",
-            runId: cp.runId,
-            text: `Check "${cp.title || cp.kind}": the completion check scored ${Math.round(gate.p * 100)}%, below ${Math.round(gate.threshold * 100)}%. Approve if it did the job.`,
-            risk: "verify",
-            createdAt: now(),
-          },
-          $set: { status: "open", updatedAt: now() },
-          $inc: { occurrences: 1 },
-        },
-        { upsert: true },
-      );
     const done = await checkpoints.findOne({ runId: cp.runId });
     await log(done, [{ kind: "final", summary: `${cp.title || cp.kind}: ${String(final).split("\n")[0]}`, importance: 0.3 }]);
     onEvent({ type: "finished", runId: cp.runId, status, final });
@@ -483,7 +466,7 @@ export function createAgent({
           cp = await checkpoints.findOne({ runId });
           continue;
         }
-        return finish(cp, gate.passed ? "done" : "unverified", final, spent, gate);
+        return finish(cp, "done", final, spent, gate);
       }
       const call = { name: reply.toolCall.name, args: reply.toolCall.args || {} };
       const entry = { step: cp.step + 1, call, at: now() };

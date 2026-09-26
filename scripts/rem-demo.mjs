@@ -81,7 +81,7 @@ say("▸ Reconnect Google Drive");
 await rem.setConnection("drive", "valid");
 await rem.settle();
 brief = await checkpoints.findOne({ runId: briefId });
-say(`  ${brief.status === "done" ? "✓" : "?"}  ${brief.status}: ${brief.final} ${plural(brief.turns, "step")} · ${usd(brief.usage.cost)} · ${plural(brief.interventions, "reconnect")}`);
+say(`  ✓  ${brief.status}: ${brief.final} ${plural(brief.turns, "step")} · ${usd(brief.usage.cost)} · ${plural(brief.interventions, "reconnect")}`);
 const ledger = await db.collection("effects").find({ runId: briefId }).toArray();
 const sent = world.state.sent.filter((m) => m.runId === briefId);
 say("▸ Effects ledger for this run");

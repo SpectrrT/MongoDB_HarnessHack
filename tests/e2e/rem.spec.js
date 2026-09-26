@@ -23,10 +23,10 @@ test("REM: run a task live, sleep, and see the morning brief and diff", async ({
   await expect(runStatus).toBeVisible({ timeout: 15000 });
   await expect
     .poll(async () => (await runStatus.textContent())?.trim(), { timeout: 15000 })
-    .toMatch(/^(done|unverified|paused_for_auth)$/);
+    .toMatch(/^(done|paused_for_auth)$/);
   if ((await runStatus.textContent())?.trim() === "paused_for_auth") {
     await page.locator(".notice").getByRole("button", { name: /^Reconnect/ }).click();
-    await expect.poll(async () => (await runStatus.textContent())?.trim(), { timeout: 15000 }).toMatch(/^(done|unverified)$/);
+    await expect.poll(async () => (await runStatus.textContent())?.trim(), { timeout: 15000 }).toBe("done");
   }
   await expect(page.locator(".rem-run-log li").first()).toBeVisible();
   await expect(page.locator(".rem-run-row").first()).toBeVisible();
