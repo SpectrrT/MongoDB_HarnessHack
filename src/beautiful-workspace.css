@@ -70,4 +70,9 @@ html[data-offload-workspace] :is(body,#root,.app-screen) {min-height:100dvh;back
 .workspace[data-palette] .suggestion-source {color:var(--off-muted);}
 @media(prefers-reduced-motion:reduce){.workspace .suggestion{transition:none;}}
 
-.beautiful-sidebar [data-workspace-trigger] {padding-left:14px;}
+/* Keep the wordmark and chevron together, separate from the collapse control. */
+.beautiful-sidebar [data-workspace-trigger] {left:12px;width:max-content;max-width:156px;padding-inline:8px;}
+.beautiful-sidebar [data-workspace-trigger] > .sidebar-copy:first-of-type {flex:0 1 auto;text-align:left;}
+.beautiful-sidebar [data-workspace-trigger] > .sidebar-copy:last-child {margin-left:7px;}
+.beautiful-sidebar [data-workspace-trigger] > .sidebar-copy:last-child svg {width:14px;height:14px;}
+.beautiful-sidebar .sidebar-collapse-control {right:16px;}

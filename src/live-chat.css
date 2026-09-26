@@ -86,3 +86,29 @@
 .agent-artifact a {font-size:12px;text-decoration:underline;overflow-wrap:anywhere;}
 .agent-artifact small {font-size:10px;color:var(--off-muted);}
 .attachment-list img,.message-files img {width:48px;height:48px;object-fit:cover;border-radius:5px;}
+
+.tool-live-dot{display:inline-block;flex-shrink:0;width:5px;height:5px;margin-right:6px;border-radius:50%;background:currentColor;animation:tool-breathe 1.2s ease-in-out infinite;}
+@keyframes tool-breathe{50%{opacity:.3;}}
+@media(prefers-reduced-motion:reduce){.tool-live-dot{animation:none;}}
+.suggested-carousel{margin-top:22px;width:100%;}
+.suggested-carousel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.suggested-carousel-head h2{font:500 12px 'Inter',sans-serif;color:var(--off-muted);}
+.suggested-carousel-head>div{display:flex;align-items:center;gap:4px;color:var(--off-muted);font-size:10px;font-variant-numeric:tabular-nums;}
+.suggested-carousel-head button{display:grid;place-items:center;min-width:28px;min-height:28px;border-radius:5px;}
+.suggested-carousel-head button:hover{background:var(--off-hover);}
+.suggested-carousel-stage{perspective:900px;min-height:160px;}
+.suggested-carousel-cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.suggested-task-card{padding:16px;text-align:left;border:1px solid var(--off-line);border-radius:10px;display:flex;flex-direction:column;gap:12px;background:var(--off-surface);color:var(--off-ink);min-height:160px;}
+.suggested-task-card:hover{background:var(--off-hover);border-color:var(--off-muted);}
+.suggested-task-source{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--off-muted);}
+.suggested-task-source>svg:last-child{margin-left:auto;}
+.suggested-task-card strong{font-size:13px;font-weight:500;line-height:1.5;}
+.suggested-task-description{font-size:11px;line-height:1.6;color:var(--off-muted);}
+@media(max-width:480px){.suggested-carousel-cards{grid-template-columns:1fr;}.suggested-carousel-stage{min-height:310px;}.suggested-task-card{min-height:148px;}.suggested-carousel-head button{min-width:32px;min-height:32px;}}
+.chat-sleep-toggle{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;height:28px;font-size:11px;border-radius:6px;color:var(--off-muted);}
+.chat-sleep-toggle:hover{background:var(--off-hover);}
+.chat-sleep-toggle[aria-pressed=true]{background:var(--off-ink);color:var(--off-surface);}
+.sleep-chat-hint{margin:8px 4px 0;color:var(--off-muted);font-size:10px;line-height:1.6;}
+.sleep-response-label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--off-muted);margin-bottom:12px;}
+
+@media(max-width:480px){.chat-composer .prompt-extra-controls{grid-column:2 / 4;grid-row:3;}}

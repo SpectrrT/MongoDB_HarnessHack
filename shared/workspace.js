@@ -345,6 +345,13 @@ export function transition(current, action, now = Date.now()) {
         messages: [],
       });
       break;
+    case "conversation-sleep": {
+      const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");c.sleepEnabled=!!p.enabled;break;
+    }
+    case "chat-sleep-start": {
+      const c=required(s.conversations.find(c=>c.id===p.id),"Conversation not found.");
+      if(c.pending||c.sleepJobId===p.jobId)break;c.sleepJobId=p.jobId;c.pending={id:p.jobId,model:p.model,effort:p.effort,notes:[],sleep:true};break;
+    }
     case "chat-start": {
       let c = s.conversations.find(c => c.id === p.id);
       if (!c) { c = {id:p.id, title:String(p.text).slice(0,48), createdAt:now, messages:[]}; s.conversations.unshift(c); }
@@ -358,7 +365,7 @@ export function transition(current, action, now = Date.now()) {
     case "chat-finish": {
       const c = required(s.conversations.find(c => c.id === p.id), "Conversation not found.");
       if(c.pending?.id !== p.jobId) break;
-      if(p.text) c.messages.push({id:uid(), role:"assistant", text:String(p.text).slice(0,20000), at:now, model:c.pending.model, effort:c.pending.effort, notes:c.pending.notes, usage:p.usage,agent:p.agent});
+      if(p.text) c.messages.push({id:uid(), role:"assistant", text:String(p.text).slice(0,20000), at:now, model:c.pending.model, effort:c.pending.effort, notes:c.pending.notes, usage:p.usage,agent:p.agent,sleep:!!c.pending.sleep});
       c.pending = null; c.error = p.error || null;
       break;
     }

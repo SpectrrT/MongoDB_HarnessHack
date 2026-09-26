@@ -23,6 +23,8 @@ const types = [
   "request-connection",
   "overnight",
   "chat-start",
+  "conversation-sleep",
+  "chat-sleep-start",
   "chat-finish",
   "onboard",
   "settings",
@@ -55,6 +57,8 @@ const schema = z
 const id = z.string().min(1).max(100),
   text = z.string().trim().min(1).max(4000);
 const payloads = {
+  "conversation-sleep": z.object({id,enabled:z.boolean()}).strict(),
+  "chat-sleep-start":z.object({id,jobId:id,model:id,effort:z.enum(["low","medium","high","xhigh","max","ultra"]).optional()}).strict(),
   "request-connection": z.object({id, requested: z.boolean()}).strict(),
   overnight: z.union([
     z.object({title: z.string().trim().min(1).max(160), brief: text, deadline: z.number().finite(), budget: z.number().int().min(1000).max(1000000)}).strict(),

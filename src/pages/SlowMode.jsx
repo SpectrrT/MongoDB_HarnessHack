@@ -12,7 +12,7 @@ export default function SlowMode({ children }) {
   return <>
     <div className="slow-tabs"><button className={tab === 'tasks' ? 'active' : ''} onClick={() => setTab('tasks')}>Overnight tasks</button><button className={tab === 'memory' ? 'active' : ''} onClick={() => setTab('memory')}>Memory review</button></div>
     {tab === 'memory' ? children : <div className="standard-page slow-page">
-      <div className="slow-heading"><div><span className="slow-label"><Moon size={14}/> SLOW MODE</span><h1>Leave it for<br />the morning.</h1><p>Set a task, a deadline and a token budget.<br />Review the result before anything goes out.</p></div><button className="button" onClick={() => open()}><Plus size={16}/> Add a task</button></div>
+      <div className="slow-heading"><div><span className="slow-label"><Moon size={14}/> SLEEP</span><h1>Leave it for<br />the morning.</h1><p>Set a task, a deadline and a token budget.<br />Review the result before anything goes out.</p></div><button className="button" onClick={() => open()}><Plus size={16}/> Add a task</button></div>
       <div className="overnight-heading"><h2>Overnight queue</h2><span>{tasks.filter(t => t.status !== 'cancelled').length} tasks</span></div>
       {!tasks.length && <div className="overnight-empty"><Moon size={26}/><h3>What can wait until morning?</h3><p>Add a brief with the result you need. Your tasks and budgets stay saved here.</p></div>}
       {tasks.map(t => <article className="overnight-task" key={t.id}>

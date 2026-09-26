@@ -1,3 +1,4 @@
+import {modelRequest} from './model-api';
 import React, {
   createContext,
   useContext,
@@ -144,6 +145,7 @@ export function WorkspaceProvider({ children }) {
     return () => removeEventListener("storage", h);
   }, []);
   const reset = async () => {
+    if(ref.current?.conversations.some(c=>c.sleepEnabled))await modelRequest("sleep/reset",{});
     if (MODE === "api") {
       const r = await fetch("/api/reset", { method: "POST" });
       if (!r.ok) throw Error("Reset failed.");

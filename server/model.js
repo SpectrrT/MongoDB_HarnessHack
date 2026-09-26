@@ -1,3 +1,5 @@
+import {createIdleReviews} from "./idle-reviews.js";
+import {mountCodexLogin} from "./codex-login-routes.js";
 import {createOpenRouter} from "./openrouter.js";
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -5,7 +7,7 @@ import crypto from "node:crypto";
 import {sessionFolder} from "./agent-session.js";
 import {collectArtifacts} from "./agent-artifacts.js";
 import { z } from 'zod';
-import { codexStatus, runCodex } from './codex.js';
+import { codexStatus, runCodex, clearCodexCache } from './codex.js';
 import { modelPrompt } from '../shared/retrieval.js';
 const localHost=host=>/^(127\.0\.0\.1|localhost):([1-9]\d{0,4})$/.test(host)||host==='offload.ai';
 const localOrigin=origin=>/^http:\/\/(127\.0\.0\.1|localhost):([1-9]\d{0,4})$/.test(origin)||origin==='https://offload.ai';
@@ -20,6 +22,7 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     if(!enabled || !localHost(host) || (origin && (!localOrigin(origin)||new URL(origin).host!==host)) || req.get('X-Offload-Client')!=='local')return res.status(403).json({error:'The model connection is available only in the local Offload app.'});
     next();
   });
+  mountCodexLogin(app,{status,onConnected:clearCodexCache,isBusy:()=>[...jobs.values()].some(j=>j.status==='running')});
   app.get('/api/model/status',async(req,res)=>res.json(await status()));
   app.get('/api/model/openrouter/status',async(req,res)=>{try{res.json(await router.status(req.workspaceKey));}catch{res.status(503).json({error:'OpenRouter is unavailable. Try again.'});}});
   app.post('/api/model/openrouter/start',(req,res)=>{const origin=req.get('origin')||'http://'+req.get('host');const auth=router.start(req.workspaceKey,origin);res.cookie('offload_oauth',auth.state,{httpOnly:true,sameSite:'lax',secure:origin==='https://offload.ai',path:'/api/openrouter/callback',maxAge:600000});res.json({url:auth.url});});
@@ -28,19 +31,18 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
     if(!enabled||!localHost(req.get('host')||''))return res.status(403).send('Local connection only.');
     try{const binding=req.headers.cookie?.split(";").map(c=>c.trim()).find(c=>c.startsWith("offload_oauth="))?.slice(14);await router.complete(binding,req.query.state,req.query.code);res.clearCookie("offload_oauth",{path:"/api/openrouter/callback"});res.redirect('/app/connections?connected=openrouter');}catch{res.redirect('/app/connections?connection_error=openrouter');}
   });
-  app.post('/api/model/jobs',async(req,res)=>{
-    const parsed=input.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:'The request is too long or incomplete.'});
-    const p=parsed.data,key=req.workspaceKey+':'+p.requestId;
-    const previous=await getJob(req.workspaceKey,p.requestId);if(previous)return res.json(publicJob(previous));
-    if([...jobs.values()].some(j=>j.status==='running'))return res.status(409).json({error:'A task is already running on this Mac. Wait or stop it first.'});
-    const connection=p.provider==='openrouter'?await router.status(req.workspaceKey):await status();if(!connection.connected)return res.status(409).json({error:connection.message});
-    if(!connection.models.some(m=>m.id===p.model))return res.status(400).json({error:'Choose a model available to your account.'});
-    if(connection.models.find(m=>m.id===p.model)?.efforts?.length&&!connection.models.find(m=>m.id===p.model)?.efforts?.includes(p.effort))return res.status(400).json({error:"This model does not support that reasoning level."});
+  async function launch(owner,p){
+    const key=owner+':'+p.requestId;
+    const previous=await getJob(owner,p.requestId);if(previous)return {job:publicJob(previous),created:false};
+    if([...jobs.values()].some(j=>j.status==='running'))throw Object.assign(Error('A task is already running on this Mac. Wait or stop it first.'),{status:409});
+    const connection=p.provider==='openrouter'?await router.status(owner):await status();if(!connection.connected)throw Object.assign(Error(connection.message),{status:409});
+    if(!connection.models.some(m=>m.id===p.model))throw Object.assign(Error('Choose a model available to your account.'),{status:400});
+    if(connection.models.find(m=>m.id===p.model)?.efforts?.length&&!connection.models.find(m=>m.id===p.model)?.efforts?.includes(p.effort))throw Object.assign(Error("This model does not support that reasoning level."),{status:400});
     // Recheck after authentication so concurrent requests cannot start two jobs.
-    if([...jobs.values()].some(j=>j.status==='running'))return res.status(409).json({error:'A task is already running.'});
+    if([...jobs.values()].some(j=>j.status==='running'))throw Object.assign(Error('A task is already running.'),{status:409});
     if(jobs.size>=100){for(const [k,j] of jobs){if(j.status!=='running'){jobs.delete(k);break;}}}
-    const job={id:p.requestId,owner:req.workspaceKey,status:'running',createdAt:Date.now(),controller:new AbortController(),events:[],decisions:[],approvals:new Map(),stream:''};jobs.set(key,job);
-    await save(job);res.status(202).json(publicJob(job));
+    const job={id:p.requestId,owner:owner,status:'running',background:!!p.background,createdAt:Date.now(),controller:new AbortController(),events:[],decisions:[],approvals:new Map(),stream:''};jobs.set(key,job);
+    await save(job);
     const onEvent=event=>{
       if(job.status!=='running')return;
       if(event.type==='approvalResolved'){for(const a of job.approvals.values())if(a.rpcId===event.rpcId){job.approvals.delete(a.id);a.reject(Error('Request resolved'));}return;}
@@ -63,6 +65,21 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
       const artifacts=await collectArtifacts(folder.cwd,path.join(jobFolder(job.owner,job.id),'files'),job.createdAt);
       job.result={text:result.text.slice(0,20000),usage:result.usage,model:p.model,agent:{jobId:job.id,cwd:folder.cwd,events:job.events,artifacts}};job.status='completed';job.stream='';
     })().catch(e=>{if(job.status==='running'){job.status='failed';job.error=e.message;}}).finally(async()=>{for(const a of job.approvals.values())a.reject(Error('Run ended.'));job.approvals.clear();await save(job).catch(()=>{});});
+    return {job:publicJob(job),created:true};
+  }
+  const cancel=async(owner,id)=>{const job=jobs.get(owner+':'+id);if(job?.status==='running'){job.status='cancelled';job.controller.abort();for(const approval of job.approvals.values())approval.reject(Error('Stopped.'));job.approvals.clear();await save(job);}};
+  const idle=createIdleReviews({dataDir,launch,getJob,cancel,isBusy:()=>!enabled||[...jobs.values()].some(job=>job.status==='running')});
+  app.post('/api/model/sleep/reset',async(req,res)=>{await idle.reset(req.workspaceKey);res.json({ok:true});});
+  app.use('/api/model/sleep/:conversationId',(req,res,next)=>{if(!z.string().uuid().safeParse(req.params.conversationId).success)return res.status(400).json({error:'Choose a conversation.'});next();});
+  app.get('/api/model/sleep/:conversationId',async(req,res)=>res.json(await idle.get(req.workspaceKey,req.params.conversationId)));
+  app.post('/api/model/sleep/:conversationId',async(req,res)=>{if(typeof req.body.enabled!=='boolean')return res.status(400).json({error:'Choose whether Sleep is enabled.'});if(req.body.context){const context=input.safeParse({...req.body.context,requestId:crypto.randomUUID(),conversationId:req.params.conversationId,images:[]});if(!context.success)return res.status(400).json({error:'The conversation context is invalid.'});await idle.set(req.workspaceKey,req.params.conversationId,req.body.enabled);await idle.observe(req.workspaceKey,context.data);}else await idle.set(req.workspaceKey,req.params.conversationId,req.body.enabled);res.json(await idle.get(req.workspaceKey,req.params.conversationId));});
+  app.post('/api/model/sleep/:conversationId/activity',async(req,res)=>res.json(await idle.touch(req.workspaceKey,req.params.conversationId)));
+  app.post('/api/model/jobs',async(req,res)=>{
+    const parsed=input.safeParse(req.body);if(!parsed.success)return res.status(400).json({error:'The request is too long or incomplete.'});
+    try{
+     for(const job of jobs.values())if(job.owner===req.workspaceKey&&job.background&&job.status==='running')await cancel(job.owner,job.id);
+     const result=await launch(req.workspaceKey,parsed.data);if(result.created)await idle.observe(req.workspaceKey,parsed.data);res.status(result.created?202:200).json(result.job);
+    }catch(e){res.status(e.status||500).json({error:e.message});}
   });
   app.get('/api/model/jobs/:id',async(req,res)=>{const job=await getJob(req.workspaceKey,req.params.id);if(!job)return res.status(404).json({error:'Run not found.'});res.json(publicJob(job));});
   app.post('/api/model/jobs/:id/stop',async(req,res)=>{const job=jobs.get(req.workspaceKey+':'+req.params.id);if(!job)return res.status(404).json({error:'Run not found.'});if(job.status==='running'){job.status='cancelled';job.controller.abort();for(const a of job.approvals.values())a.reject(Error('Stopped.'));job.approvals.clear();await save(job);}res.json(publicJob(job));});
