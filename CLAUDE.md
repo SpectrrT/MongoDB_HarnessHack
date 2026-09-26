@@ -56,6 +56,10 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - New: computer history (`server/activity/`, `/app/history`). `npm run activity:collector` records the frontmost app,
   window and page on macOS; sessions, hybrid search and routines are aggregations on Atlas. `npm run activity:seed`
   added a sample week to Atlas, labeled `source: "seed"` everywhere.
+- New: Harness fit (`server/fit/`, `npm run fit`). It turns this project's Claude Code session logs into redacted
+  turns, scores friction, backtests harness edits, and commits versions to `fit_harness` (v1 is in Atlas). The
+  auto-mode safety check blocked Claude from running the API server with log reading, so it's opt-in
+  (`FIT_READ_CLAUDE_LOGS=1`). Feeding learned rules into Offload's own chat is not wired yet (Tensae's call).
 - REM's agent uses a scripted model until OpenRouter is configured. Say so if a judge asks.
 - Open decisions: REM's night loop (`rem/`) and Sleep v2 (`server/sleep/`) overlap, so pick one for the demo or combine
   them. REM has no UI panel yet.
