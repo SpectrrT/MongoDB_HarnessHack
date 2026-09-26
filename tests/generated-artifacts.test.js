@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {resolveGeneratedArtifact} from '../server/agent-artifacts.js';
+import {collectArtifacts,resolveGeneratedArtifact} from '../server/agent-artifacts.js';
 
 async function workspace(t){
  const directory=await fs.mkdtemp(path.join(os.tmpdir(),'offload-generated-artifacts-'));
@@ -55,4 +55,37 @@ test('old, unsupported and oversized files cannot become generated downloads',as
  await write('program.exe');
  const huge=await write('huge.pdf');const handle=await fs.open(huge,'r+');await handle.truncate(20*1024*1024+1);await handle.close();
  for(const name of ['old.json','program.exe','huge.pdf'])assert.equal(await resolveGeneratedArtifact(cwd,name,since),null,name);
+});
+
+test('collection snapshots the five legacy benchmark reports alongside ordinary artifacts',async t=>{
+ const {directory,cwd,write,since}=await workspace(t),destination=path.join(directory,'snapshots');
+ const expected=new Map([['findings.md','# Findings']]);
+ for(const filename of ['report.json','baseline-explain.json','baseline-results.json','candidate-explain.json','candidate-results.json'])expected.set(`.data/query-demo/run-1/${filename}`,JSON.stringify({fixture:filename}));
+ for(const [name,data] of expected)await write(name,data);
+ const artifacts=await collectArtifacts(cwd,destination,since);
+ assert.deepEqual(artifacts.map(item=>item.name).sort(),[...expected.keys()].sort());
+ for(const artifact of artifacts){
+  await write(artifact.name,'changed after collection');
+  assert.equal(await fs.readFile(path.join(destination,artifact.id),'utf8'),expected.get(artifact.name));
+  assert.equal(artifact.size,Buffer.byteLength(expected.get(artifact.name)));assert.equal(artifact.image,false);
+ }
+});
+
+test('legacy benchmark collection rejects other hidden files, secrets, links, old and oversized reports',async t=>{
+ const {directory,cwd,write,since}=await workspace(t),destination=path.join(directory,'snapshots');
+ for(const name of ['.data/query-demo/report.json','.data/query-demo/run-1/other.json','.data/query-demo/run-1/report.pdf','.data/query-demo/run-1/nested/report.json','.data/query-demo/secret-run/report.json','.data/query-demo/.private/report.json','.data/query-demo/environment/report.json','.data/unrelated/run/report.json','.private/report.json'])await write(name,'must not be collected');
+ const outside=path.join(directory,'outside.json');await fs.writeFile(outside,'outside');
+ const linked=await write('.data/query-demo/symlink/report.json');await fs.rm(linked);await fs.symlink(outside,linked);
+ const hardlink=await write('.data/query-demo/hardlink/report.json');await fs.rm(hardlink);await fs.link(outside,hardlink);
+ await fs.symlink(path.join(cwd,'.data/query-demo/run-1'),path.join(cwd,'.data/query-demo/linked-run'));
+ const old=await write('.data/query-demo/old/report.json');await fs.utimes(old,new Date(since-10000),new Date(since-10000));
+ const large=await write('.data/query-demo/large/report.json'),handle=await fs.open(large,'r+');await handle.truncate(20*1024*1024+1);await handle.close();
+ assert.deepEqual(await collectArtifacts(cwd,destination,since),[]);
+});
+
+test('legacy benchmark collection does not follow a linked hidden directory',async t=>{
+ const {directory,cwd,since}=await workspace(t),outside=path.join(directory,'outside'),destination=path.join(directory,'snapshots');
+ await fs.mkdir(path.join(outside,'query-demo','run-1'),{recursive:true});await fs.writeFile(path.join(outside,'query-demo','run-1','report.json'),'outside');
+ await fs.symlink(outside,path.join(cwd,'.data'));
+ assert.deepEqual(await collectArtifacts(cwd,destination,since),[]);
 });
