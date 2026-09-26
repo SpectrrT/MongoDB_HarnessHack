@@ -17,11 +17,11 @@ const escape = value => String(value).replace(/[&<>"']/g, character => ({'&':'&a
 function tooltipFor(result, context, offload, name) {
   const value = number(metric(result, context, offload));
   const trials = runsFor(result).map(run => number(context ? run[offload ? 'afterContextChars' : 'beforeContextChars'] : metric(run, false, offload))).join(' · ');
-  return `<div class="benchmark-tooltip"><strong>${escape(name)}</strong><p>${escape(result.label)}</p><p><b>${value}</b> ${context ? 'characters per step' : 'tokens per verified answer'}</p>${context ? '' : `<p>${result[offload ? 'offloadPassed' : 'baselinePassed']}/${result.stages} checks passed</p>`}<p class="benchmark-trials">Trials: ${trials}</p></div>`;
+  return `<div class="benchmark-tooltip"><strong>${escape(name)}</strong><p>${escape(result.label)}</p><p><b>${value}</b> ${context ? 'history characters per step' : 'tokens per verified answer'}</p>${context ? '' : `<p>${result[offload ? 'offloadPassed' : 'baselinePassed']}/${result.stages} checks passed</p>`}<p class="benchmark-trials">Trials: ${trials}</p></div>`;
 }
 
 function BenchmarkChart({context = false}) {
-  const names = context ? ['Full context', 'Selected context'] : ['Without Offload', 'With Offload'];
+  const names = context ? ['Before selection', 'After selection'] : ['Without Offload', 'With Offload'];
   const data = comparisons.map(result => ({model: result.label, baseline: metric(result, context, false), offload: metric(result, context, true)}));
   const config = Object.fromEntries(['baseline', 'offload'].map((key, i) => [key, {label: names[i], colors: {light: [colors[i]], dark: [colors[i]]}}]));
   const series = ['baseline', 'offload'].map((key, index) => ({id: key, name: names[index], type: 'bar', barWidth: 32, barGap: '50%',
@@ -60,14 +60,14 @@ export default function BenchmarkEvidence() {
     <h2 id="benchmark-title">{evidence.presentationTitle}</h2>
     <div className="benchmark-figures">
       <figure aria-labelledby="benchmark-tokens-title">
-        <figcaption id="benchmark-tokens-title"><h3>Tokens per verified answer</h3><span>Lower is better. Selector and retrieval included.</span></figcaption>
+        <figcaption id="benchmark-tokens-title"><h3>Tokens per verified answer</h3><span>All tokens spent choosing context, fetching saved text and answering, divided by correct answers.</span></figcaption>
         <BenchmarkChart/>
       </figure>
       <figure aria-labelledby="benchmark-context-title">
-        <figcaption id="benchmark-context-title"><h3>Context per step</h3><span>Characters kept. Originals stay retrievable.</span></figcaption>
+        <figcaption id="benchmark-context-title"><h3>History kept for the next step</h3><span>Saved text before and after selection, measured in characters. This is only part of the token total.</span></figcaption>
         <BenchmarkChart context/>
       </figure>
     </div>
-    <p className="benchmark-method">Same models, with and without Offload. Offload keeps the context needed for the next step and saves the rest for later. These tests used fewer tokens per correct answer. Astra kept the same accuracy; Opus missed two checks. <a href="/evidence/benchmark-report.html">Methods and all results</a></p>
+    <p className="benchmark-method">Same models and tasks, with and without Offload. Offload keeps the history needed next and saves the rest for later. Choosing that history also uses tokens, so a much shorter history means a smaller saving in total tokens. Astra kept the same accuracy; Opus missed two checks. <a href="/evidence/benchmark-report.html">Methods and all results</a></p>
   </section>;
 }
