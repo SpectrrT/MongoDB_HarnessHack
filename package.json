@@ -22,7 +22,6 @@
     "desktop:setup": "npm install --no-save --package-lock=false electron@44.4.5 electron-builder@26 && node node_modules/electron/install.js",
     "harness:worker": "node --env-file-if-exists=.env server/harness/worker.js",
     "harness:server": "node --env-file-if-exists=.env server/index.js",
-    "sleep:worker": "node --env-file-if-exists=.env server/sleep/worker.js",
     "local:https:prepare": "node scripts/local-https.mjs prepare",
     "local:https": "node scripts/local-https.mjs start",
     "local:https:stop": "node scripts/local-https.mjs stop",

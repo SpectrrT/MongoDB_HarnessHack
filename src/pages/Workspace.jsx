@@ -1,7 +1,6 @@
 import {PERSONAL_SUGGESTIONS} from '../../shared/personal-suggestions';
 import Session from "../components/Session";
 import Harness from "./Harness";
-import Adapt from "./Adapt";
 import Sleep from "./Sleep";
 import Rem from "./Rem";
 import HistoryPage from "./History";
@@ -235,7 +234,6 @@ export default function Workspace() {
           {page === "history" && <HistoryPage />}
           {page === "sleep" && <SlowMode><Sleep /></SlowMode>}
           {page === "harness" && <Harness />}
-          {page === "adapt" && <Adapt />}
           {page === "rem" && <Rem />}
           {page === "connections" && <Connections onConnect={setConnect} />}
           {page === "settings" && <SettingsPage />}
