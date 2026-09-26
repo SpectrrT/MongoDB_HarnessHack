@@ -157,7 +157,7 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
           </ol>
           {!expanded && night.sessions.length > rows.length && (
             <button type="button" className="text-button more" onClick={() => setExpanded(true)}>
-              {night.sessions.length - rows.length} more that night
+              {night.sessions.length - rows.length} more on this date
             </button>
           )}
         </div>
@@ -167,7 +167,7 @@ export default function HistoryWorkflow({ ready, modelName, onRefine }) {
         <div className="history-more">
           {finding.nights?.length > 1 && (
             <>
-              <p className="agenda-date">Every night it happened</p>
+              <p className="agenda-date">Recorded dates</p>
               <ul className="history-nights">
                 {finding.nights.map((n) => (
                   <li key={n.day}>
