@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ThinkingOrb } from "thinking-orbs";
+import { ThinkingOrb } from "../components/ScreenTransition";
+import { resolveTheme } from "../../shared/themes";
 import { useWorkspace } from "../store";
 
 const phases = ["Read saved context", "Consolidate duplicates", "Find recurring work", "Check candidate routines"];
@@ -8,6 +9,7 @@ const date = value => new Date(value).toLocaleString([], { dateStyle: "medium", 
 
 export default function Sleep() {
   const { state, act } = useWorkspace();
+  const palette = resolveTheme(state.settings.theme, matchMedia("(prefers-color-scheme: dark)").matches, state.settings.themeCustom);
   const [filter, setFilter] = useState("all");
   const [busy, setBusy] = useState(false);
   const review = state.sleepHistory[0];
@@ -20,12 +22,12 @@ export default function Sleep() {
     finally { setBusy(false); }
   };
   return <div className="standard-page sleep-page">
-    <div className="page-title"><h1>Review your saved context</h1><p>Let the day settle. Keep what helps next time.</p></div>
+    <div className="page-title"><h1>Memory review</h1><p>Check saved notes and approve reusable routines.</p></div>
     <div className="sleep-intro sleep-hero">
-      <ThinkingOrb state={working ? "weaving" : "breathing"} size={64} />
+      <div className="sleep-review-orb"><ThinkingOrb state={working ? "weaving" : "breathing"} size={64} theme={palette.mode} /></div>
       <div>
         <span className="sleep-eyebrow">SLEEP REVIEW</span>
-        <h2>{working ? phases[Math.min(review.phase, 3)] : "Less repetition. More room."}</h2>
+        <h2>{working ? phases[Math.min(review.phase, 3)] : "Review saved notes"}</h2>
         <p>Review saved notes, combine duplicates and turn recurring work into routines you can inspect and approve.</p>
         <div className="button-row">
           <button className="button" disabled={working || busy || !state.memory.length} onClick={() => perform("sleep")}>{working ? "Review in progress…" : "Run a sleep review"}</button>
@@ -48,7 +50,7 @@ export default function Sleep() {
     {review?.status === "completed" && <div className="notice" role="status"><p>Reviewed {review.inputCount} memories and combined {review.duplicates} duplicates. {review.results?.length ? `${review.results.filter(r => r.outcome !== "unchanged").length} new or updated candidates; ${review.results.filter(r => r.outcome === "unchanged").length} unchanged.` : "No supported recurring workflow found. Add two distinct notes about a weekly update, follow-up, release or meeting."}</p></div>}
     {review?.status === "cancelled" && <div className="notice"><p>Review cancelled. Your memories and routines were not changed by this review.</p></div>}
     <section className="sleep-schedule">
-      <div><h2>A regular moment to reflect</h2><p>Runs once each day at or after your chosen time while Offload is open on this device.</p></div>
+      <div><h2>Daily review</h2><p>Runs once each day at or after your chosen time while Offload is open on this device.</p></div>
       <label><input type="checkbox" checked={state.settings.sleepSchedule} onChange={e => perform("settings", { sleepSchedule: e.target.checked })} /> Schedule daily review</label>
       {state.settings.sleepSchedule && <label>Local review time <input type="time" required value={state.settings.sleepHour} onChange={e => e.target.value && perform("settings", { sleepHour: e.target.value })} /></label>}
     </section>

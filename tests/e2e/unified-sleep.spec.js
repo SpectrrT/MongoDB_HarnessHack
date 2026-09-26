@@ -60,3 +60,45 @@ test('Sleep explains unavailable hosted services without parser errors', async (
   await expect(page.getByRole('alert')).toContainText('Context memory needs the local Offload service');
   await expect(page.locator('main')).not.toContainText('Unexpected token');
 });
+
+for (const theme of ['light', 'monochrome-dark']) {
+  test(`Sleep views stay readable and navigable in ${theme}`, async ({ page }, info) => {
+    await workspace(page, theme);
+    const views = [
+      ['conversations', '/app/sleep'],
+      ['tasks', '/app/sleep?view=tasks'],
+      ['suggestions', '/app/sleep?view=suggestions'],
+      ['notes', '/app/sleep?view=memory'],
+      ['review', '/app/sleep?view=memory&memory=review'],
+      ['context', '/app/sleep?view=memory&memory=context'],
+    ];
+    for (const [name, url] of views) {
+      await page.goto(url);
+      await expect(page.locator('.sleep-workspace h1')).toBeVisible();
+      await expect(page.locator('.workspace')).toHaveAttribute('data-palette', theme);
+      const navigation = await page.locator('[aria-label="Sleep workspace"] [role=tab]').evaluateAll(tabs => tabs.map(tab => {
+        const box = tab.getBoundingClientRect();
+        return { visible: box.left >= 0 && box.right <= innerWidth, height: box.height };
+      }));
+      expect(navigation.every(tab => tab.visible && tab.height >= 44)).toBeTruthy();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.querySelector('.app-content').scrollWidth <= document.querySelector('.app-content').clientWidth)).toBeTruthy();
+      const audit = await new AxeBuilder({ page }).include('.sleep-workspace').withTags(['wcag2a', 'wcag2aa']).analyze();
+      expect(audit.violations, `${name}: ${theme}`).toEqual([]);
+      await page.screenshot({ path: `test-results/sleep-${name}-${theme}-${info.project.name}.png` });
+    }
+  });
+}
+
+test('Sleep retries an unavailable worker and removes the stale service error', async ({ page }) => {
+  await workspace(page);
+  let unavailable = true;
+  await page.route('**/api/sleep/tasks/status', route => unavailable
+    ? route.fulfill({ contentType: 'text/html', body: '<html>Static site</html>' })
+    : route.fulfill({ json: { configured: false, enabled: false } }));
+  await page.goto('/app/sleep?view=tasks');
+  await expect(page.getByRole('alert')).toContainText('Overnight tasks need the local Offload service');
+  unavailable = false;
+  await page.getByRole('button', { name: 'Try again', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(page.getByText('MongoDB task storage is not configured.', { exact: false })).toBeVisible();
+});

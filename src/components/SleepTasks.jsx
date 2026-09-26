@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Moon, Plus, Pause, Play, X, ArrowUpRight } from 'lucide-react';
 import { useWorkspace } from '../store';
 import { Modal } from './Modal';
+import SleepServiceNotice from './SleepServiceNotice';
 
 const deadline = () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(8,0,0,0); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,16); };
 async function api(url, value) {
@@ -14,15 +15,18 @@ export default function SleepTasks() {
   const { state, act } = useWorkspace();
   const [tasks, setTasks] = useState([]), [status, setStatus] = useState(null), [draft, setDraft] = useState(null);
   const [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState(''), [checking, setChecking] = useState(false);
   const refresh = async () => {
     const config = await api('/api/sleep/tasks/status'); setStatus(config);
     if (config.configured) setTasks(await api('/api/sleep/tasks'));
+    setLoadError('');
   };
   useEffect(() => {
     let disposed = false;
-    const read = async () => { try { if (!disposed) await refresh(); } catch (e) { if (!disposed) setError(e.message); } };
+    const read = async () => { try { if (!disposed) await refresh(); } catch (e) { if (!disposed) setLoadError(e.message); } };
     void read(); const timer = setInterval(read, 3000); return () => { disposed = true; clearInterval(timer); };
   }, []);
+  const retry = async () => { setChecking(true); try { await refresh(); } catch (e) { setLoadError(e.message); } finally { setChecking(false); } };
   const open = suggestion => {
     setError(''); setDraft({ requestKey: crypto.randomUUID(), title: suggestion?.title || '',
       brief: suggestion ? `${suggestion.reason}\nPrepare a local draft for review. Use only facts in this brief.` : '',
@@ -33,10 +37,11 @@ export default function SleepTasks() {
     catch (e) { setError(e.message); }
   };
   return <div className="standard-page slow-page">
-    <div className="slow-heading"><div><span className="slow-label"><Moon size={14}/> SLEEP</span><h1>Leave it for<br/>the morning.</h1><p>Set a deadline, a token budget and output checks.<br/>Sleep drafts, verifies, and repairs inside a task folder.</p></div><button className="button" onClick={() => open()}><Plus size={16}/> Add a task</button></div>
+    <div className="slow-heading"><div><span className="slow-label"><Moon size={14}/> SLEEP</span><h1>Overnight tasks</h1><p>Assign a local draft with a deadline, token budget and checks.</p></div><button className="button" onClick={() => open()}><Plus size={16}/> Add a task</button></div>
+    {loadError && <SleepServiceNotice message={loadError} onRetry={retry} busy={checking} />}
     {error && <p role="alert">{error}</p>}
-    <div className="overnight-heading"><h2>Overnight queue</h2><span>{tasks.filter(t => t.status !== 'cancelled').length} tasks</span></div>
-    {!tasks.length && <div className="overnight-empty"><h3>What can wait until morning?</h3><p>Add the facts to work from and a file you can independently check.</p></div>}
+    <div className="overnight-heading"><h2>Overnight queue</h2><span>{status ? `${tasks.filter(t => t.status !== 'cancelled').length} tasks` : 'Waiting for service'}</span></div>
+    {status && !tasks.length && <div className="overnight-empty"><h3>What can wait until morning?</h3><p>Add the facts to work from and a file you can independently check.</p></div>}
     {tasks.map(task => <article className="overnight-task" key={task.id}>
       <div className="overnight-task-head"><h3>{task.title}</h3><span>{labels[task.status] || task.status}</span></div>
       <p>{task.brief}</p><div className="overnight-meta"><span>Due {new Date(task.deadline).toLocaleString()}</span><span>{task.tokensUsed.toLocaleString()} / {task.budget.toLocaleString()} tokens</span><span>{task.calls} model calls</span></div>

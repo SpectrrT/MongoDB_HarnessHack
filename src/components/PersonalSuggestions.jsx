@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './PersonalSuggestions.css';
+import SleepServiceNotice from './SleepServiceNotice';
 const api=async(path='',body)=>{
   const response=await fetch(`/api/suggestions${path}`,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   if(!response.headers.get('content-type')?.includes('application/json'))throw Error('Next actions need the local Offload service. Open the local app to import sessions and prepare tasks.');
@@ -7,9 +8,10 @@ const api=async(path='',body)=>{
 };
 export default function PersonalSuggestions(){
   const fileInput=useRef(null);
-  const [state,setState]=useState(null),[project,setProject]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[versions,setVersions]=useState(null);
+  const [state,setState]=useState(null),[project,setProject]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[versions,setVersions]=useState(null),[checking,setChecking]=useState(false);
   const load=useCallback(async()=>{try{const data=await api();setState(data);setError('');setProject(old=>old||data.projects[0]?.projectId||'');}catch(e){setError(e.message);}},[]);
   useEffect(()=>{load();},[load]);
+  const retry=async()=>{setChecking(true);try{await load();}finally{setChecking(false);}};
   const hasWork=state?.runs.some(r=>['queued','running'].includes(r.status));
   useEffect(()=>{if(!hasWork)return;const timer=setInterval(load,2000);return()=>clearInterval(timer);},[hasWork,load]);
   const act=async(fn)=>{setBusy(true);setError('');setNotice('');try{await fn();await load();}catch(e){setError(e.message);}finally{setBusy(false);}};
@@ -23,7 +25,7 @@ export default function PersonalSuggestions(){
   });event.target.value='';};
   return <div className="standard-page personal-suggestions" aria-label="Personal task suggestions">
     <div className="page-title"><div><h1>What comes next</h1><p>Resume a project with the decisions and requests you already saved.</p></div></div>
-    {error&&<p className="error-text" role="alert">{error}</p>}{notice&&<p role="status">{notice}</p>}
+    {error&&<SleepServiceNotice message={error} onRetry={!state?retry:undefined} busy={checking}/>}{notice&&<p role="status">{notice}</p>}
     <button className="button secondary" disabled={busy} onClick={()=>fileInput.current?.click()}>Import selected sessions</button>
     <input ref={fileInput} type="file" accept="application/json,.json" disabled={busy} onChange={importFile} hidden/>
     <p className="muted">Import only the sessions you want to use. Suggestions cite their evidence and wait for you to start them.</p>

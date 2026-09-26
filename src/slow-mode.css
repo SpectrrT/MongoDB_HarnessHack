@@ -44,3 +44,41 @@
 .sleeping-chat strong{font-size:14px;font-weight:500;overflow-wrap:anywhere;}
 .sleeping-chat span,.sleeping-chat>button{font-size:12px;color:var(--off-muted);}
 .sleep-empty{padding:28px 0;}
+
+/* Sleep uses the workspace palette for every view, including the local review. */
+.workspace .sleep-workspace .standard-page:not(.rem-page) { padding-top: 32px; }
+.workspace .sleep-workspace .standard-page:not(.rem-page) .page-title { display: block; margin-bottom: 28px; }
+.workspace .sleep-workspace .standard-page:not(.rem-page) .page-title p { margin-top: 10px; max-width: 620px; font-size: 14px; line-height: 1.65; }
+.workspace .sleeping-conversations > h1 { font-family: Inter, sans-serif; font-size: 26px; letter-spacing: -.65px; }
+.sleep-workspace .sleep-empty { padding: 24px; border: 1px solid var(--off-line); background: var(--off-inset); border-radius: 12px; }
+.sleep-workspace .sleep-empty a.button { text-decoration: none; }
+.sleep-workspace .sleep-consent-note { border-top: 1px solid var(--off-line); margin: 28px 0 0; padding-top: 18px; font-size: 12px; line-height: 1.75; color: var(--off-muted); }
+.sleep-workspace :is(.slow-label,.overnight-heading>span,.overnight-empty p,.overnight-task-head>span,.sleep-eyebrow,.sleep-disclosure,.sleep-footnote,.sleep-stats span,.sleep-progress li,.sleep-progress p,.sleep-schedule p,.sleep-empty p,.sleep-history p,.sleep-intro p) { color: var(--off-muted); }
+.sleep-workspace .sleep-hero { background: var(--off-inset); border-color: var(--off-line); padding: 28px; gap: 24px; }
+.sleep-workspace .sleep-review-orb { flex-shrink: 0; }
+.sleep-workspace .sleep-hero h2 { font: 500 20px/1.4 Inter, sans-serif; margin-top: 10px; }
+.sleep-workspace .sleep-hero p { font-size: 13px; line-height: 1.7; }
+.sleep-workspace .sleep-disclosure { margin-top: 14px; }
+.sleep-workspace :is(.sleep-stats div,.sleep-schedule,.sleep-history details,.sleep-badge,.skill blockquote,.rem-edit) { border-color: var(--off-line); }
+.sleep-workspace .sleep-filters button[aria-pressed=true] { background: var(--off-ink); color: var(--off-surface); }
+.sleep-workspace .sleep-progress li.current { color: var(--off-ink); }
+.sleep-workspace .sleep-progress progress { accent-color: var(--off-ink); }
+.sleep-service-notice { display: flex; align-items: center; gap: 12px; padding: 16px; margin: 20px 0; border: 1px solid var(--off-line); background: var(--off-inset); border-radius: 10px; }
+.sleep-service-notice > svg { flex-shrink: 0; color: var(--off-muted); }
+.sleep-service-notice p { flex: 1; margin: 0; font-size: 13px; line-height: 1.65; color: var(--off-ink); }
+.sleep-service-notice .button { flex-shrink: 0; min-height: 40px; }
+@media(max-width:600px) {
+  .sleep-workspace > .slow-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; padding: 10px 14px; overflow: visible; }
+  .sleep-workspace > .slow-tabs button { padding: 10px 4px; min-height: 44px; white-space: normal; line-height: 1.4; font-size: 12px; border-radius: 6px; border: 1px solid transparent; }
+  .sleep-workspace > .slow-tabs button.active { background: var(--off-inset); border-color: var(--off-line); font-weight: 600; }
+  .sleep-workspace .memory-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 0 18px; }
+  .sleep-workspace .memory-tabs button { white-space: normal; padding: 10px 0; }
+  .sleep-workspace .sleep-hero { padding: 20px; gap: 16px; }
+  .sleep-workspace .sleep-empty { padding: 20px; }
+  .sleep-service-notice { flex-wrap: wrap; }
+  .sleep-service-notice p { flex-basis: calc(100% - 38px); }
+  .sleep-service-notice .button { margin-left: 30px; }
+}
+.sleep-workspace label { color: var(--off-ink); }
+.sleep-workspace .memory-list article > p { color: var(--off-ink); }
+.sleep-workspace .sleep-schedule label { flex-direction: row; }

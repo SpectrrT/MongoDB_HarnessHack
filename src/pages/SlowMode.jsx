@@ -58,7 +58,7 @@ export default function SlowMode({ memory, review, rem }) {
           <button className="text-button" disabled={waking !== null} onClick={() => wake(conversation)}>{waking === conversation.id ? 'Waking...' : 'Wake'}</button>
         </article>)}
         {!sleeping.length && <div className="sleep-empty"><h2>No sleeping conversations yet.</h2><p>Use the moon beside a chat's model controls to leave it for later.</p><Link className="button secondary" to="/app/chat">Open a conversation</Link></div>}
-        <p className="sleep-empty">With consent, Sleep can draft one local candidate after 30 idle minutes. The configured OpenRouter worker uses at most 10,000 tokens and 20 minutes per pass.</p>
+        <p className="sleep-consent-note">With consent, Sleep can draft one local candidate after 30 idle minutes. The configured OpenRouter worker uses at most 10,000 tokens and 20 minutes per pass.</p>
         {error && <p role="alert">{error}</p>}
       </div>}
       {view === 'suggestions' && <PersonalSuggestions />}
