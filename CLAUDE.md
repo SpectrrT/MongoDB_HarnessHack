@@ -65,9 +65,10 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
   ideas live in `rem/`, REM runs on Atlas and has a REM page, and `server/sleep/` was removed in the cleanup. See
   `docs/rem-engine.md`, "One Sleep". The moon "Sleep" nav item is the Sleep page as Floyd and Tensae built it, kept as
   is.
-- A run whose completion gate never clears now ends `unverified` (it used to say `done`) and queues one `verify` ask;
-  approving marks it done, denying marks it failed. The end-state checkers still judge the work. In the demo, day 0's
-  weekly brief (the customer-name leak) shows `unverified`; after a night it is `done`.
+- Not merged yet: Ryan's Codex branch `ryan/jev-context` (Jev context compaction, bounded checkpoints, runs whose
+  completion gate never clears end `incomplete` instead of `done`) and `ryan/suggestive-tasks` (evidence-backed task
+  suggestions). `ryan/jev-context` also re-adds `server/sleep/` for Sleep task execution, which the 1:43 PM cleanup
+  removed; decide that before merging it.
 - LangSmith: `rem/trace.js` traces day runs, night phases, recall, effects and model calls when `LANGSMITH_API_KEY` is
   set, and does nothing without it. `npm run rem:langsmith` runs the gym as two LangSmith experiments side by side.
 - Tests: `npm test` runs 107 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
