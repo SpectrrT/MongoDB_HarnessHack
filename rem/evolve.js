@@ -6,6 +6,7 @@ import { applyEdit, commitHarness, currentHarness, editSignature } from "./harne
 import { predictionError, trackRecord } from "./proposer.js";
 import { searchCollection, settleSearch } from "./search.js";
 import { challenge } from "./attacks.js";
+import { keptRehearsals, markFixed } from "./rehearse.js";
 import { DAY_MS, round } from "./util.js";
 
 const PATTERN_ORDER = Object.keys(PATTERNS);
@@ -146,7 +147,9 @@ export async function evolve(ctx, { night, proposer, maxEdits = 3 }) {
   const { db, model, embedder, clock } = ctx;
   const current = await currentHarness(db);
   const skills = await gymSkills(db);
-  const base = await runGym(current.genome, { model, embedder, skills });
+  // Rehearsals that broke the harness and no version has passed yet: every candidate is validated against them too.
+  const extra = await keptRehearsals(db);
+  const base = await runGym(current.genome, { model, embedder, skills, extra });
   const view = proposerView(base.results);
   const patterns = await mineWeaknesses(ctx, view, night);
   for (const p of patterns) {
@@ -167,7 +170,7 @@ export async function evolve(ctx, { night, proposer, maxEdits = 3 }) {
       continue;
     }
     const candidate = applyEdit(acc.genome, edit);
-    const run = await runGym(candidate, { model, embedder, skills });
+    const run = await runGym(candidate, { model, embedder, skills, extra });
     const regressed = regressions(acc.results, run.results);
     const heldOutRegressed = regressed.filter((id) => !TRAIN_IDS.includes(id));
     const trainRegressed = regressed.filter((id) => TRAIN_IDS.includes(id));
@@ -242,6 +245,7 @@ export async function evolve(ctx, { night, proposer, maxEdits = 3 }) {
       now: clock.now(),
     });
     await db.collection("edits").updateMany({ _id: { $in: acceptedIds } }, { $set: { resultVersion: committed.version } });
+    if (extra.length) await markFixed(db, acc.results, committed.version);
   }
   return {
     baseVersion: current.version,

@@ -39,6 +39,26 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - `.mcp.json` gives Claude Code a MongoDB MCP server that reads the same `MONGODB_URI`, read-only unless `.env` sets
   `MDB_MCP_READ_ONLY=false`. It loads when a session starts, so start a new one after editing `.env`.
 
+## REM night: Rehearse and Calibrate (Ryan, 2:30 PM)
+
+- Night phases: Replay, Merge, Distill, Rehearse, Evolve, Calibrate, Asks.
+- Rehearse (`rem/rehearse.js`) stress-tests the harness: truth-preserving attacks stacked on train tasks it already
+  passes, ranked by how likely they are to break it (`REM_REHEARSE_JUDGE=jev` asks Jev), top six run. A break is kept
+  and Evolve validates every edit against it until a version passes it; when all hold, the next level is harder.
+  Held-out tasks are never rehearsed. Idle rehearsal is opt-in (`REM_REHEARSE_IDLE=1`), so idle time goes to idle
+  Sleep (`ryan/jev-context`), which works on the owner's own goal. On the scripted model nothing breaks after night 1
+  (it is a parser). With real models at the medium tier, one session (Calibrate plus Rehearse, 2:20 PM) cost $0.02
+  and found a break: Project recap under all six attacks missed a shipped item.
+- Calibrate (`rem/calibrate.js`) grades the completion gate against the checkers each night: false accepts, false
+  rejects and Brier, with the checks as evidence and blind. It commits a new `completionThreshold` only if blind errors
+  fall on train and do not rise on held-out. Real models, stub gate, blind: 4 false accepts on train, 5 on held-out.
+- `REM_PROPOSER=llm` lets a model on OpenRouter propose edits beyond the catalog, validated like any other.
+- `/api/rem/rehearse` is local-only like reset and simulate (`server/rem-guard.js`). `npm test` runs 137 (1 skip).
+- Open: ask Jev three questions (required items present, no collateral, final answer matches evidence) and take the
+  lowest. `rem/completion.js` belongs to `ryan/jev-context` right now, so that change goes there.
+- Merging `ryan/jev-context`: take its side of `tests/e2e/app.spec.js` (its Sleep execution steps replace the
+  Overnight tasks tab steps).
+
 ## Where things stand (Sat Sep 26, about 1:45 PM ET)
 
 - Merged and green: the UI and polish pass, Floyd's transitions, ASCII landing, ChatGPT chat through the local Codex
