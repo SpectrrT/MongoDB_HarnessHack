@@ -79,9 +79,9 @@
   .sleep-service-notice p { flex-basis: calc(100% - 38px); }
   .sleep-service-notice .button { margin-left: 30px; }
 }
-.sleep-workspace label { color: var(--off-ink); }
-.sleep-workspace .memory-list article > p { color: var(--off-ink); }
-.sleep-workspace .sleep-schedule label { flex-direction: row; }
+:is(.sleep-workspace,.memory-hub) label { color: var(--off-ink); }
+:is(.sleep-workspace,.memory-hub) .memory-list article > p { color: var(--off-ink); }
+:is(.sleep-workspace,.memory-hub) .sleep-schedule label { flex-direction: row; }
 
 .overnight-task-head>span,.overnight-meta { font-family:var(--font-sans); font-size:12px; }
 .overnight-instructions { margin:14px 0; font-family:var(--font-sans); font-size:12px; color:var(--off-muted); }
