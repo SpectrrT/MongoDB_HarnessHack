@@ -13,7 +13,7 @@ The native model picker reads the models available to that account. Native Codex
 
 Up to eight conversations can run at once, with one active turn in each. Switching pages does not stop a run. A rotating circle identifies running conversations. Hover or keyboard-focus a conversation for Sleep, Archive, and Delete. Deleted conversations go to Trash and can be restored from the archive button beside Conversations. Chat titles are generated separately by an available lightweight Codex model; a first-message title remains if naming fails.
 
-If a connection drops, Offload keeps checking for the reply. Restarting the backend still interrupts its active Codex processes; the saved agent thread is available when you continue the conversation. Finish active runs before editing server files in watch mode.
+If a connection drops, Offload keeps checking for the reply. Restarting the backend still interrupts its active Codex processes; the saved agent thread is available when you continue the conversation. The default development command does not restart the backend when files change. Restart it manually after backend edits, once active tasks finish. For backend development only, set `OFFLOAD_WATCH_SERVER=1`; that mode interrupts runs when backend files change.
 
 For a verified read-only walkthrough, select a native Codex model with Gmail connected and ask:
 
@@ -22,3 +22,5 @@ For a verified read-only walkthrough, select a native Codex model with Gmail con
 This flow was verified locally with real Gmail searches and thread reads. CourseWorks and Gradescope browser access has not been verified. A standalone agent session encountered a browser request-policy error; do not present those integrations as tested.
 
 For `https://offload.ai` on this Mac, follow [LOCAL-HTTPS.md](LOCAL-HTTPS.md). It requires a one-time administrator step. Until that step is complete, use the loopback URL. Public DNS and production are unchanged.
+
+Scheduled tasks live under Tasks → Add task. Choose a description, start date, time, and Once/Daily/Weekly/Monthly. The agent opens a planning conversation before you activate the schedule. Runs use the selected account and tools, keep their results under View latest run, and pause if a run fails. Keep the local service running; closing the browser does not stop the scheduler, but shutting down the Mac does.

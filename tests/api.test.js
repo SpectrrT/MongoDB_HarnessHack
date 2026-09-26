@@ -71,3 +71,14 @@ test("API cancels a review and persists its history", async () => {
     await fs.rm(dir, { recursive: true, force: true });
   }
 });
+
+test('concurrent polling does not consume the action rate budget',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'offload-polling-'));
+ try{const app=createApp({dataDir:dir,serveStatic:false}),a=request.agent(app);
+ await a.get('/api/state').expect(200);
+ for(let i=0;i<220;i++)await a.get('/api/state').expect(200);
+ for(let i=0;i<180;i++)await a.post('/api/action').send({type:'invalid'}).expect(400);
+ await a.post('/api/action').send({type:'invalid'}).expect(429);
+ await a.get('/api/state').expect(200);
+ }finally{await fs.rm(dir,{recursive:true,force:true});}
+});

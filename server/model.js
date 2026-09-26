@@ -1,3 +1,4 @@
+import {createRecurringTasks} from './recurring-tasks.js';
 import {mountChatTitles} from './chat-titles.js';
 import {createIdleReviews} from "./idle-reviews.js";
 import {mountCodexLogin} from "./codex-login-routes.js";
@@ -19,7 +20,8 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
   const busy=(owner,conversationId)=>[...jobs.values()].some(j=>j.status==='running'&&j.owner===owner&&j.conversationId===conversationId);
   const full=()=>[...jobs.values()].filter(j=>j.status==='running').length>=8;
   const jobFolder=(owner,id)=>path.join(dataDir,'agent-jobs',owner,id);
-  const save=async job=>{const folder=jobFolder(job.owner,job.id);await fs.mkdir(folder,{recursive:true,mode:0o700});const temp=path.join(folder,'job-'+crypto.randomUUID()+'.tmp');await fs.writeFile(temp,JSON.stringify(publicJob(job)),{mode:0o600});await fs.rename(temp,path.join(folder,'job.json'));};
+  const jobWrites=new Map();
+  const save=async job=>{const key=job.owner+':'+job.id,snapshot=JSON.stringify(publicJob(job));const writing=(jobWrites.get(key)||Promise.resolve()).catch(()=>{}).then(async()=>{const folder=jobFolder(job.owner,job.id);await fs.mkdir(folder,{recursive:true,mode:0o700});const temp=path.join(folder,'job-'+crypto.randomUUID()+'.tmp');await fs.writeFile(temp,snapshot,{mode:0o600});await fs.rename(temp,path.join(folder,'job.json'));});jobWrites.set(key,writing);try{await writing;}finally{if(jobWrites.get(key)===writing)jobWrites.delete(key);}};
   const getJob=async(owner,id)=>{const current=jobs.get(owner+':'+id);if(current)return current;if(!/^[a-f0-9-]{36}$/.test(id))return null;try{const saved=JSON.parse(await fs.readFile(path.join(jobFolder(owner,id),'job.json'),'utf8'));return {...saved,owner,...(saved.status==='running'?{status:'failed',approvals:[],error:'The local service restarted. Continue the conversation to resume its saved agent session.'}:{})};}catch{return null;}};
   app.use('/api/model',(req,res,next)=>{
     const host=req.get('host') || '', origin=req.get('origin');
@@ -64,6 +66,7 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
       if(job.status!=='running'||job.controller.signal.aborted)return reject(Error('Stopped.'));
       const id=crypto.randomUUID(),request={id,method,params:structuredClone(params),rpcId,resolve,reject};job.approvals.set(id,request);
     });
+    const checkpointTimer=setInterval(()=>{if(job.status==='running')void save(job).catch(()=>{});},2000);checkpointTimer.unref();
     job.finished=(async()=>{
       const folder=await sessionFolder(dataDir,job.owner,p.conversationId||p.requestId,p.folder);job.cwd=folder.cwd;await save(job);
       // Computer history that matches the request rides along as reference notes, for either provider.
@@ -74,11 +77,25 @@ export function mountModel(app,{status=codexStatus,run=runCodex,dataDir=path.res
       for(const item of result.items||[])if(item.type==='imageGeneration'&&item.status==='completed'&&/^[A-Za-z0-9+/=]+$/.test(item.result||'')&&item.result.length<28000000){await fs.writeFile(path.join(folder.cwd,'generated-'+crypto.randomUUID()+'.png'),Buffer.from(item.result,'base64'),{mode:0o600});}
       const artifacts=await collectArtifacts(folder.cwd,path.join(jobFolder(job.owner,job.id),'files'),job.createdAt);
       job.result={text:result.text.slice(0,20000),usage:result.usage,model:p.model,agent:{jobId:job.id,cwd:folder.cwd,events:job.events,artifacts}};job.status='completed';job.stream='';
-    })().catch(e=>{if(job.status==='running'){job.status='failed';job.error=e.message;}}).finally(async()=>{for(const a of job.approvals.values())a.reject(Error('Run ended.'));job.approvals.clear();await save(job).catch(()=>{});});
+    })().catch(e=>{if(job.status==='running'){job.status='failed';job.error=e.message;}}).finally(async()=>{clearInterval(checkpointTimer);for(const a of job.approvals.values())a.reject(Error('Run ended.'));job.approvals.clear();await save(job).catch(()=>{});});
     return {job:publicJob(job),created:true};
   }
   const cancel=async(owner,id)=>{const job=jobs.get(owner+':'+id);if(job?.status==='running'){job.status='cancelled';job.controller.abort();for(const approval of job.approvals.values())approval.reject(Error('Stopped.'));job.approvals.clear();await job.finished;await save(job);}};
   const idle=createIdleReviews({dataDir,launch,getJob,cancel,isBusy:(owner,id)=>!enabled||full()||busy(owner,id)});
+  const recurring=createRecurringTasks({dataDir,launch,getJob,isBusy:(owner,id)=>!enabled||full()||busy(owner,id)});
+  app.get('/api/model/tasks',async(req,res)=>res.json({tasks:await recurring.list(req.workspaceKey)}));
+  app.post('/api/model/tasks',async(req,res)=>{
+    const parsed=z.object({title:z.string().trim().min(1).max(100),brief:z.string().trim().min(1).max(4000),repeat:z.enum(['once','daily','weekly','monthly']),nextAt:z.number().finite().min(Date.now()-60000),planningId:z.string().uuid()}).strict().safeParse(req.body);
+    if(!parsed.success)return res.status(400).json({error:'Add a task, start date, and repeat schedule.'});
+    try{res.status(201).json(await recurring.create(req.workspaceKey,parsed.data));}catch(e){res.status(400).json({error:e.message});}
+  });
+  app.post('/api/model/tasks/:id',async(req,res)=>{
+    if(!z.string().uuid().safeParse(req.params.id).success)return res.status(400).json({error:'Choose a task.'});
+    const action=req.body.action;if(!['activate','pause'].includes(action))return res.status(400).json({error:'Choose a task action.'});
+    let context;
+    if(action==='activate'){const parsed=input.safeParse({...req.body.context,requestId:crypto.randomUUID(),images:[]});if(!parsed.success)return res.status(400).json({error:'The task plan is incomplete.'});context=parsed.data;}
+    try{res.json(await recurring.update(req.workspaceKey,req.params.id,action,context));}catch(e){res.status(400).json({error:e.message});}
+  });
   app.post('/api/model/sleep/reset',async(req,res)=>{await idle.reset(req.workspaceKey);res.json({ok:true});});
   app.use('/api/model/sleep/:conversationId',(req,res,next)=>{if(!z.string().uuid().safeParse(req.params.conversationId).success)return res.status(400).json({error:'Choose a conversation.'});next();});
   app.get('/api/model/sleep/:conversationId',async(req,res)=>res.json(await idle.get(req.workspaceKey,req.params.conversationId)));

@@ -24,7 +24,7 @@ function launch(args){
 }
 process.on('SIGINT',()=>stop());
 process.on('SIGTERM',()=>stop());
-if(mode!=='web')launch([...(mode==='dev'?['--watch']:[]),'server/index.js']);
+if(mode!=='web')launch([...(mode==='dev'&&process.env.OFFLOAD_WATCH_SERVER==='1'?['--watch']:[]),'server/index.js']);
 if(mode!=='start')launch(['node_modules/vite/bin/vite.js','--host','127.0.0.1']);
 // Domain setup is a local macOS convenience, never a production service.
 if(process.platform==='darwin'&&process.env.NODE_ENV!=='production'&&process.env.OFFLOAD_LOCAL_DOMAIN!=='0'){

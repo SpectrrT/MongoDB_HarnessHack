@@ -1,3 +1,4 @@
+import ScheduledTasks from '../components/ScheduledTasks';
 import ConversationArchive from './ConversationArchive';
 import {modelRequest} from '../model-api';
 import {PERSONAL_SUGGESTIONS} from '../../shared/personal-suggestions';
@@ -719,11 +720,8 @@ function Tasks({ id, onConnect }) {
         title="Tasks"
         description="Work in progress, with a place to pick up."
       />
-      {!state.runs.length ? (
-        <Empty title="Nothing underway yet.">
-          Choose a suggestion to prepare your first draft.
-        </Empty>
-      ) : (
+      <ScheduledTasks/>
+      {!state.runs.length ? null : (
         <div className="list-rows">
           {state.runs.map((r) => (
             <Link key={r.id} to={"/app/tasks/" + r.id}>

@@ -201,10 +201,12 @@ export function createApp({
         .createHash("sha256")
         .update(token)
         .digest("hex");
-      const key = req.workspaceKey,
+      // Eight simultaneous runs and multiple tabs poll independently. Reads must not exhaust the action budget.
+      const polling=req.method==='GET'||(req.method==='POST'&&req.path==='/model/titles');
+      const key = req.workspaceKey+(polling?':poll':':action'),
         now = Date.now(),
         recent = (rate.get(key) || []).filter((t) => now - t < 60000);
-      if (recent.length > 180)
+      if (recent.length >= (polling?6000:180))
         return res
           .status(429)
           .json({ error: "Too many requests. Try again shortly." });
