@@ -139,8 +139,8 @@ export async function findFriction(activity, workspace, { days = 28 } = {}) {
 export function describe(f) {
   const names = f.apps.map((a) => a.name);
   const list = names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0];
-  const source = ['sample','seed'].includes(f.provenance) ? 'Sample history' : f.provenance === 'mixed' ? 'Mixed-source history' : f.provenance === 'unknown' ? 'History with unknown provenance' : 'Recorded history';
-  return `${source} shows activity across ${list} on ${f.days} dates in the last ${f.lookbackDays || f.windowDays || 28} days, around ${f.window}. Recorded sessions averaged ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches per date in that hour. Window names do not establish what the task was.`;
+  const source = f.provenance === 'mixed' ? 'Mixed-source history' : f.provenance === 'unknown' ? 'History with unknown provenance' : null;
+  return `${source ? `${source} shows activity` : 'Activity'} across ${list} on ${f.days} dates in the last ${f.lookbackDays || f.windowDays || 28} days, around ${f.window}. Recorded sessions averaged ${f.minutesPerDay} minutes and ${f.switchesPerDay} app switches per date in that hour. Window names do not establish what the task was.`;
 }
 
 export function planWorkflow(f) {

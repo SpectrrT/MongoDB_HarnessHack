@@ -200,7 +200,7 @@ function scrollToTop(el) {
   scrollTo({ top: el.getBoundingClientRect().top + scrollY - 16, behavior });
 }
 
-const Tag = ({ children = "Sample history" }) => <span className="hx-tag">{children}</span>;
+const Tag = ({ children }) => (children ? <span className="hx-tag">{children}</span> : null);
 const STATE_LABEL = {
   checking: "Checking…",
   off: "Not connected",
@@ -747,7 +747,6 @@ function Routine({ routine: r, busy, onDecide }) {
         <span>{describeRoutine(r)}</span>
         {r.cadence === "weekly" && <Tag>Weekly pattern</Tag>}
         {r.source === "seed" && <Tag />}
-        {r.source === "mixed" && <Tag>Includes demo history</Tag>}
       </p>
       {r.cadence === "weekly" && <p className="hx-ask">Inferred from app activity across at least three weeks. No task is scheduled.</p>}
       {approved ? (
@@ -806,7 +805,7 @@ function Day({ sectionRef, day, today, data, error, onDay, live, liveNote, lande
           {(recent || (hasSample && !stale) || (isToday && live === "open")) && (
             <p className="hx-sub">
               {recent && <span>{longDate(day)}</span>}
-              {hasSample && !stale && <Tag>{allSample ? "Sample history" : "Includes sample history"}</Tag>}
+              
               {isToday && live === "open" && (
                 <span className="hx-live" title="Updates arrive through an Atlas change stream">
                   Live
@@ -963,7 +962,6 @@ function Timeline({ view, isToday, now, focus }) {
         detail,
         span(active.s.start, active.s.end),
         duration(active.s.durationSec),
-        active.s.source === "seed" ? "demo history" : "",
       ]
         .filter(Boolean)
         .join(", ")

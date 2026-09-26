@@ -13,7 +13,7 @@ test('history proposal save failure stays actionable and successful save never c
  await page.route('**/api/activity/workflows',route=>{posted=route.request().postDataJSON();return route.fulfill({status:saveWorks?201:503,json:saveWorks?{id:'saved-example',status:'saved-proposal'}:{error:'Storage unavailable. Try again.'}});});
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
  await expect(page.getByRole('button',{name:'Save workflow',exact:true})).toBeVisible();expect(header).toBe('local');
- await expect(page.locator('.history-workflow')).toContainText('Sample history');
+ await expect(page.locator('.history-workflow')).toContainText('Activity across');
  await page.getByRole('button',{name:'Save workflow',exact:true}).click();
  await expect(page.locator('.history-workflow').getByRole('alert')).toContainText('Storage unavailable');await expect(page.locator('.history-workflow')).not.toContainText('Workflow saved');
  expect(posted.provenance).toBe('seed');expect(posted.saves).toBeUndefined();
@@ -25,7 +25,7 @@ test('static-host fallback preserves sample provenance and cannot claim a saved 
  await prepare(page);
  await page.route('**/api/activity/**',route=>route.fulfill({contentType:'text/html',body:'<html>Static app</html>'}));
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
- await expect(page.locator('.history-workflow')).toContainText('Sample history');
+ await expect(page.locator('.history-workflow')).toContainText('Activity across');
  await expect(page.locator('.history-workflow')).toContainText('Showing the last saved analysis of the engineering example. The live history is not reachable right now.');
  await page.getByRole('button',{name:'Save workflow',exact:true}).click();
  await expect(page.locator('.history-workflow').getByRole('alert')).toContainText('local computer history service is unavailable');
@@ -40,7 +40,7 @@ test('refining a sample proposal keeps its provenance and does not authorize ext
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
  await page.getByRole('textbox',{name:'Tell Offload what to change in this workflow'}).fill('Only on weekdays.');
  await page.getByRole('button',{name:'Prepare with model',exact:true}).click();
- await expect.poll(()=>sent?.messages?.at(-1)?.text).toContain('Source provenance: Sample history');
+ await expect.poll(()=>sent?.messages?.at(-1)?.text).toContain('Source provenance: Seeded activity');
  expect(sent.messages.at(-1).text).toContain('Do not send messages, book meetings, or change external accounts as part of this planning request.');
  expect(sent.messages.at(-1).text).toContain('(not executed)');
  expect(sent.messages.at(-1).text).toContain('Requested plan changes: Only on weekdays.');
@@ -57,7 +57,7 @@ test('a stalled activity read ends with an identified example and can retry live
  await page.goto('/app/chat');await page.getByRole('button',{name:/Find work to hand off/}).click();
  await expect(page.getByText('Reading saved activity…',{exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'Retry saved activity'})).toBeVisible({timeout:16000});
- await expect(page.locator('.history-workflow')).toContainText('Sample history');
+ await expect(page.locator('.history-workflow')).toContainText('Activity across');
  await expect(page.getByRole('heading',{name:'Prepare a database query review'})).toBeVisible();
  await page.getByRole('button',{name:'Retry saved activity'}).click();
  await expect(page.locator('.history-workflow')).not.toContainText('last saved analysis');

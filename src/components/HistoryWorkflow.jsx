@@ -21,7 +21,7 @@ const provenanceOf = finding => {
   const source = finding.provenance || (finding.sample ? 'seed' : 'unknown');
   return ({sample:'seed',live:'captured'})[source] || (['seed','captured','mixed'].includes(source) ? source : 'unknown');
 };
-const provenanceLabel = finding => ({seed:'Sample history',captured:'Captured activity',mixed:'Sample and captured activity',unknown:'Activity source not verified'})[provenanceOf(finding)];
+const provenanceLabel = finding => ({seed:'Seeded activity',captured:'Captured activity',mixed:'Seeded and captured activity',unknown:'Activity source not verified'})[provenanceOf(finding)];
 
 function refinePrompt({ summary, finding, workflow, cached = false }, instruction = '') {
   const steps = workflow.steps.map((s, i) => `${i + 1}. ${s.label} (${s.app}): ${s.detail}`).join('\n');

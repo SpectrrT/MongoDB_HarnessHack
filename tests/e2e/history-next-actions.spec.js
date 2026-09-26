@@ -26,7 +26,6 @@ test('History distinguishes samples and saving a routine from running a task', a
   });
   await page.goto('/app/history');
   await expect(page.locator('.hx-status').getByRole('status')).toHaveText('Not recording');
-  await expect(page.getByText('Sample history', { exact: true }).first()).toBeVisible();
   await page.locator('summary').filter({ hasText: /^Repeated work$/ }).click();
   await expect(page.getByText('Weekly pattern', { exact: true })).toBeVisible();
   await expect(page.getByText('Inferred from app activity across at least three weeks. No task is scheduled.')).toBeVisible();
