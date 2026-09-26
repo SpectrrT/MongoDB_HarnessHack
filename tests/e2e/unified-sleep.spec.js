@@ -28,7 +28,7 @@ test('Memory keeps legacy destinations, persistent views and keyboard navigation
   await expect(views.getByRole('link', { name: 'Sleep', exact: true })).toBeFocused();
   await page.keyboard.press('Enter');
   await page.getByText('Context memory', { exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Context memory', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'How context is kept', exact: true })).toBeVisible();
   await page.goto('/app/rem');
   await expect(page).toHaveURL(/\/app\/memory\?tab=rem$/);
   await expect(views.getByRole('link', { name: 'Learning', exact: true })).toHaveAttribute('aria-current', 'page');
@@ -37,7 +37,7 @@ test('Memory keeps legacy destinations, persistent views and keyboard navigation
   await page.keyboard.press('Shift+Tab');
   await expect(views.getByRole('link', { name: 'Sleep', exact: true })).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('heading', { name: 'Sleeping conversations', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Conversations and reviews', exact: true })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole('heading', { name: 'Run a task', exact: true })).toBeVisible();
   await page.screenshot({ path: `test-results/unified-sleep-${info.project.name}.png` });
