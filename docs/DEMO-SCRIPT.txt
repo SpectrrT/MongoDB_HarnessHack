@@ -1,0 +1,97 @@
+OFFLOAD x REM: DEMO KIT (Sat Sep 26, 2:55 PM)
+
+Rules to respect: show only what was built during the event, Atlas must be core, the repo must be public,
+and the submission needs a one-minute video. Everything below comes from git history and runs measured today.
+
+
+1. WHAT WAS BUILT DURING THE EVENT (commits after the 11:11 AM first commit)
+
+Ryan
+- REM on the Atlas Sandbox: autoEmbed vector + Atlas Search indexes, $rankFusion recall policy, lessons with
+  provenance, search-settle for autoEmbed, reset that keeps the search indexes (12:36 to 13:04)
+- Jev completion gate (probabilistic "is it really done?"), recall trap in the gym, cost per verified success,
+  night timeline, adversarial challenge (six truth-preserving attacks), cross-worker resume lease (12:36 to 12:59)
+- REM panel in the app: day, night and morning from live API data (12:48 to 13:09)
+- LangSmith tracing of every run and the gym as LangSmith experiments (13:32)
+- Lock on REM reset and simulate for public deploys (13:43)
+- Calibrate: grades the completion gate against the checkers and tunes its own threshold (14:04)
+- Rehearse: stress-tests the harness on harder versions of work it already does, keeps what breaks it (14:17)
+- REM page shows what Rehearse and Calibrate found (14:49); end-to-end tests kept green all day
+Floyd
+- ChatGPT models, local agent tools, image attachments, Atlas workspace storage (11:34 to 12:18)
+- Screen and microphone sessions, local sign-in, idle reviews, scheduled agent tasks (12:31 to 13:54)
+- Chat, sidebar and landing redesign, rich replies (13:42 to 14:32)
+Tensae
+- README and project docs, MongoDB MCP server for Claude Code (11:23 to 11:54)
+- Computer history: a MongoDB timeline of what you work on, with hybrid search and routines on Atlas (13:15)
+- Cleanup of unused code, dev server fixes, clearer model setup (13:43 to 14:24)
+Unmerged (Ryan's Codex agents): idle Sleep, which keeps working on your goal while you are away; task
+suggestions learned from real history. Only demo these if they are merged and green by 4:15.
+
+
+2. THREE-MINUTE LIVE DEMO (REM page, server on Atlas; the header shows "MongoDB Atlas · rem")
+
+Before judging: run day 1 once (it takes about 30 s on Atlas). DO NOT press Reset during the demo.
+Measured on Atlas today: run 4 to 6 s, reconnect 10 to 15 s, Sleep 31 to 43 s, morning run about 15 s.
+
+0:00  Hook. "Agents fail long jobs two ways: they declare victory early, and they repeat yesterday's mistakes.
+      REM gives the agent a night. By day it works durably, at night it rewrites its own harness against a
+      held-out test set, in the morning it asks once for anything new."
+0:20  Day. Drive access expires mid-run: the run pauses, asks once, and resumes from its checkpoint the moment
+      Drive reconnects (an Atlas change stream). The email went out exactly once: the effects ledger is a unique
+      index written in the same transaction as the checkpoint. The reviewer flags two problems: an external
+      recipient and a leaked customer name.
+0:55  Night. Press Sleep and narrate the phases as they light up (30 to 45 s):
+      Replay; Merge (near-duplicate memories folded into one, contradictions resolved, noise dropped);
+      Distill (repeated work becomes a tested skill); Rehearse (harder versions of work it already passes);
+      Atlas embeds the new memories with voyage-4 so the next day's recall ($rankFusion) finds them;
+      Evolve (proposes edits with predictions, validates on train plus held-out); Calibrate (grades the
+      completion gate against the checkers).
+1:45  Morning. Night 1 on Atlas: gym train 3/9 -> 6/9, held-out 1/5 -> 3/5, collateral 8 -> 3.
+      Accepted: "never include customer names", "send only to internal recipients".
+      Rejected: cheap-model routing, because it broke a held-out task (Product review). That is the
+      no-regression gate working. Show the harness diff v0 -> v1, then the one ask: "Want me to send the
+      brief myself next time?" Run the same task again: done, no leak.
+2:30  The curve (5 simulated days on Atlas): passed 2/4 -> 4/4, collateral 3 -> 0, interventions 4 -> 0,
+      cost $0.096 -> $0.009 per day, memory stays small and exact (32 items vs 120 without sleep,
+      duplicates 0 vs 0.64, precision 1.0 vs 0.4). 10 emails, 0 duplicates, 4 crashes reconciled.
+2:50  Close. "Statement One: the harness evolves its own rules, guardrails, routing and even how strictly it
+      judges itself. Statement Two: memory that gets smaller and more precise, durable execution, hard metrics."
+
+
+3. ONE-MINUTE VIDEO (record the REM page on Atlas; Cmd+Shift+5 works without Loom)
+
+0:00  Title card: "Offload: agents that sleep, and wake up with a better harness." (5 s)
+0:05  Day run pauses on expired Drive access, asks once, resumes on reconnect; ledger shows one email. (15 s)
+0:20  Press Sleep; phases light up; say "all of this state lives in MongoDB Atlas". (15 s)
+0:35  Morning: accepted and rejected edits, harness diff, the ask; same task runs clean. (15 s)
+0:50  Five-day table and "Grading the grader" table; end on the repo URL. (10 s)
+
+
+4. SUBMISSION TEXT (paste and edit)
+
+Offload is a workspace that learns the work you repeat so you can hand it over. Its engine, REM, gives an
+agent harness a day/night cycle on MongoDB Atlas. By day it runs long tasks durably: checkpoints after every
+step, an effects ledger that makes every email exactly-once, and a pause-and-ask when access expires. At night
+it replays the day, merges duplicate memories, recalls with Atlas hybrid search ($rankFusion over autoEmbed vectors), stress-tests
+itself on harder versions of its own work, and evolves its rules, guardrails and model routing against a
+held-out task suite with a no-regression gate. It also grades its own completion evaluator against
+deterministic checkers and tunes how strictly it decides a job is done. In the morning it asks once for any new
+authority. Measured on Atlas over five simulated days: pass rate 2/4 -> 4/4, collateral 3 -> 0, cost per day
+down 90%, memory 32 items instead of 120, zero duplicate emails. Built today: see docs/DEMO-SCRIPT.txt part 1.
+
+
+5. Q&A
+
+- Real model or scripted? The demo runs a scripted model so the numbers are reproducible and free. Real models
+  work through OpenRouter (REM_MODEL=openrouter); a real session today cost $0.02 on the medium tier and
+  Rehearse found a real weakness (the project recap missed a shipped item under noisy evidence).
+- Why MongoDB? The harness and memory change shape as the system evolves; hybrid search and provenance in one
+  aggregation; change streams resume paused runs and drive the live UI; autoEmbed removed the embedding
+  pipeline; a transaction plus a unique index gives exactly-once side effects.
+- Can it reward-hack its own tests? The gym, fixtures and checkers are read-only to the proposer. Rehearsals
+  only reorder or add noise to evidence, never the answer, and held-out tasks are never rehearsed.
+- How is this different from Letta sleep-time compute? Sleep here is gated by hard metrics: every edit carries
+  a prediction, is validated on held-out tasks, and its prediction error feeds the next night's proposer.
+- Does "done" mean done? Calibrate measures it. Without checks, the completion gate called failing runs done
+  3 times on train and 2 on held-out on night 1, which is why every task kind needs a checker.

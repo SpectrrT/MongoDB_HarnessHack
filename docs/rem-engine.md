@@ -6,9 +6,9 @@ consolidates (Replay, Merge, Distill, Evolve); in the **morning** it asks once f
 measurably better. Vocabulary follows `CONTEXT.md` of the planning pack (episode, memory, skill, harness,
 genome, edit, prediction, checkpoint, effect, ask, day/night/morning).
 
-Tonight it runs without MongoDB, a model provider or embeddings: an in-memory database with the MongoDB
-Node driver's call shapes, a deterministic `ScriptedModel`, and a local hashing embedder. Tomorrow's switch
-to Atlas, OpenRouter and Voyage is configuration plus one dependency (see "Switching tomorrow").
+Without credentials it runs without MongoDB, a model provider or embeddings: an in-memory database with the
+MongoDB Node driver's call shapes, a deterministic `ScriptedModel`, and a local hashing embedder. Switching to
+Atlas, OpenRouter and Voyage is configuration (see "Switching to real services").
 
 ```sh
 npm run rem:demo   # the 3-minute story in the terminal (~0.3 s); rewrites docs/DEMO-NUMBERS.md
@@ -62,7 +62,7 @@ npm test           # existing tests + tests/rem-*.test.js (~0.5 s)
 ## Night: consolidation
 
 1. **Replay** re-reads unconsolidated episodes in order and computes per-task metrics.
-2. **Merge** extracts facts (deterministic extractor tonight; the consolidator role tomorrow), clusters them
+2. **Merge** extracts facts (a deterministic extractor; the consolidator role can replace it), clusters them
    by cosine on the fact identity, folds each cluster into one **memory** with provenance episode ids,
    confidence and recency, resolves contradictions by recency and confidence while keeping contradiction
    links, retires resolved blockers, maintains an "open blockers as of" digest, deletes noise (low-importance
@@ -130,9 +130,9 @@ planning", which adds a cheap check to every task but removes every reconnect, c
 `ensureIndexes(db)` creates collections (metrics as time series), indexes and search indexes.
 Change streams also feed `GET /api/rem/stream` (Server-Sent Events).
 
-## Scripted tonight vs real
+## Stand-ins vs real services
 
-| Piece | Tonight | Tomorrow |
+| Piece | Without credentials | With credentials |
 | --- | --- | --- |
 | Database | `createMemoryDb()`: driver-shaped collections, filters, updates, unique indexes, TTL sweep, change streams, session transactions (undo log; reads can see uncommitted writes) | `createMongoDb({ uri })` on the Atlas Sandbox |
 | Model | `ScriptedModel`: follows the rules, guardrail descriptions, memories and skills in its prompt text; the small tier fails three-source tasks without a skill; tokens = chars/4 | `createOpenRouterModel()` (tool calling, usage from OpenRouter) |
@@ -143,7 +143,7 @@ Change streams also feed `GET /api/rem/stream` (Server-Sent Events).
 | Accounts | fixture Google workspace (`fixtures.js`), deterministic revoke | same tools; real OAuth only for the interrupt beat |
 | Prices | placeholders in `rem/models.js` | verify against OpenRouter `/api/v1/models` |
 
-## Switching tomorrow
+## Switching to real services
 
 1. `npm install mongodb` (the only new dependency) and set `MONGODB_URI` to the Atlas Sandbox string
    (optionally `REM_DB_NAME`, default `rem`). `server/rem.js` then builds REM on `createMongoDb()`; for

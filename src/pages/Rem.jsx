@@ -51,6 +51,8 @@ const LABEL_OVERRIDES = { latencyMs: "Latency" };
 const label = (key) =>
   LABEL_OVERRIDES[key] || key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
 const statusClass = (s) => STATUS_CLASS[s] || "";
+// Import kept below the top-of-file imports, which other branches edit.
+import RemSelfCheck from "../components/RemSelfCheck";
 
 function fmtMetric(key, value) {
   if (value === undefined || value === null) return "n/a";
@@ -402,6 +404,9 @@ function ControlsBar({ state, busy, setBusy, setError, reload, onReset }) {
   return (
     <div className="rem-controls">
       <span className="status-label">Harness v{state.harness.version}</span>
+      {state.engine?.database?.startsWith("atlas:") && (
+        <span className="status-label">MongoDB Atlas · {state.engine.database.slice(6)} · search {state.engine.search}</span>
+      )}
       <span className="muted">
         Day {state.day} · {state.week}
       </span>
@@ -772,6 +777,7 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
             <h3>Before / after on the gym</h3>
           </div>
           <FitnessTable title="Whole gym" before={brief.evolve.baseline} after={brief.evolve.fitness} />
+          <RemSelfCheck brief={brief} />
           {brief.verified && (
             <table className="rem-table">
               <thead><tr><th>Verified work</th><th>Verified</th><th>Cost</th><th>Cost per verified success</th><th>Tokens per verified success</th></tr></thead>

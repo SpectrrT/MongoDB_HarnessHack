@@ -1,4 +1,4 @@
-// Model routing tiers. Ids and $/1M-token prices are PLACEHOLDERS: verify tomorrow against
+// Model routing tiers. Ids and $/1M-token prices are PLACEHOLDERS: verify them against
 // https://openrouter.ai/api/v1/models (pricing.prompt / pricing.completion are $ per token there).
 export const TIERS = Object.freeze({
   large: Object.freeze({
