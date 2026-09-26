@@ -528,3 +528,9 @@ records before their existing TTL can remove them. Previously deleted records ca
 The landing page shows measured evidence directly below the hero headline and links its receipt. Personal-history
 artifact replay is a separate evaluation using frozen pre-return context and private checkers. It does not compare
 historical cumulative session tokens against a small reconstructed artifact. Failed protocol trials remain in the ledger.
+
+## Minimal comparison presentation
+
+The homepage now uses two flat graphs: total model tokens (including selection and recovery) and exact checks passed. The underlying measurements are unchanged: changing-task development replay 39,196 versus 32,264 tokens and 11/12 versus 12/12 checks; repeated-snapshot replay 26,640 versus 9,052 tokens and 20/20 on both paths. Both use GPT-4o-mini. The sole changing-task baseline failure was an extra JSON field, not an incorrect owner or readiness fact. Repeated snapshots favor reuse and are not independent task trials. No new performance experiment was run for this presentation change.
+
+`public/evidence/benchmark-report.html` retains detailed methods, failed personal replays, and raw-receipt links outside the presentation flow. Regenerate it with `node scripts/build-benchmark-report.mjs` after updating `src/data/benchmark-evidence.json`. New verified comparisons can populate `presentationComparisons`, `presentationDescription`, and `presentationMethod`; do not reuse old method text for a different experiment.

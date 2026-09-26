@@ -29,3 +29,9 @@ Native OpenRouter selection passes one scripted-provider task with real file too
 The homepage displays conditions and receipts immediately after the complete hero. Read [evolving evidence](context-evolving-evidence.md), [personal replay evidence](personal-session-evidence.md), [assigned execution](sleep-task-execution.md), [idle validation](idle-sleep-validation.md), and [transcript recovery](sleep-transcript-storage.md).
 
 This implementation does not yet demonstrate billion-token sessions, weeks of autonomous operation, universally correct semantic completion, or universal savings. Slower execution alone is not a token optimization.
+
+## Minimal comparison presentation
+
+The homepage now uses two flat graphs: total model tokens (including selection and recovery) and exact checks passed. The underlying measurements are unchanged: changing-task development replay 39,196 versus 32,264 tokens and 11/12 versus 12/12 checks; repeated-snapshot replay 26,640 versus 9,052 tokens and 20/20 on both paths. Both use GPT-4o-mini. The sole changing-task baseline failure was an extra JSON field, not an incorrect owner or readiness fact. Repeated snapshots favor reuse and are not independent task trials. No new performance experiment was run for this presentation change.
+
+`public/evidence/benchmark-report.html` retains detailed methods, failed personal replays, and raw-receipt links outside the presentation flow. Regenerate it with `node scripts/build-benchmark-report.mjs` after updating `src/data/benchmark-evidence.json`. New verified comparisons can populate `presentationComparisons`, `presentationDescription`, and `presentationMethod`; do not reuse old method text for a different experiment.
