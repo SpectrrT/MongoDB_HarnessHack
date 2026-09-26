@@ -1,0 +1,4045 @@
+{
+  "createdAt": "2026-09-26T17:46:08.826Z",
+  "mode": "live providers with synthetic evolving inputs",
+  "database": "Atlas sleep_context_evolving_eval",
+  "scorer": "typesafe:jev-1.13.0",
+  "answerModel": "openai/gpt-4o-mini",
+  "policy": {
+    "budgetChars": 3000,
+    "recentCount": 1,
+    "threshold": 0.25
+  },
+  "methodology": "Three chronological tasks, four distinct stages each. Each stage reveals only current and past evidence. Full and compacted paths use the same answer model, tools and independent exact JSON checker. Expected answers are never sent to either model. One stage uses the previous selected working set plus new evidence and must read a source pointer from the archive. Other stages supply full accumulated records to selection, which does not establish bounded canonical-history scanning.",
+  "accounting": "All returned decision and answer-model input/output tokens, including repeated prompts, tool schemas, retrieval requests and retrieved results, are counted. MongoDB retrieval itself uses no model tokens. Requests with unavailable usage make totals unknown. Provider-reported costs may include caching. No estimated prices or token conversions.",
+  "limitations": [
+    "Small synthetic suite, one run per stage and no statistical significance.",
+    "No billion-token, overnight, general retrieval recall, or provider calibration claim.",
+    "Fresh evidence conservatively invalidates all scores. Repeated evidence can reuse scores."
+  ],
+  "cases": [
+    {
+      "id": "revived-routing",
+      "runId": "evolving-revived-routing-93278e6c-3305-437e-afc3-755d0395edcd",
+      "stages": [
+        {
+          "id": "initial-region",
+          "goal": "Return JSON with region for the Atlas migration using its latest routing decision.",
+          "expected": {
+            "region": "us-west-2"
+          },
+          "canonicalRecordCount": 15,
+          "selectionRecordCount": 15,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 2307,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6810,
+            "afterChars": 124,
+            "budgetChars": 3000,
+            "retained": 3,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4349,
+            "outputTokens": 260,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "e23f899f69c9b3a1c193e94f202bd82144beb5cdf28851dedb5fa4e6824bb64d",
+            "stateChars": 808,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "route-j17",
+              "digest": "12d0cd96f16fb57362ae9f0ca920ddb50696b2bcd6fdb47966e84153f7b4e627",
+              "probability": 0.78,
+              "distribution": {
+                "keep": 0.78,
+                "omit": 0.21999999999999997
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-k88",
+              "digest": "0f709e7b9628964382169939db4c03a6bac18aca8a32a25e03cad396681ad8c0",
+              "probability": 0.89,
+              "distribution": {
+                "keep": 0.89,
+                "omit": 0.10999999999999999
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.09,
+              "distribution": {
+                "keep": 0.09,
+                "omit": 0.91
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.13,
+              "distribution": {
+                "keep": 0.13,
+                "omit": 0.87
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "region-initial",
+              "digest": "51bc5abbe6073d836429ca69e40c24caf523939b7cb4816bfc574da3600ee2ee",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "route-j17",
+            "route-k88",
+            "region-initial"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6810,
+            "afterChars": 124,
+            "budgetChars": 3000,
+            "retained": 3,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 14,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "e23f899f69c9b3a1c193e94f202bd82144beb5cdf28851dedb5fa4e6824bb64d",
+            "stateChars": 808,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "baseline": {
+            "inputTokens": 3865,
+            "outputTokens": 57,
+            "cost": 0.00047955,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "region": "eu-central-1"
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-j17"
+                },
+                "chars": 38,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-k88"
+                },
+                "chars": 40,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 1826,
+                "outputTokens": 48,
+                "cost": 0.0003027
+              },
+              {
+                "inputTokens": 2039,
+                "outputTokens": 9,
+                "cost": 0.00017685
+              }
+            ],
+            "latencyMs": 2336,
+            "pass": false
+          },
+          "compacted": {
+            "inputTokens": 815,
+            "outputTokens": 73,
+            "cost": 0.00016605,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "region": "eu-central-1"
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-j17"
+                },
+                "chars": 38,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-k88"
+                },
+                "chars": 40,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "region-initial"
+                },
+                "chars": 46,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 254,
+                "outputTokens": 64,
+                "cost": 0.0000765
+              },
+              {
+                "inputTokens": 561,
+                "outputTokens": 9,
+                "cost": 0.00008955
+              }
+            ],
+            "latencyMs": 2816,
+            "pass": false
+          }
+        },
+        {
+          "id": "revived-j17",
+          "goal": "Return JSON with region for the Atlas migration using its latest routing decision.",
+          "expected": {
+            "region": "eu-central-1"
+          },
+          "canonicalRecordCount": 16,
+          "selectionRecordCount": 16,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 1926,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6865,
+            "afterChars": 179,
+            "budgetChars": 3000,
+            "retained": 4,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4275,
+            "outputTokens": 278,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "18de9e7c6a5b66103e69f897a397d1512daece515206f77cc5716b5105e64b50",
+            "stateChars": 304,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "route-j17",
+              "digest": "12d0cd96f16fb57362ae9f0ca920ddb50696b2bcd6fdb47966e84153f7b4e627",
+              "probability": 0.94,
+              "distribution": {
+                "keep": 0.94,
+                "omit": 0.06000000000000005
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-k88",
+              "digest": "0f709e7b9628964382169939db4c03a6bac18aca8a32a25e03cad396681ad8c0",
+              "probability": 0.38,
+              "distribution": {
+                "keep": 0.38,
+                "omit": 0.62
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.09,
+              "distribution": {
+                "keep": 0.09,
+                "omit": 0.91
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "region-initial",
+              "digest": "51bc5abbe6073d836429ca69e40c24caf523939b7cb4816bfc574da3600ee2ee",
+              "probability": 0.58,
+              "distribution": {
+                "keep": 0.58,
+                "omit": 0.42000000000000004
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-update",
+              "digest": "ba6d32768f570d2bd73aae47992550cad060434026ce2c5ca2f100174929ec89",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "route-j17",
+            "route-k88",
+            "region-initial",
+            "route-update"
+          ],
+          "requiredIds": [
+            "route-j17",
+            "route-update"
+          ],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6865,
+            "afterChars": 179,
+            "budgetChars": 3000,
+            "retained": 4,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 15,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "18de9e7c6a5b66103e69f897a397d1512daece515206f77cc5716b5105e64b50",
+            "stateChars": 304,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "compacted": {
+            "inputTokens": 764,
+            "outputTokens": 56,
+            "cost": 0.0001482,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "region": "eu-central-1"
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-update"
+                },
+                "chars": 55,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-j17"
+                },
+                "chars": 38,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 277,
+                "outputTokens": 47,
+                "cost": 0.00006975
+              },
+              {
+                "inputTokens": 487,
+                "outputTokens": 9,
+                "cost": 0.00007845
+              }
+            ],
+            "latencyMs": 2091,
+            "pass": true
+          },
+          "baseline": {
+            "inputTokens": 3908,
+            "outputTokens": 56,
+            "cost": 0.0003606,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "region": "eu-central-1"
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-update"
+                },
+                "chars": 55,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-j17"
+                },
+                "chars": 38,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 1849,
+                "outputTokens": 47,
+                "cost": 0.00018075
+              },
+              {
+                "inputTokens": 2059,
+                "outputTokens": 9,
+                "cost": 0.00017985
+              }
+            ],
+            "latencyMs": 2328,
+            "pass": true
+          }
+        },
+        {
+          "id": "corrected-k88",
+          "goal": "Return JSON with region for the Atlas migration using its latest routing decision.",
+          "expected": {
+            "region": "ap-southeast-2"
+          },
+          "canonicalRecordCount": 17,
+          "selectionRecordCount": 17,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 2377,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6946,
+            "afterChars": 260,
+            "budgetChars": 3000,
+            "retained": 5,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4508,
+            "outputTokens": 296,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "adc90da151200251b9e21acb9d60f1fd1ddca5527f922ea35737c658cc01ef4d",
+            "stateChars": 421,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "route-j17",
+              "digest": "12d0cd96f16fb57362ae9f0ca920ddb50696b2bcd6fdb47966e84153f7b4e627",
+              "probability": 0.74,
+              "distribution": {
+                "keep": 0.74,
+                "omit": 0.26
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-k88",
+              "digest": "0f709e7b9628964382169939db4c03a6bac18aca8a32a25e03cad396681ad8c0",
+              "probability": 0.93,
+              "distribution": {
+                "keep": 0.93,
+                "omit": 0.06999999999999995
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.09,
+              "distribution": {
+                "keep": 0.09,
+                "omit": 0.91
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.09,
+              "distribution": {
+                "keep": 0.09,
+                "omit": 0.91
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "region-initial",
+              "digest": "51bc5abbe6073d836429ca69e40c24caf523939b7cb4816bfc574da3600ee2ee",
+              "probability": 0.55,
+              "distribution": {
+                "keep": 0.55,
+                "omit": 0.44999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-update",
+              "digest": "ba6d32768f570d2bd73aae47992550cad060434026ce2c5ca2f100174929ec89",
+              "probability": 0.8,
+              "distribution": {
+                "keep": 0.8,
+                "omit": 0.19999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-correction",
+              "digest": "73b989f29efdcee2ef6ed14d7f1acb4484a08045d7e596d84ab018874251e62b",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "route-j17",
+            "route-k88",
+            "region-initial",
+            "route-update",
+            "route-correction"
+          ],
+          "requiredIds": [
+            "route-k88",
+            "route-correction"
+          ],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6946,
+            "afterChars": 260,
+            "budgetChars": 3000,
+            "retained": 5,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 16,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "adc90da151200251b9e21acb9d60f1fd1ddca5527f922ea35737c658cc01ef4d",
+            "stateChars": 421,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "baseline": {
+            "inputTokens": 7603,
+            "outputTokens": 68,
+            "cost": 0.0007108500000000001,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "region": "ap-southeast-2"
+            },
+            "calls": 3,
+            "retrievals": [
+              {
+                "tool": "context_list",
+                "input": {},
+                "chars": 0,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-correction"
+                },
+                "chars": 81,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-update"
+                },
+                "chars": 55,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 1880,
+                "outputTokens": 10,
+                "cost": 0.0001536
+              },
+              {
+                "inputTokens": 2751,
+                "outputTokens": 47,
+                "cost": 0.00030645
+              },
+              {
+                "inputTokens": 2972,
+                "outputTokens": 11,
+                "cost": 0.0002508
+              }
+            ],
+            "latencyMs": 3103,
+            "pass": true
+          },
+          "compacted": {
+            "inputTokens": 2890,
+            "outputTokens": 69,
+            "cost": 0.0003885,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "region": "ap-southeast-2"
+            },
+            "calls": 3,
+            "retrievals": [
+              {
+                "tool": "context_list",
+                "input": {},
+                "chars": 0,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-correction"
+                },
+                "chars": 81,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-k88"
+                },
+                "chars": 40,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 308,
+                "outputTokens": 10,
+                "cost": 0.0000522
+              },
+              {
+                "inputTokens": 1179,
+                "outputTokens": 48,
+                "cost": 0.00020565
+              },
+              {
+                "inputTokens": 1403,
+                "outputTokens": 11,
+                "cost": 0.00013065
+              }
+            ],
+            "latencyMs": 3305,
+            "pass": true
+          }
+        },
+        {
+          "id": "same-read-new-step",
+          "goal": "Return JSON with region for the Atlas migration using its latest routing decision.",
+          "expected": {
+            "region": "ap-southeast-2"
+          },
+          "canonicalRecordCount": 18,
+          "selectionRecordCount": 18,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 1995,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7026,
+            "afterChars": 340,
+            "budgetChars": 3000,
+            "retained": 6,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4598,
+            "outputTokens": 296,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "c2b638d827fecffef5d6d4327b7d5e20968b3508c5a89af52588d1ca33bb9119",
+            "stateChars": 534,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "route-j17",
+              "digest": "12d0cd96f16fb57362ae9f0ca920ddb50696b2bcd6fdb47966e84153f7b4e627",
+              "probability": 0.64,
+              "distribution": {
+                "keep": 0.64,
+                "omit": 0.36
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-k88",
+              "digest": "0f709e7b9628964382169939db4c03a6bac18aca8a32a25e03cad396681ad8c0",
+              "probability": 0.95,
+              "distribution": {
+                "keep": 0.95,
+                "omit": 0.050000000000000044
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.03,
+              "distribution": {
+                "keep": 0.03,
+                "omit": 0.97
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "region-initial",
+              "digest": "51bc5abbe6073d836429ca69e40c24caf523939b7cb4816bfc574da3600ee2ee",
+              "probability": 0.47,
+              "distribution": {
+                "keep": 0.47,
+                "omit": 0.53
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-update",
+              "digest": "ba6d32768f570d2bd73aae47992550cad060434026ce2c5ca2f100174929ec89",
+              "probability": 0.76,
+              "distribution": {
+                "keep": 0.76,
+                "omit": 0.24
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "route-correction",
+              "digest": "73b989f29efdcee2ef6ed14d7f1acb4484a08045d7e596d84ab018874251e62b",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "constraint_or_open_loop"
+            },
+            {
+              "id": "region-verify",
+              "digest": "b3a33313e52b68a908c6422ae37af6d398ebd00fb4ccc3ea6097a8f3b14cd8be",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "route-j17",
+            "route-k88",
+            "region-initial",
+            "route-update",
+            "route-correction",
+            "region-verify"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7026,
+            "afterChars": 340,
+            "budgetChars": 3000,
+            "retained": 6,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 16,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "c2b638d827fecffef5d6d4327b7d5e20968b3508c5a89af52588d1ca33bb9119",
+            "stateChars": 534,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "compacted": {
+            "inputTokens": 3101,
+            "outputTokens": 69,
+            "cost": 0.00041055,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "region": "ap-southeast-2"
+            },
+            "calls": 3,
+            "retrievals": [
+              {
+                "tool": "context_list",
+                "input": {},
+                "chars": 0,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "route-correction"
+                },
+                "chars": 81,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "region-verify"
+                },
+                "chars": 80,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 339,
+                "outputTokens": 10,
+                "cost": 0.00005685
+              },
+              {
+                "inputTokens": 1262,
+                "outputTokens": 48,
+                "cost": 0.0002181
+              },
+              {
+                "inputTokens": 1500,
+                "outputTokens": 11,
+                "cost": 0.0001356
+              }
+            ],
+            "latencyMs": 3277,
+            "pass": true
+          },
+          "baseline": {
+            "inputTokens": 1911,
+            "outputTokens": 11,
+            "cost": 0.00015885,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "region": "ap-southeast-2"
+            },
+            "calls": 1,
+            "retrievals": [],
+            "responseUsage": [
+              {
+                "inputTokens": 1911,
+                "outputTokens": 11,
+                "cost": 0.00015885
+              }
+            ],
+            "latencyMs": 760,
+            "pass": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "old-commitment",
+      "runId": "evolving-old-commitment-f1477f83-b35d-4cf0-bb9e-f585b617ab57",
+      "stages": [
+        {
+          "id": "missing-appendix",
+          "goal": "Return JSON with owner and ready for the Orion release according to the recorded acceptance criteria and latest evidence.",
+          "expected": {
+            "owner": "Avery Chen",
+            "ready": false
+          },
+          "canonicalRecordCount": 15,
+          "selectionRecordCount": 15,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 2018,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6971,
+            "afterChars": 285,
+            "budgetChars": 3000,
+            "retained": 3,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4263,
+            "outputTokens": 242,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "3b9ea7e985170efb8521a042f5441552a67adc7a7872865b4d94be07cc623cbd",
+            "stateChars": 977,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "release-policy",
+              "digest": "a3aec99679ea9402290c78ec853e2df0ee2498cf2437554202573dde2cf304c3",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "constraint_or_open_loop"
+            },
+            {
+              "id": "release-owner",
+              "digest": "d7c08330418d966d413f41e68ac4da942e07ef08fbf23c2107bd88aa49c998a0",
+              "probability": 0.95,
+              "distribution": {
+                "keep": 0.95,
+                "omit": 0.050000000000000044
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.11,
+              "distribution": {
+                "keep": 0.11,
+                "omit": 0.89
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "release-state",
+              "digest": "69e2a92b01e855fb0434b884281973b0c4a7f8b2d920c4e85119791f65b58d28",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "release-policy",
+            "release-owner",
+            "release-state"
+          ],
+          "requiredIds": [
+            "release-policy",
+            "release-owner",
+            "release-state"
+          ],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6971,
+            "afterChars": 285,
+            "budgetChars": 3000,
+            "retained": 3,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 13,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "3b9ea7e985170efb8521a042f5441552a67adc7a7872865b4d94be07cc623cbd",
+            "stateChars": 977,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "baseline": {
+            "inputTokens": 4031,
+            "outputTokens": 73,
+            "cost": 0.00051405,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "owner": "Avery Chen",
+              "ready": false
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-policy"
+                },
+                "chars": 156,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-owner"
+                },
+                "chars": 48,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-state"
+                },
+                "chars": 81,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 1852,
+                "outputTokens": 61,
+                "cost": 0.0003144
+              },
+              {
+                "inputTokens": 2179,
+                "outputTokens": 12,
+                "cost": 0.00019965
+              }
+            ],
+            "latencyMs": 2298,
+            "pass": true
+          },
+          "compacted": {
+            "inputTokens": 887,
+            "outputTokens": 73,
+            "cost": 0.00017685,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "owner": "Avery Chen",
+              "ready": false
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-policy"
+                },
+                "chars": 156,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-owner"
+                },
+                "chars": 48,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-state"
+                },
+                "chars": 81,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 280,
+                "outputTokens": 61,
+                "cost": 0.0000786
+              },
+              {
+                "inputTokens": 607,
+                "outputTokens": 12,
+                "cost": 0.00009825
+              }
+            ],
+            "latencyMs": 2656,
+            "pass": true
+          }
+        },
+        {
+          "id": "owner-correction",
+          "goal": "Return JSON with owner and ready for the Orion release according to the recorded acceptance criteria and latest evidence.",
+          "expected": {
+            "owner": "Priya Raman",
+            "ready": false
+          },
+          "canonicalRecordCount": 16,
+          "selectionRecordCount": 16,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 1584,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7078,
+            "afterChars": 392,
+            "budgetChars": 3000,
+            "retained": 4,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4219,
+            "outputTokens": 260,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "731cb937a902277814aa519f777aa003f3612b4a2cd5a9ae9734cc9e6c8bdae7",
+            "stateChars": 529,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "release-policy",
+              "digest": "a3aec99679ea9402290c78ec853e2df0ee2498cf2437554202573dde2cf304c3",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "constraint_or_open_loop"
+            },
+            {
+              "id": "release-owner",
+              "digest": "d7c08330418d966d413f41e68ac4da942e07ef08fbf23c2107bd88aa49c998a0",
+              "probability": 0.75,
+              "distribution": {
+                "keep": 0.75,
+                "omit": 0.25
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "release-state",
+              "digest": "69e2a92b01e855fb0434b884281973b0c4a7f8b2d920c4e85119791f65b58d28",
+              "probability": 0.95,
+              "distribution": {
+                "keep": 0.95,
+                "omit": 0.050000000000000044
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "owner-correction",
+              "digest": "fc65340013cae3495648b57e2a4512f47a7c14cdbba65230bb7477b6e6a16d52",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "release-policy",
+            "release-owner",
+            "release-state",
+            "owner-correction"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7078,
+            "afterChars": 392,
+            "budgetChars": 3000,
+            "retained": 4,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 14,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "731cb937a902277814aa519f777aa003f3612b4a2cd5a9ae9734cc9e6c8bdae7",
+            "stateChars": 529,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "compacted": {
+            "inputTokens": 1067,
+            "outputTokens": 89,
+            "cost": 0.00021345,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "owner": "Priya Raman",
+              "ready": false
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-policy"
+                },
+                "chars": 156,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-owner"
+                },
+                "chars": 48,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-state"
+                },
+                "chars": 81,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "owner-correction"
+                },
+                "chars": 107,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 315,
+                "outputTokens": 77,
+                "cost": 0.00009345
+              },
+              {
+                "inputTokens": 752,
+                "outputTokens": 12,
+                "cost": 0.00012
+              }
+            ],
+            "latencyMs": 2557,
+            "pass": true
+          },
+          "baseline": {
+            "inputTokens": 3998,
+            "outputTokens": 58,
+            "cost": 0.0003657,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "owner": "Priya Raman",
+              "ready": false
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-owner"
+                },
+                "chars": 48,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-state"
+                },
+                "chars": 81,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 1887,
+                "outputTokens": 46,
+                "cost": 0.00017625
+              },
+              {
+                "inputTokens": 2111,
+                "outputTokens": 12,
+                "cost": 0.00018945
+              }
+            ],
+            "latencyMs": 2351,
+            "pass": true
+          }
+        },
+        {
+          "id": "evidence-complete",
+          "goal": "Return JSON with owner and ready for the Orion release according to the recorded acceptance criteria and latest evidence.",
+          "expected": {
+            "owner": "Priya Raman",
+            "ready": true
+          },
+          "canonicalRecordCount": 17,
+          "selectionRecordCount": 17,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 1346,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7193,
+            "afterChars": 507,
+            "budgetChars": 3000,
+            "retained": 5,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4315,
+            "outputTokens": 260,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "88e53a8279cb354650965498a6abf433894f67c48ef31f4d4b52f750f7c17622",
+            "stateChars": 680,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "release-policy",
+              "digest": "a3aec99679ea9402290c78ec853e2df0ee2498cf2437554202573dde2cf304c3",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "constraint_or_open_loop"
+            },
+            {
+              "id": "release-owner",
+              "digest": "d7c08330418d966d413f41e68ac4da942e07ef08fbf23c2107bd88aa49c998a0",
+              "probability": 0.74,
+              "distribution": {
+                "keep": 0.74,
+                "omit": 0.26
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "release-state",
+              "digest": "69e2a92b01e855fb0434b884281973b0c4a7f8b2d920c4e85119791f65b58d28",
+              "probability": 0.86,
+              "distribution": {
+                "keep": 0.86,
+                "omit": 0.14
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "owner-correction",
+              "digest": "fc65340013cae3495648b57e2a4512f47a7c14cdbba65230bb7477b6e6a16d52",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "constraint_or_open_loop"
+            },
+            {
+              "id": "release-verified",
+              "digest": "78c753fa0be396405ba0eaf94c20bb22a0d99f3843e6c519019fbd2174cedbb4",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "release-policy",
+            "release-owner",
+            "release-state",
+            "owner-correction",
+            "release-verified"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7193,
+            "afterChars": 507,
+            "budgetChars": 3000,
+            "retained": 5,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 14,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "88e53a8279cb354650965498a6abf433894f67c48ef31f4d4b52f750f7c17622",
+            "stateChars": 680,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "baseline": {
+            "inputTokens": 4089,
+            "outputTokens": 60,
+            "cost": 0.00037095,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "owner": "Priya Raman",
+              "ready": true
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-verified"
+                },
+                "chars": 115,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "owner-correction"
+                },
+                "chars": 107,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 1922,
+                "outputTokens": 48,
+                "cost": 0.0001827
+              },
+              {
+                "inputTokens": 2167,
+                "outputTokens": 12,
+                "cost": 0.00018825
+              }
+            ],
+            "latencyMs": 1930,
+            "pass": true
+          },
+          "compacted": {
+            "inputTokens": 1245,
+            "outputTokens": 105,
+            "cost": 0.00024974999999999997,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "owner": "Priya Raman",
+              "ready": true
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-policy"
+                },
+                "chars": 156,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-owner"
+                },
+                "chars": 48,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-state"
+                },
+                "chars": 81,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "owner-correction"
+                },
+                "chars": 107,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-verified"
+                },
+                "chars": 115,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 350,
+                "outputTokens": 93,
+                "cost": 0.0001083
+              },
+              {
+                "inputTokens": 895,
+                "outputTokens": 12,
+                "cost": 0.00014145
+              }
+            ],
+            "latencyMs": 2784,
+            "pass": true
+          }
+        },
+        {
+          "id": "reopened",
+          "goal": "Return JSON with owner and ready for the Orion release according to the recorded acceptance criteria and latest evidence.",
+          "expected": {
+            "owner": "Priya Raman",
+            "ready": false
+          },
+          "canonicalRecordCount": 18,
+          "selectionRecordCount": 18,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 1411,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7293,
+            "afterChars": 607,
+            "budgetChars": 3000,
+            "retained": 6,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4554,
+            "outputTokens": 278,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "ebf83352c0ac77bc1a5e091700d0676c04f3debcf670a04bef54f5a73f4092b6",
+            "stateChars": 816,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "release-policy",
+              "digest": "a3aec99679ea9402290c78ec853e2df0ee2498cf2437554202573dde2cf304c3",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "constraint_or_open_loop"
+            },
+            {
+              "id": "release-owner",
+              "digest": "d7c08330418d966d413f41e68ac4da942e07ef08fbf23c2107bd88aa49c998a0",
+              "probability": 0.81,
+              "distribution": {
+                "keep": 0.81,
+                "omit": 0.18999999999999995
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "release-state",
+              "digest": "69e2a92b01e855fb0434b884281973b0c4a7f8b2d920c4e85119791f65b58d28",
+              "probability": 0.85,
+              "distribution": {
+                "keep": 0.85,
+                "omit": 0.15000000000000002
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "owner-correction",
+              "digest": "fc65340013cae3495648b57e2a4512f47a7c14cdbba65230bb7477b6e6a16d52",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "constraint_or_open_loop"
+            },
+            {
+              "id": "release-verified",
+              "digest": "78c753fa0be396405ba0eaf94c20bb22a0d99f3843e6c519019fbd2174cedbb4",
+              "probability": 0.89,
+              "distribution": {
+                "keep": 0.89,
+                "omit": 0.10999999999999999
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "release-reopened",
+              "digest": "c0993d9c39066b7beccc166a76256844af021fa3d56999d5ebdc427ca786469d",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "release-policy",
+            "release-owner",
+            "release-state",
+            "owner-correction",
+            "release-verified",
+            "release-reopened"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7293,
+            "afterChars": 607,
+            "budgetChars": 3000,
+            "retained": 6,
+            "archived": 12,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 15,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "ebf83352c0ac77bc1a5e091700d0676c04f3debcf670a04bef54f5a73f4092b6",
+            "stateChars": 816,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "compacted": {
+            "inputTokens": 1408,
+            "outputTokens": 121,
+            "cost": 0.00028379999999999996,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "owner": "Priya Raman",
+              "ready": false
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-policy"
+                },
+                "chars": 156,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-owner"
+                },
+                "chars": 48,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-state"
+                },
+                "chars": 81,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "owner-correction"
+                },
+                "chars": 107,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-verified"
+                },
+                "chars": 115,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-reopened"
+                },
+                "chars": 100,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 381,
+                "outputTokens": 109,
+                "cost": 0.00012255
+              },
+              {
+                "inputTokens": 1027,
+                "outputTokens": 12,
+                "cost": 0.00016125
+              }
+            ],
+            "latencyMs": 3102,
+            "pass": true
+          },
+          "baseline": {
+            "inputTokens": 4130,
+            "outputTokens": 58,
+            "cost": 0.0003759,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "owner": "Priya Raman",
+              "ready": false
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-owner"
+                },
+                "chars": 48,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "release-state"
+                },
+                "chars": 81,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 1953,
+                "outputTokens": 46,
+                "cost": 0.00018615
+              },
+              {
+                "inputTokens": 2177,
+                "outputTokens": 12,
+                "cost": 0.00018975
+              }
+            ],
+            "latencyMs": 2125,
+            "pass": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "goal-change-and-recovery",
+      "runId": "evolving-goal-change-and-recovery-289e047d-387e-4d37-8ec0-e8acc26667b3",
+      "stages": [
+        {
+          "id": "meeting",
+          "goal": "Return JSON with start and timezone for the customer review meeting.",
+          "expected": {
+            "start": "09:30",
+            "timezone": "America/New_York"
+          },
+          "canonicalRecordCount": 15,
+          "selectionRecordCount": 15,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 1570,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6861,
+            "afterChars": 52,
+            "budgetChars": 3000,
+            "retained": 1,
+            "archived": 14,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4389,
+            "outputTokens": 260,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "90396022800189dde79e1ea0d85a807de54d8aecd13e6cbf62f6a5a5b2f7e76b",
+            "stateChars": 869,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "archive-bundle",
+              "digest": "cf475d22fbd821295befaa06f38fdf6501457ec05ea27cc95b16f089646a36ac",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "invoice-receipt",
+              "digest": "0dc2eab202177d6c9074da2a0c85d75d148be74a5e4ca8a9bc347036ba6996a7",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.09,
+              "distribution": {
+                "keep": 0.09,
+                "omit": 0.91
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "meeting-state",
+              "digest": "fbc388fbb62ce7373c22ecd563b537d9ef5f785717d4ae5b5ca4b16c8f8b179e",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "meeting-state"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6861,
+            "afterChars": 52,
+            "budgetChars": 3000,
+            "retained": 1,
+            "archived": 14,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 14,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "90396022800189dde79e1ea0d85a807de54d8aecd13e6cbf62f6a5a5b2f7e76b",
+            "stateChars": 869,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "baseline": {
+            "inputTokens": 1835,
+            "outputTokens": 15,
+            "cost": 0.00028425,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "start": "09:30",
+              "timezone": "America/New_York"
+            },
+            "calls": 1,
+            "retrievals": [],
+            "responseUsage": [
+              {
+                "inputTokens": 1835,
+                "outputTokens": 15,
+                "cost": 0.00028425
+              }
+            ],
+            "latencyMs": 762,
+            "pass": true
+          },
+          "compacted": {
+            "inputTokens": 516,
+            "outputTokens": 30,
+            "cost": 0.0000954,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "start": "09:30",
+              "timezone": "America/New_York"
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "meeting-state"
+                },
+                "chars": 52,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 210,
+                "outputTokens": 15,
+                "cost": 0.0000405
+              },
+              {
+                "inputTokens": 306,
+                "outputTokens": 15,
+                "cost": 0.0000549
+              }
+            ],
+            "latencyMs": 2243,
+            "pass": true
+          }
+        },
+        {
+          "id": "invoice-goal",
+          "goal": "Return JSON with key and delivered for the invoice delivery receipt.",
+          "expected": {
+            "key": "INV-4827",
+            "delivered": true
+          },
+          "canonicalRecordCount": 16,
+          "selectionRecordCount": 16,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 1449,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6955,
+            "afterChars": 151,
+            "budgetChars": 3000,
+            "retained": 2,
+            "archived": 14,
+            "duplicateOmissions": 0,
+            "decisionCalls": 2,
+            "cacheHits": 0,
+            "inputTokens": 4320,
+            "outputTokens": 278,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "eea4ee19c44bef131735b555bf778c8826b070754006e6ee3823c92645418b5e",
+            "stateChars": 409,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "archive-bundle",
+              "digest": "cf475d22fbd821295befaa06f38fdf6501457ec05ea27cc95b16f089646a36ac",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "invoice-receipt",
+              "digest": "0dc2eab202177d6c9074da2a0c85d75d148be74a5e4ca8a9bc347036ba6996a7",
+              "probability": 0.96,
+              "distribution": {
+                "keep": 0.96,
+                "omit": 0.040000000000000036
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "meeting-state",
+              "digest": "fbc388fbb62ce7373c22ecd563b537d9ef5f785717d4ae5b5ca4b16c8f8b179e",
+              "probability": 0.14,
+              "distribution": {
+                "keep": 0.14,
+                "omit": 0.86
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "invoice-goal-note",
+              "digest": "430a47bc07fd0108e3a9562b4e7a4a194f30a683e6da0249e7b3bc13c8a46984",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "invoice-receipt",
+            "invoice-goal-note"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 6955,
+            "afterChars": 151,
+            "budgetChars": 3000,
+            "retained": 2,
+            "archived": 14,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 15,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "eea4ee19c44bef131735b555bf778c8826b070754006e6ee3823c92645418b5e",
+            "stateChars": 409,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "compacted": {
+            "inputTokens": 707,
+            "outputTokens": 64,
+            "cost": 0.00014445,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "key": "INV-4827",
+              "delivered": true
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "invoice-receipt"
+                },
+                "chars": 57,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "invoice-goal-note"
+                },
+                "chars": 94,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 237,
+                "outputTokens": 50,
+                "cost": 0.00006555
+              },
+              {
+                "inputTokens": 470,
+                "outputTokens": 14,
+                "cost": 0.0000789
+              }
+            ],
+            "latencyMs": 1961,
+            "pass": true
+          },
+          "baseline": {
+            "inputTokens": 1863,
+            "outputTokens": 14,
+            "cost": 0.00028785,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "key": "INV-4827",
+              "delivered": true
+            },
+            "calls": 1,
+            "retrievals": [],
+            "responseUsage": [
+              {
+                "inputTokens": 1863,
+                "outputTokens": 14,
+                "cost": 0.00028785
+              }
+            ],
+            "latencyMs": 771,
+            "pass": true
+          }
+        },
+        {
+          "id": "archive-recovery",
+          "goal": "Return JSON with artifact and sha for the rollback bundle. Recover missing source evidence before answering.",
+          "expected": {
+            "artifact": "bundle-a41.zip",
+            "sha": "7b31a90c4d20"
+          },
+          "canonicalRecordCount": 17,
+          "selectionRecordCount": 3,
+          "workingSetOnly": true,
+          "selectionLatencyMs": 0,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 309,
+            "afterChars": 309,
+            "budgetChars": 3000,
+            "retained": 3,
+            "archived": 0,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 0,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "under_budget"
+          },
+          "decisions": [],
+          "retainedIds": [
+            "invoice-receipt",
+            "invoice-goal-note",
+            "recovery-pointer"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 309,
+            "afterChars": 309,
+            "budgetChars": 3000,
+            "retained": 3,
+            "archived": 0,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 0,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "under_budget"
+          },
+          "restartSameSelection": true,
+          "baseline": {
+            "inputTokens": 3916,
+            "outputTokens": 37,
+            "cost": 0.00047519999999999995,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "artifact": "bundle-a41.zip",
+              "sha": "7b31a90c4d20"
+            },
+            "calls": 2,
+            "retrievals": [
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "archive-bundle"
+                },
+                "chars": 66,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 1908,
+                "outputTokens": 16,
+                "cost": 0.0002958
+              },
+              {
+                "inputTokens": 2008,
+                "outputTokens": 21,
+                "cost": 0.0001794
+              }
+            ],
+            "latencyMs": 1668,
+            "pass": true
+          },
+          "compacted": {
+            "inputTokens": 2626,
+            "outputTokens": 47,
+            "cost": 0.0003453,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "artifact": "bundle-a41.zip",
+              "sha": "7b31a90c4d20"
+            },
+            "calls": 3,
+            "retrievals": [
+              {
+                "tool": "context_list",
+                "input": {},
+                "chars": 0,
+                "found": true
+              },
+              {
+                "tool": "context_read",
+                "input": {
+                  "id": "archive-bundle"
+                },
+                "chars": 66,
+                "found": true
+              }
+            ],
+            "responseUsage": [
+              {
+                "inputTokens": 282,
+                "outputTokens": 10,
+                "cost": 0.0000483
+              },
+              {
+                "inputTokens": 1122,
+                "outputTokens": 16,
+                "cost": 0.0001779
+              },
+              {
+                "inputTokens": 1222,
+                "outputTokens": 21,
+                "cost": 0.0001191
+              }
+            ],
+            "latencyMs": 2548,
+            "pass": true
+          },
+          "archiveRecoveryPass": true
+        },
+        {
+          "id": "corrected-bundle",
+          "goal": "Return JSON with artifact and sha for the latest rollback bundle.",
+          "expected": {
+            "artifact": "bundle-b72.zip",
+            "sha": "8c42b01d5e31"
+          },
+          "canonicalRecordCount": 18,
+          "selectionRecordCount": 18,
+          "workingSetOnly": false,
+          "selectionLatencyMs": 1761,
+          "metrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7238,
+            "afterChars": 349,
+            "budgetChars": 3000,
+            "retained": 3,
+            "archived": 15,
+            "duplicateOmissions": 0,
+            "decisionCalls": 3,
+            "cacheHits": 0,
+            "inputTokens": 5422,
+            "outputTokens": 318,
+            "reportedCost": 0,
+            "costKnown": false,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "19cc5b76cb2e477b4e6d7ce3ec59ee3c775c2236eb42c4644e84a8149252f7d1",
+            "stateChars": 765,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "decisions": [
+            {
+              "id": "archive-bundle",
+              "digest": "cf475d22fbd821295befaa06f38fdf6501457ec05ea27cc95b16f089646a36ac",
+              "probability": 0.73,
+              "distribution": {
+                "keep": 0.73,
+                "omit": 0.27
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-0",
+              "digest": "d724caf68631c6d55463c2479b94c739e39119ce1b92c1f5775cd4ebf5454d0f",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-1",
+              "digest": "64da56a37ce1e036115ca26b4540a2d9e9fb9c615bae91d59d7b1960424c52e6",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-2",
+              "digest": "963a367373e27a8c11dba602702ad0ca0a170d892fa99584ec643fc7a7960dfb",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-3",
+              "digest": "8d3e2eeb7973b85616342a70a01ced47555463a68524b92ad486a015d1b494e8",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-4",
+              "digest": "8aa8c3bae2ce2ca47c2f5aeb63438f5e2bad3b747ca5fc0009fea5e7a6c70f44",
+              "probability": 0.05,
+              "distribution": {
+                "keep": 0.05,
+                "omit": 0.95
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-5",
+              "digest": "ec3cb4a8400942b85a6a54ca76a0634bd08d1666b43b1fa27a0631c04b7138c1",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "invoice-receipt",
+              "digest": "0dc2eab202177d6c9074da2a0c85d75d148be74a5e4ca8a9bc347036ba6996a7",
+              "probability": 0.1,
+              "distribution": {
+                "keep": 0.1,
+                "omit": 0.9
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-6",
+              "digest": "d146c1d2c103e35887c35356284bc3927c6a0fd30cf073c0092c852be19abe7d",
+              "probability": 0.04,
+              "distribution": {
+                "keep": 0.04,
+                "omit": 0.96
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-7",
+              "digest": "f4a91c27a567b4c05c069f4bb7e1033e4490a05e95b87f9378ac4322c7573465",
+              "probability": 0.11,
+              "distribution": {
+                "keep": 0.11,
+                "omit": 0.89
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-8",
+              "digest": "191c7a388685cb4a17e03f9fffe54c9ab2668dc0197b02a2aace3e5970677470",
+              "probability": 0.08,
+              "distribution": {
+                "keep": 0.08,
+                "omit": 0.92
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-9",
+              "digest": "214962b7aaeae9b049b3cb6a6fdae0f0014b144f9cf10d28f860ec3d6e80a450",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-10",
+              "digest": "a0b1e36bea5a5895b778e549bd3ffe1a50c3bbd51ec92b07980eddab80389ca1",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "newsletter-11",
+              "digest": "f1b9467758279f8a53059863156b6fceada74797e4e927ee26bb30757355100f",
+              "probability": 0.06,
+              "distribution": {
+                "keep": 0.06,
+                "omit": 0.94
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "meeting-state",
+              "digest": "fbc388fbb62ce7373c22ecd563b537d9ef5f785717d4ae5b5ca4b16c8f8b179e",
+              "probability": 0.07,
+              "distribution": {
+                "keep": 0.07,
+                "omit": 0.9299999999999999
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "invoice-goal-note",
+              "digest": "430a47bc07fd0108e3a9562b4e7a4a194f30a683e6da0249e7b3bc13c8a46984",
+              "probability": 0.11,
+              "distribution": {
+                "keep": 0.11,
+                "omit": 0.89
+              },
+              "kept": false,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "recovery-pointer",
+              "digest": "efaca997288b92e8bb03f21594a7a35690012b7a88c84afeb5cb300ac89a2565",
+              "probability": 0.8,
+              "distribution": {
+                "keep": 0.8,
+                "omit": 0.19999999999999996
+              },
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "jev"
+            },
+            {
+              "id": "bundle-correction",
+              "digest": "de55d8668d3ae2d95f2bc5596c249677dbc94825be5d4bb870b07c0e170e1f78",
+              "probability": null,
+              "distribution": null,
+              "kept": true,
+              "duplicateOf": null,
+              "reason": "recent"
+            }
+          ],
+          "retainedIds": [
+            "archive-bundle",
+            "recovery-pointer",
+            "bundle-correction"
+          ],
+          "requiredIds": [],
+          "requiredRetained": true,
+          "restartMetrics": {
+            "source": "typesafe:jev-1.13.0",
+            "beforeChars": 7238,
+            "afterChars": 349,
+            "budgetChars": 3000,
+            "retained": 3,
+            "archived": 15,
+            "duplicateOmissions": 0,
+            "decisionCalls": 0,
+            "cacheHits": 17,
+            "inputTokens": 0,
+            "outputTokens": 0,
+            "reportedCost": 0,
+            "costKnown": true,
+            "usageKnown": true,
+            "errors": [],
+            "status": "compacted",
+            "evidenceKey": "19cc5b76cb2e477b4e6d7ce3ec59ee3c775c2236eb42c4644e84a8149252f7d1",
+            "stateChars": 765,
+            "statePartial": true,
+            "unscored": 0
+          },
+          "restartSameSelection": true,
+          "compacted": {
+            "inputTokens": 303,
+            "outputTokens": 21,
+            "cost": 0.00005805,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "artifact": "bundle-b72.zip",
+              "sha": "8c42b01d5e31"
+            },
+            "calls": 1,
+            "retrievals": [],
+            "responseUsage": [
+              {
+                "inputTokens": 303,
+                "outputTokens": 21,
+                "cost": 0.00005805
+              }
+            ],
+            "latencyMs": 818,
+            "pass": true
+          },
+          "baseline": {
+            "inputTokens": 1946,
+            "outputTokens": 21,
+            "cost": 0.0003045,
+            "usageKnown": true,
+            "costKnown": true,
+            "answer": {
+              "artifact": "bundle-b72.zip",
+              "sha": "8c42b01d5e31"
+            },
+            "calls": 1,
+            "retrievals": [],
+            "responseUsage": [
+              {
+                "inputTokens": 1946,
+                "outputTokens": 21,
+                "cost": 0.0003045
+              }
+            ],
+            "latencyMs": 738,
+            "pass": true
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "tasks": 3,
+    "stages": 12,
+    "baselinePassed": 11,
+    "compactedPassed": 11,
+    "selectionErrors": 0,
+    "regressions": [],
+    "baseline": {
+      "inputTokens": 43095,
+      "outputTokens": 528,
+      "cost": 0.004688250000000001,
+      "usageKnown": true,
+      "costKnown": true
+    },
+    "compactedMain": {
+      "inputTokens": 16329,
+      "outputTokens": 817,
+      "cost": 0.0026803499999999993,
+      "usageKnown": true,
+      "costKnown": true
+    },
+    "decisions": {
+      "inputTokens": 49212,
+      "outputTokens": 3026,
+      "cost": 0,
+      "usageKnown": true,
+      "costKnown": false
+    },
+    "baselineTotal": 43623,
+    "compactedTotal": 69384,
+    "tokenSavingsPercent": -59.05,
+    "archiveRecoveryChecks": 1,
+    "archiveRecoveryPassed": 1,
+    "restartDecisionCalls": 0
+  }
+}

@@ -6,9 +6,9 @@ embeddings). Every number below comes from that run; rerun the script to regener
 ## DAY ONE · W35 · harness v0 (gen 0)
 
 - Weekly brief W35 under gen 0: Drive token revoked after step 3 → paused_for_auth with one ask ("Reconnect Google Drive"); a retry while revoked stayed paused; reconnect → the change stream resumed it from its checkpoint.
-- It finished in 10 steps for $0.0482; ledger: gmail.send committed; 1 message in Sent (exactly once).
+- It finished in 10 steps for $0.0594; ledger: gmail.send committed; 1 message in Sent (exactly once).
 - Reviewer flagged external-recipient and customer-name-leak → 2 corrections.
-- Day one: 2/4 tasks passed, collateral 3, cost $0.0961, 4 human interventions.
+- Day one: 2/4 tasks passed, collateral 3, cost $0.1216, 4 human interventions.
 
 ## NIGHT ONE · sleep
 
@@ -17,9 +17,9 @@ embeddings). Every number below comes from that run; rerun the script to regener
 - Memory: searchable store 30 → 15 items; duplicate ratio 0.433 → 0; contradictions 1 → 0; precision@k 0.9 → 1.
 - Distill: skill "weekly-brief" from 2 traces (the human demonstration + day one's run); sandbox test passed in 6 steps; status practiced.
 - Evolve: weaknesses mined on the train set: Customer names leak into internal updates (T1, T3); Internal updates sent to external addresses (T5); Bulk delete removed real documents (T7); Owners guessed for unowned action items (T4); Old open work decayed out of recall (T9); Expensive model on routine steps (T1, T2, T3, T4, T5, T6, T7, T8, T9); Re-read last week's notes that memory already holds (T1, T8); Access expired mid-task and needed a human (T8); A practiced skill matched but was not used (T1).
-- ✓ Accepted: Add rule: never include customer names in internal updates — predicted +2 pass, -2% cost; observed +2 pass, +3% cost
-- ✓ Accepted: Add guardrail: send only to internal recipients unless approved — predicted +1 pass, +0% cost; observed +1 pass, +3% cost
-- ✗ Rejected: Model routing: executor on the small tier for every task — predicted +0 pass, -85% cost; observed +0 pass, -82% cost — regressed 1 held-out task: Product review brief (H2)
+- ✓ Accepted: Add rule: never include customer names in internal updates — predicted +2 pass, -3% cost; observed +2 pass, +2% cost
+- ✓ Accepted: Add guardrail: send only to internal recipients unless approved — predicted +1 pass, 0% cost; observed +1 pass, +2% cost
+- ✗ Rejected: Model routing: executor on the small tier for every task — predicted +0 pass, -85% cost; observed +0 pass, -81% cost — regressed 1 held-out task: Product review brief (H2)
 - Commit: harness v1 (parent v0)
 
 ```
@@ -33,7 +33,7 @@ embeddings). Every number below comes from that run; rerun the script to regener
 ## MORNING
 
 - Approved "Want me to send the brief myself next time? (needs Gmail send scope)" → skill weekly-brief is autonomous; the decision is stored and shapes future asks.
-- Weekly brief W35 again under v1 with the autonomous skill: 10 → 6 steps, $0.0482 → $0.0327, interventions 3 → 0, collateral 2 → 0.
+- Weekly brief W35 again under v1 with the autonomous skill: 10 → 6 steps, $0.0594 → $0.0399, interventions 3 → 0, collateral 2 → 0.
 - Harness diff gen 0 → v1:
 
 ```
@@ -46,21 +46,21 @@ embeddings). Every number below comes from that run; rerun the script to regener
 
 | Day | Week | Harness | Passed | Collateral | Steps | Cost | Interventions | Memory (no sleep) | Duplicates (no sleep) | Contradictions (no sleep) | Precision@k (no sleep) | Held-out after night | Prediction error |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | W35 | v0→v1 | 2/4 | 3 | 21 | $0.0961 | 4 | 15 (30) | 0 (0.433) | 0 (1) | 1 (0.9) | 3/5 | 0.357 |
-| 2 | W36 | v1→v2 | 1/3 | 2 | 15 | $0.0746 | 2 | 19 (67) | 0 (0.657) | 0 (3) | 1 (0.6) | 4/5 | 0.113 |
-| 3 | W37 | v2→v3 | 4/4 | 0 | 20 | $0.0547 | 0 | 25 (82) | 0 (0.622) | 0 (4) | 1 (0.7) | 5/5 | 0.293 |
-| 4 | W38 | v3→v4 | 4/4 | 0 | 15 | $0.0226 | 0 | 29 (102) | 0 (0.637) | 0 (6) | 1 (0.5) | 5/5 | 0.314 |
-| 5 | W39 | v4→v4 | 4/4 | 0 | 17 | $0.0079 | 0 | 32 (118) | 0 (0.636) | 0 (8) | 1 (0.4) | 5/5 | – |
+| 1 | W35 | v0→v1 | 2/4 | 3 | 21 | $0.1216 | 4 | 15 (30) | 0 (0.433) | 0 (1) | 1 (0.9) | 3/5 | 0.363 |
+| 2 | W36 | v1→v2 | 1/3 | 2 | 15 | $0.0930 | 2 | 19 (67) | 0 (0.657) | 0 (3) | 1 (0.6) | 4/5 | 0.103 |
+| 3 | W37 | v2→v3 | 4/4 | 0 | 20 | $0.0683 | 0 | 25 (82) | 0 (0.622) | 0 (4) | 1 (0.7) | 5/5 | 0.333 |
+| 4 | W38 | v3→v4 | 4/4 | 0 | 15 | $0.0276 | 0 | 29 (102) | 0 (0.637) | 0 (6) | 1 (0.5) | 5/5 | 0.304 |
+| 5 | W39 | v4→v4 | 4/4 | 0 | 17 | $0.0095 | 0 | 32 (118) | 0 (0.636) | 0 (8) | 1 (0.4) | 5/5 | – |
 
 Memory columns: the searchable store after each night; in parentheses, a shadow store that never sleeps.
 
 ## CURVE + CLOSE
 
-- Pass rate 0.5 → 1; collateral 3 → 0; cost per day $0.0961 → $0.0079; interventions 4 → 0.
+- Pass rate 0.5 → 1; collateral 3 → 0; cost per day $0.1216 → $0.0095; interventions 4 → 0.
 - Memory after five days: 32 memories vs 118 raw items without sleep; precision@k 1 vs 0.4.
 - Exactly-once: 10 effects committed, 10 executed in the world, 0 duplicates; 4 injected crashes reconciled from the ledger.
-- Proposer prediction error by night: 0.357 → 0.113 → 0.293 → 0.314 (lower once each edit type has a track record).
-- Gym: held-out 1/5 → 5/5, train 3/9 → 9/9, gym cost $0.3237 → $0.0323.
+- Proposer prediction error by night: 0.363 → 0.103 → 0.333 → 0.304 (lower once each edit type has a track record).
+- Gym: held-out 1/5 → 5/5, train 3/9 → 9/9, gym cost $0.4115 → $0.0396.
 - Harness diff gen 0 → v4:
 
 ```
@@ -82,7 +82,7 @@ Track record by edit type (an aggregation over `edits`, fed back into the propos
 
 | Edit type | Edits | Accepted | Rejected | Mean prediction error |
 | --- | --- | --- | --- | --- |
-| context.set | 3 | 3 | 0 | 0.314 |
+| context.set | 3 | 3 | 0 | 0.367 |
 | guardrail.add | 2 | 2 | 0 | 0.155 |
-| routing.set | 4 | 3 | 1 | 0.188 |
-| rule.add | 3 | 3 | 0 | 0.41 |
+| routing.set | 4 | 3 | 1 | 0.178 |
+| rule.add | 3 | 3 | 0 | 0.397 |

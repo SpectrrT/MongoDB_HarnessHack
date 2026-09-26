@@ -1,0 +1,204 @@
+{
+  "createdAt": "2026-09-26T18:27:11.478Z",
+  "mode": "One bounded prompt diagnosis only, not paired answer evaluation",
+  "scorerPolicy": "retention-v8-shared-encoding",
+  "error": "Protected or uncertain context exceeds the budget. Narrow the task or increase the context budget.",
+  "metrics": {
+    "source": "openrouter:typesafe/jev-1.13",
+    "beforeChars": 7219,
+    "afterChars": 7219,
+    "budgetChars": 1600,
+    "retained": 15,
+    "archived": 0,
+    "duplicateOmissions": 0,
+    "decisionCalls": 1,
+    "cacheHits": 0,
+    "inputTokens": 1390,
+    "outputTokens": 241,
+    "reportedCost": 0.00005838,
+    "costKnown": true,
+    "usageKnown": true,
+    "errors": [],
+    "status": "needs_review",
+    "evidenceKey": "c329ef57c5c0619fb77b9e6ad106159b27bb6f62397de8d7368c199ef9d0b8c8",
+    "stateChars": 838,
+    "statePartial": true,
+    "unscored": 0,
+    "decisions": [
+      {
+        "id": "f1",
+        "digest": "d9b8557979b32b938f2cb7827182748c2c1a642a6217cf9abaf9c4759194f087",
+        "probability": 0.91,
+        "distribution": {
+          "keep": 0.91,
+          "omit": 0.08999999999999997
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-0",
+        "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+        "probability": 0.34,
+        "distribution": {
+          "keep": 0.34,
+          "omit": 0.6599999999999999
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-1",
+        "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+        "probability": 0.29,
+        "distribution": {
+          "keep": 0.29,
+          "omit": 0.71
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-2",
+        "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+        "probability": 0.31,
+        "distribution": {
+          "keep": 0.31,
+          "omit": 0.69
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-3",
+        "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+        "probability": 0.3,
+        "distribution": {
+          "keep": 0.3,
+          "omit": 0.7
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-4",
+        "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+        "probability": 0.33,
+        "distribution": {
+          "keep": 0.33,
+          "omit": 0.6699999999999999
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-5",
+        "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+        "probability": 0.34,
+        "distribution": {
+          "keep": 0.34,
+          "omit": 0.6599999999999999
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "f2",
+        "digest": "3e57401394b6d99834ef1c6f3dd6e9949b57b2f9193560308e9b330a85954957",
+        "probability": null,
+        "distribution": null,
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "constraint_or_open_loop"
+      },
+      {
+        "id": "noise-6",
+        "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+        "probability": 0.31,
+        "distribution": {
+          "keep": 0.31,
+          "omit": 0.69
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-7",
+        "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+        "probability": 0.28,
+        "distribution": {
+          "keep": 0.28,
+          "omit": 0.72
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-8",
+        "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+        "probability": 0.29,
+        "distribution": {
+          "keep": 0.29,
+          "omit": 0.71
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-9",
+        "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+        "probability": 0.3,
+        "distribution": {
+          "keep": 0.3,
+          "omit": 0.7
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-10",
+        "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+        "probability": 0.27,
+        "distribution": {
+          "keep": 0.27,
+          "omit": 0.73
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "noise-11",
+        "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+        "probability": 0.28,
+        "distribution": {
+          "keep": 0.28,
+          "omit": 0.72
+        },
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "jev"
+      },
+      {
+        "id": "recent",
+        "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+        "probability": null,
+        "distribution": null,
+        "kept": true,
+        "duplicateOf": null,
+        "reason": "recent"
+      }
+    ]
+  }
+}

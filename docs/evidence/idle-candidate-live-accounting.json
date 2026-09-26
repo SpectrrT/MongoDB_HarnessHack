@@ -1,0 +1,13 @@
+{
+  "runs": 3,
+  "passedRuns": 2,
+  "incompleteRuns": 1,
+  "paidCalls": 5,
+  "paidCallsWithMeasuredUsage": 2,
+  "paidCallsWithoutRetainedUsage": 3,
+  "knownTokens": 2833,
+  "totalTokens": null,
+  "knownCost": 0.0031228000000000002,
+  "totalCost": null,
+  "limitation": "The first smoke test discarded its temporary database before recording usage. Three generated attempt directories establish its call count. Its tokens and cost remain unknown, so aggregate savings or total cost cannot be claimed. Later successful runs retain measured totals and the final run retains per-call provider response IDs and usage."
+}

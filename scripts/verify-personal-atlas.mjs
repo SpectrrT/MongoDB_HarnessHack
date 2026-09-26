@@ -1,0 +1,53 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {randomUUID,createHash} from 'node:crypto';
+import {MongoClient} from 'mongodb';
+import {createPersonalSuggestions} from '../server/suggestions/service.js';
+if(!process.env.MONGODB_URI)throw Error('MONGODB_URI is required.');
+const output=process.argv[2];
+const database=`personal_eval_${randomUUID().replaceAll('-','')}`;
+let client=await new MongoClient(process.env.MONGODB_URI).connect();
+let time=new Date();
+const event=(id,text,days=1)=>({sourceId:id,sessionId:`session-${id}`,projectId:'harness',projectTitle:'Harness test',origin:'user',locator:`synthetic:${id}`,timestamp:new Date(+time-days*86400000).toISOString(),text});
+const rows=[event('one','Find the previous session and recover the project context.',3),event('two','Review the conversation and find what we decided.',2),{...event('constraint','Never publish without approval.'),kind:'constraint'}];
+const report={createdAt:time.toISOString(),database,source:'Synthetic engineering fixtures only. No personal history uploaded.',checks:{}};
+try{
+ let db=client.db(database),s=await createPersonalSuggestions({db,clock:()=>time});
+ await s.importEvents('owner',rows);
+ const card=(await s.openProject('owner','harness')).suggestion;assert.ok(card);
+ const accepted=await s.decide('owner',card._id,'accept');
+ await s.workOnce('before-restart');
+ assert.equal((await s.run('owner',accepted.run._id)).checkpoint,1);
+ await client.close();client=await new MongoClient(process.env.MONGODB_URI).connect();db=client.db(database);
+ s=await createPersonalSuggestions({db,clock:()=>time});
+ const retries=await Promise.all(Array.from({length:4},()=>s.decide('owner',card._id,'accept')));
+ assert.ok(retries.every(r=>r.run._id===accepted.run._id));
+ for(let i=0;i<3;i++)await s.workOnce('after-restart');
+ const done=await s.run('owner',accepted.run._id),artifact=await s.getArtifact('owner',done._id);
+ assert.equal(done.status,'completed');assert.equal(done.receipts.length,4);
+ assert.equal(artifact.sha256,createHash('sha256').update(artifact.text).digest('hex'));
+ assert.equal(await s.getArtifact('other-owner',done._id),null);
+ assert.equal(await db.collection('personal_task_runs').countDocuments({workspace:'owner'}),1);
+ report.checks.restartFromCheckpoint=true;report.checks.concurrentAcceptIdempotence=true;report.checks.verifiedArtifact=true;report.checks.workspaceIsolation=true;
+ await s.importEvents('feedback-owner',rows);
+ const first=(await s.openProject('feedback-owner','harness')).suggestion;await s.decide('feedback-owner',first._id,'dismiss');
+ time=new Date(+time+26*3600000);await s.importEvents('feedback-owner',[event('changed','A new saved project decision.',0)]);
+ const second=(await s.openProject('feedback-owner','harness')).suggestion;await s.decide('feedback-owner',second._id,'dismiss');
+ const policy=await s.policy.active('feedback-owner');assert.equal(policy.version,2);assert.equal(policy.context.suggestions.cooldownHours,48);
+ report.policyEvaluation=policy.evaluation;
+ await client.close();client=await new MongoClient(process.env.MONGODB_URI).connect();db=client.db(database);s=await createPersonalSuggestions({db,clock:()=>time});
+ assert.equal((await s.policy.active('feedback-owner'))._id,policy._id);
+ await s.policy.rollback('feedback-owner',policy._id);assert.equal((await s.policy.active('feedback-owner')).version,1);
+ report.checks.policyPromotionPersistenceRollback=true;
+ // Seed bounded public fixture rows directly to measure retrieval, not importer throughput.
+ await db.collection('personal_events').insertMany(Array.from({length:10000},(_,i)=>({_id:`scale-${i}`,workspace:'owner',projectId:'unrelated',active:true,textHash:`scale-${i}`,text:'Synthetic unrelated project note.',timestamp:new Date(+time-i*1000),family:null,duplicateOf:null})));
+ const times=[];for(let i=0;i<5;i++){const start=performance.now();await s.openProject('owner','harness');times.push(Math.round(performance.now()-start));}
+ const explain=await db.collection('personal_events').find({workspace:'owner',projectId:'harness',active:true}).sort({timestamp:-1,_id:1}).limit(20).explain('executionStats');
+ report.retrieval={fixtureRows:10000,samplesMs:times,medianMs:[...times].sort((a,b)=>a-b)[2],sourceDocumentsExamined:explain.executionStats.totalDocsExamined,scope:'Single client, five sequential reads. Not a production load test.'};
+ assert.equal(explain.executionStats.totalDocsExamined,3);
+ await s.forget('owner',card.sourceIds[0]);assert.equal(await s.getArtifact('owner',done._id),null);report.checks.sourceWithdrawal=true;
+ await db.collection('personal_events').deleteMany({_id:/^scale-/});
+ report.passed=true;
+ if(output)await fs.writeFile(output,JSON.stringify(report,null,2)+'\n');
+ console.log(JSON.stringify(report));
+}finally{await client.close();}

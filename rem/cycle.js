@@ -72,8 +72,11 @@ export async function review(ctx, run) {
     }
     if (kind === "deleted-real-doc") {
       const wrong = world.state.trash.filter((t) => t.runId === run.runId && !workspace.truth.staleDrafts.includes(t.id));
-      for (const t of wrong) world.state.files.find((f) => f.id === t.id).trashed = false;
-      world.state.trash = world.state.trash.filter((t) => !wrong.includes(t));
+      if (world.restoreFiles) await world.restoreFiles(wrong.map(t => t.id));
+      else {
+        for (const t of wrong) world.state.files.find((f) => f.id === t.id).trashed = false;
+        world.state.trash = world.state.trash.filter((t) => !wrong.includes(t));
+      }
       note = `${pref.text} (restored ${wrong.map((t) => `"${t.title}"`).join(", ")})`;
     }
     corrections.push({

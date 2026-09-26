@@ -1,0 +1,536 @@
+{
+  "schema": 1,
+  "createdAt": "2026-09-26T18:33:26.441Z",
+  "id": "personal-research-qualification",
+  "title": "Preserve creator-screening rules across a long research session",
+  "mode": "Reconstructed offline artifact replay through production Sleep generation, file writing and declared file checks",
+  "adapter": "Benchmark-only immutable historical context attachment. Production Sleep has no context compaction/retrieval integration.",
+  "model": "openai/gpt-4o-mini",
+  "scorerPolicy": "retention-v9-shared-encoding",
+  "trials": 3,
+  "provenance": {
+    "packetSha256": "3214e4481b6cda12f7c0fd8683acbcf8803b304136b91b51b71b316f9470ca62",
+    "evaluatorSha256": "89b176dab8aa476fc32382dc9715956806018b3df942332dbd09747d3a289090",
+    "origin": "codex",
+    "sessionSpanHours": 48.62,
+    "observedReturnGapSeconds": 2190.726,
+    "cutoffAt": "2026-09-24T01:08:19.528Z",
+    "historyRecords": 83,
+    "authoredTextChars": 6238,
+    "serializedHistoryChars": 11575,
+    "characterMeasurement": "Chars and selector budgets use JavaScript UTF-16 code units. No text normalization was performed."
+  },
+  "policy": {
+    "budgetChars": 16000,
+    "recentCount": 2,
+    "threshold": 0.25,
+    "maxAttempts": 3,
+    "tokenBudget": 100000,
+    "maxOutputTokens": 1800,
+    "tools": [],
+    "storage": "Fresh temporary local MongoDB, real driver"
+  },
+  "disclosure": [
+    "History uses authored user requests before the cutoff, plus one prior assistant continuation constraint. Tool output and later answers are excluded.",
+    "Candidate accounts and their metadata are synthetic, introduced identically in both arms to make the historical task independently checkable.",
+    "Idle time is replayed now; no historical background execution or elapsed-time speedup is claimed.",
+    "This tests a bounded qualification artifact, not the full original research task or spreadsheet.",
+    "User and system instructions are pinned. The production 16000-character selection budget is unchanged; no artificial context pressure.",
+    "Both arms use identical current inputs, model, generation parameters, local file permissions, declared file checks and repair limits.",
+    "Private evaluator and future outcomes are never included in model requests. The evaluator runs only after both artifacts in a pair exist; its failures never feed repair.",
+    "Production declared file checks assess JSON and existence only. Independent reconstructed criteria decide benchmark success.",
+    "Raw private history, prompts and generated artifact content are not included in this public receipt.",
+    "Each paid attempt is recorded, including failed requests. Unknown provider usage makes token totals unknown.",
+    "No retrieval tools are exposed, matching the production Sleep executor. This does not measure arbitrary archive recovery.",
+    "Source session duration and observed idle gaps do not establish historical background execution or elapsed-time speedup."
+  ],
+  "implementation": {
+    "server/context/compaction.js": "3dc4da9964c8a6b8a9025df9f4ceedb6917b89d4e5fed04ab469e990eaca67da",
+    "server/context/jev.js": "9e3e3f3531f75a46f1bc4074261a944f489c2657d5d3d2ecf353334dcf21ada1",
+    "server/context/repeat-evidence.js": "59177050e0bb2965b966bcfdd9708a8993222998e512e91f4ed8e03345dbc70d",
+    "server/sleep/execution.js": "cef58b2326496c6f8bca935ccc404308a15538786a89c701588264831c120c9b",
+    "server/sleep/execution-store.js": "d50acf61cf13c85c480f600451bd77b6e9edaf4ef3032adb31bb3a94486d5b4f",
+    "server/sleep/execution-provider.js": "a434c09d8663b688df407a4d1cbd541ba41942cc891f211623008dc19c4d4c28",
+    "scripts/benchmark-real-sleep.mjs": "cb47e8e80edb15fdd590028388143ea3c100915bbce0b22839b2309f15bd15ec"
+  },
+  "pairs": [
+    {
+      "trial": 1,
+      "order": [
+        "baseline",
+        "compacted"
+      ],
+      "baseline": {
+        "arm": "baseline",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0010989,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6989
+          },
+          {
+            "attempt": 2,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 488,
+            "cost": 0.0011001,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 4141
+          },
+          {
+            "attempt": 3,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 5460
+          }
+        ],
+        "startedAt": "2026-09-26T18:33:27.305Z",
+        "status": "incomplete",
+        "repairs": 0,
+        "declaredChecks": [],
+        "runtimeChargedTokens": 17606,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 17606,
+          "totalTokens": 17606,
+          "measuredCost": 0.0029043
+        },
+        "decisionTokens": 0,
+        "totalTokens": 17606,
+        "elapsedMs": 16643,
+        "evaluation": {
+          "passed": false,
+          "error": "No generated artifact"
+        }
+      },
+      "compacted": {
+        "arm": "compacted",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 5942
+          },
+          {
+            "attempt": 2,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 492,
+            "cost": 0.0007089,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6401
+          },
+          {
+            "attempt": 3,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 5688
+          }
+        ],
+        "startedAt": "2026-09-26T18:33:43.948Z",
+        "selection": {
+          "source": "openrouter:typesafe/jev-1.13",
+          "beforeChars": 11575,
+          "afterChars": 11575,
+          "budgetChars": 16000,
+          "retained": 83,
+          "archived": 0,
+          "duplicateOmissions": 0,
+          "decisionCalls": 0,
+          "cacheHits": 0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "reportedCost": 0,
+          "costKnown": true,
+          "usageKnown": true,
+          "errors": [],
+          "status": "under_budget"
+        },
+        "selectionLatencyMs": 1,
+        "status": "incomplete",
+        "repairs": 0,
+        "declaredChecks": [],
+        "runtimeChargedTokens": 17610,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 17610,
+          "totalTokens": 17610,
+          "measuredCost": 0.0021195
+        },
+        "decisionTokens": 0,
+        "totalTokens": 17610,
+        "elapsedMs": 18046,
+        "evaluation": {
+          "passed": false,
+          "error": "No generated artifact"
+        }
+      },
+      "compactionOnlyRegression": false
+    },
+    {
+      "trial": 2,
+      "order": [
+        "compacted",
+        "baseline"
+      ],
+      "compacted": {
+        "arm": "compacted",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6960
+          },
+          {
+            "attempt": 2,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6673
+          },
+          {
+            "attempt": 3,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 5828
+          }
+        ],
+        "startedAt": "2026-09-26T18:34:01.995Z",
+        "selection": {
+          "source": "openrouter:typesafe/jev-1.13",
+          "beforeChars": 11575,
+          "afterChars": 11575,
+          "budgetChars": 16000,
+          "retained": 83,
+          "archived": 0,
+          "duplicateOmissions": 0,
+          "decisionCalls": 0,
+          "cacheHits": 0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "reportedCost": 0,
+          "costKnown": true,
+          "usageKnown": true,
+          "errors": [],
+          "status": "under_budget"
+        },
+        "selectionLatencyMs": 0,
+        "status": "incomplete",
+        "repairs": 0,
+        "declaredChecks": [],
+        "runtimeChargedTokens": 17604,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 17604,
+          "totalTokens": 17604,
+          "measuredCost": 0.0021159
+        },
+        "decisionTokens": 0,
+        "totalTokens": 17604,
+        "elapsedMs": 19495,
+        "evaluation": {
+          "passed": false,
+          "error": "No generated artifact"
+        }
+      },
+      "baseline": {
+        "arm": "baseline",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 495,
+            "cost": 0.0007107,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6033
+          },
+          {
+            "attempt": 2,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 5815
+          },
+          {
+            "attempt": 3,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 488,
+            "cost": 0.0007065,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6230
+          }
+        ],
+        "startedAt": "2026-09-26T18:34:21.491Z",
+        "status": "incomplete",
+        "repairs": 0,
+        "declaredChecks": [],
+        "runtimeChargedTokens": 17615,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 17615,
+          "totalTokens": 17615,
+          "measuredCost": 0.0021225
+        },
+        "decisionTokens": 0,
+        "totalTokens": 17615,
+        "elapsedMs": 18114,
+        "evaluation": {
+          "passed": false,
+          "error": "No generated artifact"
+        }
+      },
+      "compactionOnlyRegression": false
+    },
+    {
+      "trial": 3,
+      "order": [
+        "baseline",
+        "compacted"
+      ],
+      "baseline": {
+        "arm": "baseline",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6016
+          },
+          {
+            "attempt": 2,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6062
+          },
+          {
+            "attempt": 3,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 488,
+            "cost": 0.0007065,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6203
+          }
+        ],
+        "startedAt": "2026-09-26T18:34:39.606Z",
+        "status": "incomplete",
+        "repairs": 0,
+        "declaredChecks": [],
+        "runtimeChargedTokens": 17606,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 17606,
+          "totalTokens": 17606,
+          "measuredCost": 0.0021171
+        },
+        "decisionTokens": 0,
+        "totalTokens": 17606,
+        "elapsedMs": 18302,
+        "evaluation": {
+          "passed": false,
+          "error": "No generated artifact"
+        }
+      },
+      "compacted": {
+        "arm": "compacted",
+        "calls": [
+          {
+            "attempt": 1,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6277
+          },
+          {
+            "attempt": 2,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 5743
+          },
+          {
+            "attempt": 3,
+            "requestSha256": "f00d04a3ed74a4f0d60f051e43e4a4e110b919867ca130cf8f75f9282e190a7a",
+            "requestChars": 23304,
+            "finished": true,
+            "httpStatus": 200,
+            "inputTokens": 5382,
+            "outputTokens": 486,
+            "cost": 0.0007053,
+            "reportedModel": "openai/gpt-4o-mini",
+            "latencyMs": 6429
+          }
+        ],
+        "startedAt": "2026-09-26T18:34:57.906Z",
+        "selection": {
+          "source": "openrouter:typesafe/jev-1.13",
+          "beforeChars": 11575,
+          "afterChars": 11575,
+          "budgetChars": 16000,
+          "retained": 83,
+          "archived": 0,
+          "duplicateOmissions": 0,
+          "decisionCalls": 0,
+          "cacheHits": 0,
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "reportedCost": 0,
+          "costKnown": true,
+          "usageKnown": true,
+          "errors": [],
+          "status": "under_budget"
+        },
+        "selectionLatencyMs": 0,
+        "status": "incomplete",
+        "repairs": 0,
+        "declaredChecks": [],
+        "runtimeChargedTokens": 17604,
+        "runtimeUnknownUsage": 0,
+        "mainUsage": {
+          "known": true,
+          "costKnown": true,
+          "measuredTokens": 17604,
+          "totalTokens": 17604,
+          "measuredCost": 0.0021159
+        },
+        "decisionTokens": 0,
+        "totalTokens": 17604,
+        "elapsedMs": 18458,
+        "evaluation": {
+          "passed": false,
+          "error": "No generated artifact"
+        }
+      },
+      "compactionOnlyRegression": false
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "trials": 3,
+      "artifactsGenerated": 0,
+      "passed": 0,
+      "checksPassed": 0,
+      "checksTotal": 0,
+      "totalTokens": 52827,
+      "decisionTokens": 0,
+      "decisionCalls": 0,
+      "mainCalls": 9,
+      "elapsedMs": 53059
+    },
+    "compacted": {
+      "trials": 3,
+      "artifactsGenerated": 0,
+      "passed": 0,
+      "checksPassed": 0,
+      "checksTotal": 0,
+      "totalTokens": 52818,
+      "decisionTokens": 0,
+      "decisionCalls": 0,
+      "mainCalls": 9,
+      "elapsedMs": 55999
+    },
+    "compactionOnlyRegressions": 0,
+    "tokenSavingsPercent": 0.02,
+    "comparison": "identical-input generation variation",
+    "savingsAttribution": "No compaction occurred. Token and check differences cannot be attributed to compaction.",
+    "compactionChangedInputs": false
+  }
+}

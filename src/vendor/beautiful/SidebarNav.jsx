@@ -408,7 +408,7 @@ function SidebarNav({
                   }
                 ),
                 onConversationAction && /* @__PURE__ */ jsxs("div", { className: "conversation-actions", children: [
-                  /* @__PURE__ */ jsx("button", { type: "button", "aria-label": "Move " + item.label + " to Sleep", title: "Move to Sleep", onClick: () => onConversationAction(item.id, "sleep"), children: /* @__PURE__ */ jsx(Moon, { size: 14 }) }),
+                  /* @__PURE__ */ jsx("button", { type: "button", "aria-label": "Move " + item.label + " to Sleep", title: "Enable Sleep: isolated local drafts and offline prototype checks, up to 10,000 tokens and 20 minutes per idle pass using the configured OpenRouter worker.", onClick: () => onConversationAction(item.id, "sleep"), children: /* @__PURE__ */ jsx(Moon, { size: 14 }) }),
                   /* @__PURE__ */ jsx("button", { type: "button", "aria-label": "Archive " + item.label, title: "Archive", onClick: () => onConversationAction(item.id, "archive"), children: /* @__PURE__ */ jsx(Archive, { size: 14 }) }),
                   /* @__PURE__ */ jsx("button", { type: "button", "aria-label": "Delete " + item.label, title: "Delete", onClick: () => onConversationAction(item.id, "delete"), children: /* @__PURE__ */ jsx(Trash2, { size: 14 }) })
                 ] })

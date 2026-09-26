@@ -167,9 +167,10 @@ export default function Workspace() {
               onOpenArchive={()=>navigate('/app/archive')}
               onConversationAction={async(id,action)=>{try{const c=state.conversations.find(c=>c.id===id);
                 if(action==='sleep'){
-                  const messages=c.messages.slice(-16).map(m=>({role:m.role,text:m.text.slice(0,20000)}));
-                  const context=messages.length?{model:c.pending?.model||c.messages.findLast(m=>m.role==='assistant')?.model||state.settings.modelSelection||'gpt-5.5',provider:state.settings.modelProvider||'codex',effort:state.settings.reasoningEffort||'low',messages,notes:[]}:undefined;
-                  await modelRequest('sleep/'+id,{enabled:true,...(context?{context}:{})});await act('conversation-sleep',{id,enabled:true});navigate('/app/memory?tab=sleep');
+                  const messages=c.messages.filter(m=>!m.sleep).map(m=>({role:m.role,text:m.text}));
+                  const context=messages.length?{model:c.pending?.model||c.messages.findLast(m=>m.role==='assistant')?.model||state.settings.modelSelection||'gpt-5.5',provider:state.settings.modelProvider||'codex',effort:state.settings.reasoningEffort||'low',folder:state.settings.agentFolder||'',messages,notes:[]}:undefined;
+                  const consent={scope:'isolated-local-drafts',budget:10000,durationMs:20*60*1000,offlinePrototypeChecks:true};
+                  await modelRequest('sleep/'+id,{enabled:true,consent,...(context?{context}:{})});await act('conversation-sleep',{id,enabled:true});navigate('/app/memory?tab=sleep');
                 }else{
                   if(action==='delete'&&c.pending)await modelRequest('jobs/'+c.pending.id+'/stop',{});
                   if(c.sleepEnabled){await modelRequest('sleep/'+id,{enabled:false});await act('conversation-sleep',{id,enabled:false});}

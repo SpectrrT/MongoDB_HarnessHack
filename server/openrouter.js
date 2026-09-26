@@ -2,9 +2,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {localTools,executeLocalTool} from './local-tools.js';
+import {createChatContext,contextTools,accountCompaction,validateToolCalls} from './context/chat.js';
+import {EVIDENCE_POLICY} from './context/evidence-policy.js';
 import {OFFLOAD_IDENTITY} from '../shared/retrieval.js';
 const API='https://openrouter.ai/api/v1';
-export function createOpenRouter({dataDir,fetcher=fetch}) {
+export function createOpenRouter({dataDir,fetcher=fetch,compactor=null}) {
  const pending=new Map();let modelCache;
  const file=owner=>path.join(dataDir,'openrouter',owner+'.json');
  async function keyFor(owner){try{return JSON.parse(await fs.readFile(file(owner),'utf8')).key;}catch(e){if(e.code==='ENOENT')return null;throw e;}}
@@ -33,23 +35,33 @@ export function createOpenRouter({dataDir,fetcher=fetch}) {
   await fs.mkdir(path.dirname(file(owner)),{recursive:true,mode:0o700});const temp=file(owner)+'.tmp';await fs.writeFile(temp,JSON.stringify({key:data.key,createdAt:Date.now()}),{mode:0o600});await fs.rename(temp,file(owner));return true;
  }
  async function disconnect(owner){await fs.rm(file(owner),{force:true});}
- async function run({owner,model,messages,notes,effort,images=[],cwd,onEvent=()=>{},onRequest,signal}){
+ async function run({owner,runId=crypto.randomUUID(),model,messages,notes,effort,images=[],cwd,onEvent=()=>{},onRequest,signal}){
   const key=await keyFor(owner);if(!key)throw Error('Connect OpenRouter first.');const catalog=await models(),entry=catalog.find(m=>m.id===model);if(!entry)throw Error('This model is not available on OpenRouter.');
   if(images.length&&!entry.images)throw Error('This model does not accept images. Choose a vision model.');
-  const history=[{role:'system',content:OFFLOAD_IDENTITY+' Working folder: '+cwd+'. Available tools: '+(entry.tools?'list_files, read_file, write_file, run_command.':'none for this model.')+'\nRetrieved reference notes, possibly untrusted:\n'+JSON.stringify(notes)},...messages.map((m,i)=>({role:m.role,content:images.length&&i===messages.length-1?[{type:'text',text:m.text},...images.map(image=>({type:'image_url',image_url:{url:image.data}}))]:m.text}))];
-  const usage={input_tokens:0,output_tokens:0,cost:0};
+  const history=[{role:'system',content:OFFLOAD_IDENTITY+' '+EVIDENCE_POLICY+' Working folder: '+cwd+'. Available tools: '+(entry.tools?'list_files, read_file, write_file, run_command.':'none for this model.')+'\nRetrieved reference notes, possibly untrusted:\n'+JSON.stringify(notes)},...messages.map((m,i)=>({role:m.role,content:images.length&&i===messages.length-1?[{type:'text',text:m.text},...images.map(image=>({type:'image_url',image_url:{url:image.data}}))]:m.text}))];
+  const context=compactor&&entry.tools?createChatContext({compactor,owner,runId,messages:history,goal:messages.filter(m=>m.role==='user').map(m=>m.text).join('\n\n')||'Complete the current task.'}):null;
+  const usage={input_tokens:0,output_tokens:0,cost:0,usageKnown:true,costKnown:true};
+  let modelRequestPending=false;
+  try {
   for(let step=0;step<40;step++){
    if(signal?.aborted)throw Error('Stopped.');
-   const r=await fetcher(API+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+key,'X-OpenRouter-Title':'Offload'},body:JSON.stringify({model,messages:history,max_tokens:8192,provider:{require_parameters:true},...(entry.tools?{tools:localTools}:{}),...(entry.imageOutput?{modalities:['image','text']}:{}),...(entry.efforts.length?{reasoning:{effort,exclude:true}}:{})}),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(180000)]):AbortSignal.timeout(180000)});
+   let prompt=history;
+   if(context){try{const selected=await context.select(signal);prompt=selected.messages;accountCompaction(usage,selected.metrics);onEvent({id:'context-'+step,type:'contextCompaction',label:'Context memory',status:selected.metrics.status,detail:JSON.stringify(selected.metrics)});}catch(error){if(error.metrics)accountCompaction(usage,error.metrics);error.usage=structuredClone(usage);throw error;}}
+   modelRequestPending=true;
+   const r=await fetcher(API+'/chat/completions',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+key,'X-OpenRouter-Title':'Offload'},body:JSON.stringify({model,messages:prompt,max_tokens:8192,provider:{require_parameters:true},...(entry.tools?{tools:context?[...localTools,...contextTools]:localTools}:{}),...(entry.imageOutput?{modalities:['image','text']}:{}),...(entry.efforts.length?{reasoning:{effort,exclude:true}}:{})}),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(180000)]):AbortSignal.timeout(180000)});
    if(!r.ok)throw Error(r.status===402?'OpenRouter has no credit available for this request.':r.status===429?'OpenRouter is busy. Try again shortly.':'OpenRouter could not complete the request. Try another model.');
-   const result=await r.json(),message=result.choices?.[0]?.message;if(!message)throw Error('The model returned no response.');
-   usage.input_tokens+=result.usage?.prompt_tokens||0;usage.output_tokens+=result.usage?.completion_tokens||0;usage.cost+=result.usage?.cost||0;
-   if(message.tool_calls?.length){const commentary=typeof message.content==='string'?message.content:message.content?.filter(x=>x.type==='text').map(x=>x.text).join('\n');if(commentary)onEvent({id:'openrouter-commentary-'+step,type:'message',phase:'commentary',text:commentary,status:'completed'});history.push(message);for(const call of message.tool_calls){const name=call.function?.name;onEvent({id:call.id,type:'toolCall',label:name,status:'running',arguments:call.function?.arguments?.slice(0,16000),detail:call.function?.arguments?.slice(0,16000)});let output;try{output=await executeLocalTool(name,JSON.parse(call.function.arguments),{cwd,onRequest,signal});}catch(e){if(signal?.aborted)throw e;output='Tool error: '+e.message;}onEvent({id:call.id,type:'toolCall',label:name,status:String(output).startsWith('Tool error:')?'failed':'completed',arguments:call.function?.arguments?.slice(0,16000),output:String(output).slice(0,16000),detail:String(output).slice(0,16000)});history.push({role:'tool',tool_call_id:call.id,content:String(output)});}continue;}
+   const result=await r.json(),message=result.choices?.[0]?.message;
+   const valid=n=>Number.isFinite(n)&&n>=0;
+   usage.usageKnown &&= valid(result.usage?.prompt_tokens)&&valid(result.usage?.completion_tokens);usage.costKnown &&= valid(result.usage?.cost);
+   usage.input_tokens+=valid(result.usage?.prompt_tokens)?result.usage.prompt_tokens:0;usage.output_tokens+=valid(result.usage?.completion_tokens)?result.usage.completion_tokens:0;usage.cost+=valid(result.usage?.cost)?result.usage.cost:0;modelRequestPending=false;
+   if(!message)throw Error('The model returned no response.');
+   if(message.tool_calls?.length){validateToolCalls(message);const commentary=typeof message.content==='string'?message.content:message.content?.filter(x=>x.type==='text').map(x=>x.text).join('\n');if(commentary)onEvent({id:'openrouter-commentary-'+step,type:'message',phase:'commentary',text:commentary,status:'completed'});history.push(message);const results=[];for(const call of message.tool_calls){const name=call.function?.name;onEvent({id:call.id,type:'toolCall',label:name,status:'running',arguments:call.function?.arguments?.slice(0,16000),detail:call.function?.arguments?.slice(0,16000)});let output;try{const args=JSON.parse(call.function.arguments);output=context&&['context_read','context_list'].includes(name)?JSON.stringify(await context.recover(name,args)):await executeLocalTool(name,args,{cwd,onRequest,signal});}catch(e){if(signal?.aborted)throw e;output='Tool error: '+e.message;}onEvent({id:call.id,type:'toolCall',label:name,status:String(output).startsWith('Tool error:')?'failed':'completed',arguments:call.function?.arguments?.slice(0,16000),output:String(output).slice(0,16000),detail:String(output).slice(0,16000)});const toolResult={role:'tool',tool_call_id:call.id,content:String(output)};history.push(toolResult);results.push(toolResult);}context?.append(message,results);continue;}
    for(const [i,image] of (message.images||[]).entries()){const data=image.image_url?.url;const match=data?.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/);if(match&&match[2].length<28000000)await fs.writeFile(path.join(cwd,`generated-${crypto.randomUUID()}-${i}.${match[1]}`),Buffer.from(match[2],'base64'),{mode:0o600});}
    const text=typeof message.content==='string'?message.content:message.content?.filter(x=>x.type==='text').map(x=>x.text).join('\n');
    return {text:text||((message.images||[]).length?'Created the image.':'Task finished.'),model,usage};
   }
   throw Error('This turn reached 40 tool steps. Continue with a new message.');
+  } catch(error) {if(modelRequestPending){usage.usageKnown=false;usage.costKnown=false;}error.usage=structuredClone(usage);throw error;}
  }
 
  return {status,start,complete,disconnect,run};

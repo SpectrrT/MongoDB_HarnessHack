@@ -132,7 +132,7 @@ test("adversarial challenge: six truth-preserving attacks; the recall edit holds
   assert.ok(bad.failed.every((f) => f.failures.includes("missing blocker: SEC-7 signing key rotation")));
 });
 
-test("probabilistic termination: a run below threshold keeps working once, then finishes with the record", async () => {
+test("probabilistic termination: a run below threshold attempts repair, then stops incomplete", async () => {
   const t = task("T4");
   const make = async (failures) => {
     const db = createMemoryDb({ name: `gate-${failures.length}` });
@@ -153,17 +153,19 @@ test("probabilistic termination: a run below threshold keeps working once, then 
     return agent.startRun({ ...t, runId: "gate" });
   };
   const ok = await make([]);
+  assert.equal(ok.status, "done");
   assert.equal(ok.completion.passed, true);
   assert.equal(ok.completion.attempts, 1);
   assert.equal(ok.completion.source, "stub");
   const bad = await make(["missing blocker: SEC-7 signing key rotation"]);
+  assert.equal(bad.status, "incomplete");
   assert.equal(bad.completion.passed, false);
   assert.equal(bad.completion.attempts, 2, "one extra executor turn before finishing");
   assert.ok(bad.completion.p < bad.completion.threshold);
   assert.equal(bad.turns, ok.turns + 1);
 });
 
-test("the Jev gate reads a probability and falls back to the labeled stub when OpenRouter refuses", async () => {
+test("the Jev gate reads a probability and fails closed when OpenRouter refuses", async () => {
   const cp = { instruction: "Check release readiness for W33", plan: [], transcript: [] };
   const good = createJevGate({ apiKey: "k", fetchImpl: async (url, init) => {
     const body = JSON.parse(init.body);
@@ -176,8 +178,9 @@ test("the Jev gate reads a probability and falls back to the labeled stub when O
   assert.deepEqual([v.p, v.source, v.tokens], [0.05, "typesafe/jev-1.13", 400]);
   const broke = createJevGate({ apiKey: "k", fetchImpl: async () => ({ ok: false, status: 402 }) });
   const f = await broke.check({ cp, final: "go", evidence: { failures: [] } });
-  assert.equal(f.source, "stub (jev unavailable: 402 payment required)");
-  assert.equal(typeof f.p, "number");
+  assert.equal(f.source, "jev unavailable: 402 payment required");
+  assert.equal(f.p, null);
+  assert.equal(f.available, false);
 });
 
 test("the morning brief reports cost per verified success and a timeline of the night", async () => {

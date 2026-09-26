@@ -442,7 +442,7 @@ export default function SidebarNav({
                   </span>
                 </button>
                 {onConversationAction&&<div className="conversation-actions">
-                  <button type="button" aria-label={'Move '+item.label+' to Sleep'} title="Move to Sleep" onClick={()=>onConversationAction(item.id,'sleep')}><Moon size={14}/></button>
+                  <button type="button" aria-label={'Move '+item.label+' to Sleep'} title="Enable Sleep: isolated local drafts and offline prototype checks, up to 10,000 tokens and 20 minutes per idle pass using the configured OpenRouter worker." onClick={()=>onConversationAction(item.id,'sleep')}><Moon size={14}/></button>
                   <button type="button" aria-label={'Archive '+item.label} title="Archive" onClick={()=>onConversationAction(item.id,'archive')}><Archive size={14}/></button>
                   <button type="button" aria-label={'Delete '+item.label} title="Delete" onClick={()=>onConversationAction(item.id,'delete')}><Trash2 size={14}/></button>
                 </div>}

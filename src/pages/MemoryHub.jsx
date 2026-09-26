@@ -6,6 +6,8 @@ import {modelRequest} from '../model-api';
 import SlowMode from './SlowMode';
 import Sleep from './Sleep';
 import Rem from './Rem';
+import ContextMemory from '../components/ContextMemory';
+import PersonalSuggestions from '../components/PersonalSuggestions';
 import '../memory.css';
 
 function Disclosure({title,description,children}){
@@ -54,11 +56,13 @@ function SleepingWork(){
  const wake=async conversation=>{setBusy(conversation.id);setError('');try{await modelRequest('sleep/'+conversation.id,{enabled:false});await act('conversation-sleep',{id:conversation.id,enabled:false});navigate('/app/chat/'+conversation.id);}catch(error){setError(error.message);}finally{setBusy('');}};
  return <section aria-label="Sleeping work">
   <div className="memory-hub-section-heading"><h2>Sleeping conversations</h2><span>{conversations.length}</span></div>
-  <p className="memory-hub-intro">Leave a conversation here for an idle review. Open it whenever you’re ready.</p>
+  <p className="memory-hub-intro">Leave a conversation here for a bounded local draft after 30 idle minutes. Open it whenever you’re ready.</p>
   {error&&<p className="error-text" role="alert">{error}</p>}
-  <div className="memory-hub-sleeping">{conversations.map(conversation=><article key={conversation.id}><Moon size={18} strokeWidth={1.5} aria-hidden="true"/><Link to={'/app/chat/'+conversation.id}><strong>{conversation.title}</strong><span>{conversation.pending?'Working':conversation.sleepJobId?'Review available':'Reviews after 30 minutes idle'}</span></Link><button className="text-button" disabled={!!busy} onClick={()=>wake(conversation)}>{busy===conversation.id?'Waking…':'Wake'}</button><Link to={'/app/chat/'+conversation.id} aria-label={'Open '+conversation.title}><ArrowRight size={16}/></Link></article>)}</div>
+  <div className="memory-hub-sleeping">{conversations.map(conversation=><article key={conversation.id}><Moon size={18} strokeWidth={1.5} aria-hidden="true"/><Link to={'/app/chat/'+conversation.id}><strong>{conversation.title}</strong><span>{conversation.pending?'Working':conversation.sleepJobId?'Review available':'Sleep enabled'}</span></Link><button className="text-button" disabled={!!busy} onClick={()=>wake(conversation)}>{busy===conversation.id?'Waking…':'Wake'}</button><Link to={'/app/chat/'+conversation.id} aria-label={'Open '+conversation.title}><ArrowRight size={16}/></Link></article>)}</div>
   {!conversations.length&&<p className="memory-hub-empty">Use the moon beside a chat’s model controls to leave it here.</p>}
-  <Disclosure title="Overnight queue" description="Saved task briefs, deadlines, and token budgets."><SlowMode initialTab="tasks" embedded/></Disclosure>
+  <Disclosure title="Overnight queue" description="Assign bounded tasks, inspect checks, and download verified outputs."><SlowMode initialTab="tasks" embedded/></Disclosure>
+  <Disclosure title="Context memory" description="Inspect retained exchanges, archived context, and decision costs."><ContextMemory/></Disclosure>
+  <Disclosure title="Suggested next actions" description="Resume a project using source-backed suggestions from selected sessions."><PersonalSuggestions/></Disclosure>
   <Disclosure title="Review history and routines" description="Run a local context review and inspect its evidence."><Sleep/></Disclosure>
  </section>;
 }

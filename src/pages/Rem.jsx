@@ -31,7 +31,7 @@ const PHASE_BY_COLLECTION = {
 };
 const PHASES = ["Replay", "Merge", "Distill", "Rehearse", "Evolve", "Calibrate", "Asks", "Brief"];
 const METRIC_ORDER = ["tasks", "passed", "passRate", "collateral", "cost", "steps", "interventions", "latencyMs"];
-const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", failed: "is-cancelled" };
+const STATUS_CLASS = { running: "is-running", paused_for_auth: "is-blocked", done: "is-ready", incomplete: "is-blocked", failed: "is-cancelled" };
 
 const get = async (url) => {
   const r = await fetch(url);
@@ -40,7 +40,7 @@ const get = async (url) => {
   return v;
 };
 const post = async (url, body) => {
-  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) });
+  const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-Offload-Client": "local" }, body: JSON.stringify(body ?? {}) });
   const v = await r.json();
   if (!r.ok) throw Error(v?.error || "Request failed.");
   return v;
@@ -314,6 +314,7 @@ function AsksList({ asks, onDecide, busy }) {
       {asks.map((a) => (
         <article key={a._id} className="rem-ask">
           <p>{a.text}</p>
+          {a.validation?.reason && <p className="muted">{a.validation.reason}</p>}
           <span className="muted">
             {a.kind}
             {a.risk ? ` · risk: ${a.risk}` : ""}
@@ -335,13 +336,15 @@ function AsksList({ asks, onDecide, busy }) {
 function RunExtras({ run }) {
   const gate = run?.completion;
   const inj = run?.injected;
-  if (!gate && !inj) return null;
+  const compact = run?.compaction;
+  if (!gate && !inj && !compact) return null;
   return (
     <div className="rem-run-extras">
-      {gate && gate.p != null && (
+      {compact && Number.isFinite(compact.beforeBytes) ? <p>Sleep working transcript: {compact.beforeBytes} bytes, budget {compact.budgetBytes} bytes. Protected context needs review.</p> : compact && <p>Sleep context: {compact.beforeChars} to {compact.afterChars} characters, {compact.archived} exchanges archived, {compact.decisionCalls} new decision calls. {compact.status === "needs_review" ? "Protected context exceeds budget." : ""}</p>}
+      {gate && (
         <p>
-          P(goal satisfied | evidence) = {Number(gate.p).toFixed(2)} vs threshold {gate.threshold}:{" "}
-          {gate.passed ? "done" : "keep working"}
+          P(goal satisfied | evidence) = {gate.p == null ? "unavailable" : Number(gate.p).toFixed(2)} vs threshold {gate.threshold}:{" "}
+          {gate.passed ? "verified" : run.status === "running" ? "checking remaining work" : "incomplete: completion checks did not pass"}
           {gate.source ? ` (${gate.source}${gate.attempts > 1 ? `, ${gate.attempts} checks` : ""})` : ""}
         </p>
       )}
@@ -365,7 +368,7 @@ function RunExtras({ run }) {
 
 function RunLog({ events }) {
   const rows = events.filter(
-    (e) => e.collection === "episodes" || e.collection === "effects" || (e.collection === "checkpoints" && ["paused_for_auth", "done", "failed"].includes(e.status)),
+    (e) => e.collection === "episodes" || e.collection === "effects" || (e.collection === "checkpoints" && ["paused_for_auth", "done", "incomplete", "failed"].includes(e.status)),
   );
   if (!rows.length) return <p className="muted">No live steps recorded for this run in this session.</p>;
   return (
@@ -753,8 +756,9 @@ function MorningPanel({ state, busy, setBusy, setError, reload }) {
     setBusy(true);
     setError("");
     try {
-      await post(`/api/rem/asks/${id}`, { decision });
+      const result = await post(`/api/rem/asks/${id}`, { decision });
       await reload();
+      if (result.ask?.validation && !result.ask.validation.passed) setError(result.ask.validation.reason);
     } catch (e) {
       setError(e.message);
     } finally {

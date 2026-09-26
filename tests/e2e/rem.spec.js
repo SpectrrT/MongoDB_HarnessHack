@@ -25,17 +25,17 @@ test("REM: run a task live, sleep, and see the morning brief and diff", async ({
   await expect(runStatus).toBeVisible({ timeout: 15000 });
   await expect
     .poll(async () => (await runStatus.textContent())?.trim(), { timeout: 15000 })
-    .toMatch(/^(done|paused_for_auth)$/);
+    .toMatch(/^(done|incomplete|paused_for_auth)$/);
   if ((await runStatus.textContent())?.trim() === "paused_for_auth") {
     await page.locator(".notice").getByRole("button", { name: /^Reconnect/ }).click();
-    await expect.poll(async () => (await runStatus.textContent())?.trim(), { timeout: 15000 }).toBe("done");
+    await expect.poll(async () => (await runStatus.textContent())?.trim(), { timeout: 15000 }).toMatch(/^(done|incomplete)$/);
   }
   await expect(page.locator(".rem-run-log li").first()).toBeVisible();
   await expect(page.locator(".rem-run-row").first()).toBeVisible();
 
   // Night: sleep once and see the real phases render (Replay, Merge, Distill, Evolve, asks, brief).
   // The Memory hub keeps the live REM cycle in its Learning view.
-  await page.getByRole("region", { name: "Night" }).getByRole("button", { name: "Run sleep cycle", exact: true }).click();
+  await page.getByRole("region", { name: "Night", exact: true }).getByRole("button", { name: "Run sleep cycle", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Replay", exact: true })).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("heading", { name: "Merge", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Distill", exact: true })).toBeVisible();

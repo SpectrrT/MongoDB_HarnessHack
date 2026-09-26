@@ -26,6 +26,7 @@
     "local:https": "node scripts/local-https.mjs start",
     "local:https:stop": "node scripts/local-https.mjs stop",
     "local:https:status": "node scripts/local-https.mjs status",
+    "context:benchmark": "node scripts/benchmark-context.mjs",
     "activity:collector": "node --env-file-if-exists=.env server/activity/collector.js",
     "activity:seed": "node --env-file-if-exists=.env server/activity/seed.js"
   },

@@ -1,0 +1,10 @@
+.personal-suggestions { overflow-wrap: anywhere; }
+.personal-suggestions > p { margin: 12px 0 20px; }
+.personal-suggestions > h2 { font-size: 18px; margin: 28px 0 12px; }
+.personal-suggestions .button-row { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 14px 0; }
+.personal-suggestions .rem-edit { margin: 14px 0; }
+.personal-suggestions .rem-edit h2 { font-size: 18px; margin-bottom: 10px; }
+.personal-suggestions .rem-edit p { margin: 8px 0; }
+.personal-suggestions details { margin: 12px 0; }
+.personal-suggestions summary { cursor: pointer; }
+.personal-suggestions li { margin: 8px 0; font-size: 13px; }

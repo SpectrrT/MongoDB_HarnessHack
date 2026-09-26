@@ -1,0 +1,25 @@
+{
+  "source": "Synthetic counter fixture through real OpenRouter model and Sleep executor",
+  "model": "openai/gpt-4.1-mini",
+  "status": "incomplete",
+  "reason": "acceptance-checks-failed",
+  "checks": [
+    {
+      "path": "prototype.html",
+      "passed": true
+    },
+    {
+      "path": "evidence.md",
+      "passed": false,
+      "failed": [
+        "missing: Unverified draft"
+      ]
+    }
+  ],
+  "browserTestRan": false,
+  "usage": "Not captured in this initial smoke-test failure; no cost saving claim is made.",
+  "paidCalls": 3,
+  "callCountEvidence": "Three immutable attempt directories, each with generated artifacts, match the three-attempt executor bound.",
+  "tokensUsed": null,
+  "cost": null
+}

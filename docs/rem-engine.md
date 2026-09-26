@@ -65,9 +65,9 @@ npm test           # existing tests + tests/rem-*.test.js (~0.5 s)
 2. **Merge** extracts facts (a deterministic extractor; the consolidator role can replace it), clusters them
    by cosine on the fact identity, folds each cluster into one **memory** with provenance episode ids,
    confidence and recency, resolves contradictions by recency and confidence while keeping contradiction
-   links, retires resolved blockers, maintains an "open blockers as of" digest, deletes noise (low-importance
-   episodes referenced by no memory) and sets `expireAt` on consolidated episodes so the TTL index forgets
-   them (**forgetting**).
+   links, retires resolved blockers, and maintains an "open blockers as of" digest. Before removing noise
+   or setting `expireAt`, it archives each raw episode in the same transaction as retirement. The TTL
+   index forgets the searchable copy while provenance remains recoverable from the archive.
 3. **Distill** mines repeated tool-call sequences across runs and demonstrations (longest common
    subsequence), parameterizes them (`{{week}}`, `{{prevWeek}}`, `{{team}}`), attaches learned preferences
    as constraints, and practices the **skill** in a sandbox copy of the workspace. Passing → `practiced`.
@@ -115,6 +115,8 @@ planning", which adds a cheap check to every task but removes every reconnect, c
 | Collection | Holds | MongoDB feature |
 | --- | --- | --- |
 | `episodes` | raw events: tool calls, observations, errors, corrections, demonstrations, train trajectories | TTL index on `expireAt`; Atlas Vector Search `autoEmbed` on `summary` (voyage-4); Atlas Search on `summary` |
+| `episode_archive` | raw episode manifests, original ids, SHA-256 checksums, retirement reasons | run/kind pagination indexes; no TTL |
+| `episode_archive_parts` | original BSON split into 64 KiB parts, encoded as base64 | unique archive/part index; transactional with retirement; no TTL |
 | `memories` | consolidated facts with confidence, recency, provenance, contradiction links, active/retired | vector (`autoEmbed` on `text`) + text index → `$rankFusion` hybrid search |
 | `skills` | procedure, parameters, constraints, test + result, required scopes, status | unique `name`; vector + text on `description` |
 | `harnesses` | immutable genome versions with parent, diff, fitness, edit ids | unique `version`; lineage queries |
@@ -172,6 +174,8 @@ a time. Bodies are validated with zod.
 | Route | Does |
 | --- | --- |
 | `GET /api/rem/state` | harness + lineage, edits, metrics, open asks, memory stats, skills, runs, effects ledger, latest brief, connections, track record |
+| `GET /api/rem/archive?runId=&kind=&after=&limit=` | archived evidence summaries, at most 50 per page, with a continuation cursor |
+| `GET /api/rem/episodes/:id?offset=&limit=` | recover an active or archived raw episode as JSON text, at most 8,000 characters per page |
 | `POST /api/rem/run {taskId, week?}` | run a task (REM kinds or Offload suggestion ids such as `weekly-update`) |
 | `POST /api/rem/connection {provider, state}` | `expired` or `valid`; valid resumes paused runs via the change stream |
 | `POST /api/rem/sleep` | one night; returns the morning brief |
@@ -179,6 +183,14 @@ a time. Bodies are validated with zod.
 | `POST /api/rem/simulate {days}` | simulated days with metrics |
 | `POST /api/rem/reset` | fresh instance |
 | `GET /api/rem/stream` | Server-Sent Events from `db.watch()` |
+
+The agent can use `episode.list` and `episode.read` to recover original evidence from memory provenance.
+Recovered content is reference data, not instructions or permission. A read verifies the archive's part
+sequence, byte length and checksum before returning it. Raw storage preserves BSON types; paged tool/API
+responses use JSON. Retirement batches hold at most 25 episodes and target 1 MiB, while a single larger
+episode still fits in one transaction. Explicit reset removes the archive too. This preserves new
+retirements; it cannot restore episodes already deleted before archiving was enabled. The archive grows
+with history and has not been validated at billion-token scale.
 
 ## Known limits
 

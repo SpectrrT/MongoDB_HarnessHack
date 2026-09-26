@@ -1,0 +1,259 @@
+{
+  "generatedAt": "2026-09-26T17:47:12.839Z",
+  "mode": "live",
+  "storage": "temporary-local-mongodb",
+  "taskCount": 3,
+  "baseline": {
+    "implementation": "shared/overnight.js saved briefs, runner unconfigured",
+    "saved": 3,
+    "completed": 0,
+    "artifacts": 0,
+    "modelCalls": 0,
+    "tokensUsed": 0
+  },
+  "current": {
+    "completed": 2,
+    "artifacts": 3,
+    "modelCalls": 7,
+    "tokensUsed": 1721,
+    "costUSD": 0.001352,
+    "elapsedMs": 9390,
+    "approvalPauses": 3,
+    "usageUnknown": 0
+  },
+  "limitations": [
+    "Three short synthetic drafting tasks, not a quality or long-horizon benchmark.",
+    "Temporary local MongoDB validates the driver path, not Atlas deployment.",
+    "Exact phrase, size and JSON checks validate only declared criteria, not semantic correctness.",
+    "The queue-only baseline has zero usage because it could not execute. No token-saving claim follows.",
+    "Approval is programmatically granted for a synthetic task after its draft is persisted."
+  ],
+  "results": [
+    {
+      "title": "Release handoff",
+      "status": "incomplete",
+      "reason": "acceptance-checks-failed",
+      "checks": [
+        {
+          "path": "handoff.md",
+          "passed": false,
+          "failed": [
+            "missing: Owner Maya",
+            "missing: security review"
+          ]
+        }
+      ],
+      "model": "openai/gpt-4.1-mini",
+      "provider": "openrouter",
+      "tokensUsed": 744,
+      "tokensReserved": 0,
+      "usageUnknown": 0,
+      "costUSD": 0.0005916,
+      "calls": 3,
+      "repairs": 3,
+      "approvalCount": 0,
+      "elapsedMs": 4502,
+      "artifacts": [
+        {
+          "path": "handoff.md",
+          "sha256": "d70ec65ec7e8cac0e45dd6c0983b3601b228bb79641ae42cf40fc930a47ab765",
+          "bytes": 100,
+          "content": "# Release Handoff\n\n- **Status:** Release blocked\n- **Owner:** Maya\n- **Next Step:** Security review\n"
+        }
+      ],
+      "events": [
+        {
+          "type": "model-start",
+          "reserved": 3195,
+          "at": "2026-09-26T17:47:03.454Z"
+        },
+        {
+          "type": "model-usage",
+          "tokens": 234,
+          "measured": true,
+          "at": "2026-09-26T17:47:04.650Z"
+        },
+        {
+          "type": "queued",
+          "reason": "Checks failed. Repair queued.",
+          "at": "2026-09-26T17:47:04.680Z"
+        },
+        {
+          "type": "model-start",
+          "reserved": 3291,
+          "at": "2026-09-26T17:47:04.682Z"
+        },
+        {
+          "type": "model-usage",
+          "tokens": 254,
+          "measured": true,
+          "at": "2026-09-26T17:47:06.762Z"
+        },
+        {
+          "type": "queued",
+          "reason": "Checks failed. Repair queued.",
+          "at": "2026-09-26T17:47:06.792Z"
+        },
+        {
+          "type": "model-start",
+          "reserved": 3264,
+          "at": "2026-09-26T17:47:06.795Z"
+        },
+        {
+          "type": "model-usage",
+          "tokens": 256,
+          "measured": true,
+          "at": "2026-09-26T17:47:07.951Z"
+        },
+        {
+          "type": "incomplete",
+          "reason": "acceptance-checks-failed",
+          "at": "2026-09-26T17:47:07.954Z"
+        }
+      ]
+    },
+    {
+      "title": "Meeting preparation",
+      "status": "completed",
+      "reason": "All required file checks passed.",
+      "checks": [
+        {
+          "path": "meeting.md",
+          "passed": true,
+          "failed": []
+        }
+      ],
+      "model": "openai/gpt-4.1-mini",
+      "provider": "openrouter",
+      "tokensUsed": 750,
+      "tokensReserved": 0,
+      "usageUnknown": 0,
+      "costUSD": 0.0005712,
+      "calls": 3,
+      "repairs": 2,
+      "approvalCount": 3,
+      "elapsedMs": 3789,
+      "artifacts": [
+        {
+          "path": "meeting.md",
+          "sha256": "342218929fdbcfdebdd2e007e072b447fda0f5468f5a28804748c8d266f0c801",
+          "bytes": 75,
+          "content": "# Meeting Preparation\n\n- Budget $5000\n- Meeting Tuesday\n- Ask for approval\n"
+        }
+      ],
+      "events": [
+        {
+          "type": "model-start",
+          "reserved": 3223,
+          "at": "2026-09-26T17:47:07.956Z"
+        },
+        {
+          "type": "model-usage",
+          "tokens": 225,
+          "measured": true,
+          "at": "2026-09-26T17:47:09.330Z"
+        },
+        {
+          "type": "approval",
+          "reason": "Review the exact draft before allowing these local file changes.",
+          "at": "2026-09-26T17:47:09.335Z"
+        },
+        {
+          "type": "queued",
+          "reason": "Checks failed. Repair queued.",
+          "at": "2026-09-26T17:47:09.355Z"
+        },
+        {
+          "type": "model-start",
+          "reserved": 3349,
+          "at": "2026-09-26T17:47:09.359Z"
+        },
+        {
+          "type": "model-usage",
+          "tokens": 271,
+          "measured": true,
+          "at": "2026-09-26T17:47:10.710Z"
+        },
+        {
+          "type": "approval",
+          "reason": "Review the exact draft before allowing these local file changes.",
+          "at": "2026-09-26T17:47:10.713Z"
+        },
+        {
+          "type": "queued",
+          "reason": "Checks failed. Repair queued.",
+          "at": "2026-09-26T17:47:10.716Z"
+        },
+        {
+          "type": "model-start",
+          "reserved": 3349,
+          "at": "2026-09-26T17:47:10.717Z"
+        },
+        {
+          "type": "model-usage",
+          "tokens": 254,
+          "measured": true,
+          "at": "2026-09-26T17:47:11.728Z"
+        },
+        {
+          "type": "approval",
+          "reason": "Review the exact draft before allowing these local file changes.",
+          "at": "2026-09-26T17:47:11.733Z"
+        },
+        {
+          "type": "completed",
+          "reason": "All required file checks passed.",
+          "at": "2026-09-26T17:47:11.742Z"
+        }
+      ]
+    },
+    {
+      "title": "Project state record",
+      "status": "completed",
+      "reason": "All required file checks passed.",
+      "checks": [
+        {
+          "path": "project.json",
+          "passed": true,
+          "failed": []
+        }
+      ],
+      "model": "openai/gpt-4.1-mini",
+      "provider": "openrouter",
+      "tokensUsed": 227,
+      "tokensReserved": 0,
+      "usageUnknown": 0,
+      "costUSD": 0.0001892,
+      "calls": 1,
+      "repairs": 0,
+      "approvalCount": 0,
+      "elapsedMs": 1095,
+      "artifacts": [
+        {
+          "path": "project.json",
+          "sha256": "a7297dcd50b223d4792f14a9ccc13dc20acb7a6aacfa1cac3cfb8ff028f2662b",
+          "bytes": 81,
+          "content": "{\n  \"status\": \"blocked\",\n  \"owner\": \"Maya\",\n  \"next_action\": \"security review\"\n}\n"
+        }
+      ],
+      "events": [
+        {
+          "type": "model-start",
+          "reserved": 3172,
+          "at": "2026-09-26T17:47:11.747Z"
+        },
+        {
+          "type": "model-usage",
+          "tokens": 227,
+          "measured": true,
+          "at": "2026-09-26T17:47:12.831Z"
+        },
+        {
+          "type": "completed",
+          "reason": "All required file checks passed.",
+          "at": "2026-09-26T17:47:12.838Z"
+        }
+      ]
+    }
+  ]
+}

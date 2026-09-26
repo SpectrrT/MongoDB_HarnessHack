@@ -1,0 +1,982 @@
+{
+  "createdAt": "2026-09-26T17:30:10.832Z",
+  "mode": "live Jev",
+  "database": "in-memory",
+  "scope": "Synthetic retention and paired exact-answer evaluation. No billion-token or overnight claim.",
+  "scorer": "openrouter:typesafe/jev-1.13",
+  "cases": [
+    {
+      "id": "cross-batch-reference",
+      "runId": "context-eval-cross-batch-reference-483ae6b3-a00f-40b3-b846-08069e10c725",
+      "goal": "Return JSON with region for the Atlas migration, following its routing plan.",
+      "requiredIds": [
+        "f1",
+        "f2"
+      ],
+      "retainedIds": [
+        "f1",
+        "f2",
+        "recent"
+      ],
+      "fullRecall": true,
+      "tailRecall": false,
+      "jevRecall": true,
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7209,
+        "afterChars": 139,
+        "budgetChars": 1600,
+        "retained": 3,
+        "archived": 12,
+        "duplicateOmissions": 0,
+        "decisionCalls": 2,
+        "cacheHits": 0,
+        "inputTokens": 3025,
+        "outputTokens": 260,
+        "reportedCost": 0.00012705,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "compacted"
+      },
+      "latencyMs": 635,
+      "restartDecisionCalls": 0,
+      "archiveRecovery": true,
+      "decisions": [
+        {
+          "id": "f1",
+          "digest": "6caaf167781ab6c671de6e6779dc9611c0ebbad18b4f6980e44817959ae1b9d3",
+          "probability": 0.87,
+          "distribution": {
+            "keep": 0.87,
+            "omit": 0.13
+          },
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-0",
+          "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-1",
+          "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-2",
+          "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-3",
+          "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-4",
+          "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-5",
+          "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+          "probability": 0.05,
+          "distribution": {
+            "keep": 0.05,
+            "omit": 0.95
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "f2",
+          "digest": "12d0cd96f16fb57362ae9f0ca920ddb50696b2bcd6fdb47966e84153f7b4e627",
+          "probability": 0.97,
+          "distribution": {
+            "keep": 0.97,
+            "omit": 0.030000000000000027
+          },
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-6",
+          "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-7",
+          "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-8",
+          "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-9",
+          "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-10",
+          "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-11",
+          "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "recent",
+          "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "recent"
+        }
+      ],
+      "baseline": {
+        "answer": {
+          "region": "eu-central-1"
+        },
+        "inputTokens": 1313,
+        "outputTokens": 8,
+        "cost": 0.00020175,
+        "latencyMs": 654,
+        "pass": true
+      },
+      "compacted": {
+        "answer": {
+          "region": "eu-central-1"
+        },
+        "inputTokens": 77,
+        "outputTokens": 8,
+        "cost": 0.00001635,
+        "latencyMs": 1070,
+        "pass": true
+      },
+      "baselineTotal": 1321,
+      "compactedTotal": 3370,
+      "repeatedFiveCalls": {
+        "baseline": 6605,
+        "compacted": 3710,
+        "label": "Projection from one paired call and verified zero-call decision reuse, not five live answers"
+      }
+    },
+    {
+      "id": "updated-decision",
+      "runId": "context-eval-updated-decision-d1de1749-2c85-468a-9fec-8166f04f213e",
+      "goal": "Return JSON with owner for ticket Q62 using the most recent dated assignment.",
+      "requiredIds": [
+        "f1",
+        "f2"
+      ],
+      "retainedIds": [
+        "f1",
+        "f2",
+        "recent"
+      ],
+      "fullRecall": true,
+      "tailRecall": false,
+      "jevRecall": true,
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7200,
+        "afterChars": 130,
+        "budgetChars": 1600,
+        "retained": 3,
+        "archived": 12,
+        "duplicateOmissions": 0,
+        "decisionCalls": 2,
+        "cacheHits": 0,
+        "inputTokens": 3047,
+        "outputTokens": 260,
+        "reportedCost": 0.000127974,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "compacted"
+      },
+      "latencyMs": 700,
+      "restartDecisionCalls": 0,
+      "archiveRecovery": true,
+      "decisions": [
+        {
+          "id": "f1",
+          "digest": "dbb498ab85a57a3f9efa71e069002ee974ea2b0b72ff53a9af2713167fb6475a",
+          "probability": 0.87,
+          "distribution": {
+            "keep": 0.87,
+            "omit": 0.13
+          },
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-0",
+          "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-1",
+          "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-2",
+          "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-3",
+          "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-4",
+          "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-5",
+          "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "f2",
+          "digest": "d8fb97545fc2cc5171783986687aa19db21a49761d714e9611d63bf45fcb00a6",
+          "probability": 0.97,
+          "distribution": {
+            "keep": 0.97,
+            "omit": 0.030000000000000027
+          },
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-6",
+          "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-7",
+          "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-8",
+          "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-9",
+          "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-10",
+          "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-11",
+          "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "recent",
+          "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "recent"
+        }
+      ],
+      "baseline": {
+        "answer": {
+          "owner": "Avery"
+        },
+        "inputTokens": 1323,
+        "outputTokens": 6,
+        "cost": 0.00020205,
+        "latencyMs": 582,
+        "pass": true
+      },
+      "compacted": {
+        "answer": {
+          "owner": "Avery"
+        },
+        "inputTokens": 87,
+        "outputTokens": 6,
+        "cost": 0.00001665,
+        "latencyMs": 441,
+        "pass": true
+      },
+      "baselineTotal": 1329,
+      "compactedTotal": 3400,
+      "repeatedFiveCalls": {
+        "baseline": 6645,
+        "compacted": 3772,
+        "label": "Projection from one paired call and verified zero-call decision reuse, not five live answers"
+      }
+    },
+    {
+      "id": "negative-permission",
+      "runId": "context-eval-negative-permission-a9f8b7b2-31f1-4998-b69f-254ae41d74a6",
+      "goal": "Return JSON with canSend for the draft. Use the permission record.",
+      "requiredIds": [
+        "f2"
+      ],
+      "retainedIds": [
+        "f2",
+        "recent"
+      ],
+      "fullRecall": true,
+      "tailRecall": false,
+      "jevRecall": true,
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7219,
+        "afterChars": 107,
+        "budgetChars": 1600,
+        "retained": 2,
+        "archived": 13,
+        "duplicateOmissions": 0,
+        "decisionCalls": 2,
+        "cacheHits": 0,
+        "inputTokens": 2936,
+        "outputTokens": 242,
+        "reportedCost": 0.000123312,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "compacted"
+      },
+      "latencyMs": 576,
+      "restartDecisionCalls": 0,
+      "archiveRecovery": true,
+      "decisions": [
+        {
+          "id": "f1",
+          "digest": "8fe8c239c9cc3b088a6613bde4577ea0d2d7242fb742243d8a5412427fe5f40b",
+          "probability": 0.23,
+          "distribution": {
+            "keep": 0.23,
+            "omit": 0.77
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-0",
+          "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+          "probability": 0.11,
+          "distribution": {
+            "keep": 0.11,
+            "omit": 0.89
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-1",
+          "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+          "probability": 0.1,
+          "distribution": {
+            "keep": 0.1,
+            "omit": 0.9
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-2",
+          "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-3",
+          "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-4",
+          "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-5",
+          "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "f2",
+          "digest": "6bbe697b3cb0fe8b95d2f05ec1df7c00378909a36496aadc62a99ea1ce6d1f2d",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "constraint_or_open_loop"
+        },
+        {
+          "id": "noise-6",
+          "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+          "probability": 0.1,
+          "distribution": {
+            "keep": 0.1,
+            "omit": 0.9
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-7",
+          "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+          "probability": 0.1,
+          "distribution": {
+            "keep": 0.1,
+            "omit": 0.9
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-8",
+          "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-9",
+          "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+          "probability": 0.08,
+          "distribution": {
+            "keep": 0.08,
+            "omit": 0.92
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-10",
+          "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+          "probability": 0.09,
+          "distribution": {
+            "keep": 0.09,
+            "omit": 0.91
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-11",
+          "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+          "probability": 0.1,
+          "distribution": {
+            "keep": 0.1,
+            "omit": 0.9
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "recent",
+          "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "recent"
+        }
+      ],
+      "baseline": {
+        "answer": {
+          "canSend": false
+        },
+        "inputTokens": 1311,
+        "outputTokens": 6,
+        "cost": 0.00020025,
+        "latencyMs": 576,
+        "pass": true
+      },
+      "compacted": {
+        "answer": {
+          "canSend": false
+        },
+        "inputTokens": 67,
+        "outputTokens": 6,
+        "cost": 0.00001365,
+        "latencyMs": 517,
+        "pass": true
+      },
+      "baselineTotal": 1317,
+      "compactedTotal": 3251,
+      "repeatedFiveCalls": {
+        "baseline": 6585,
+        "compacted": 3543,
+        "label": "Projection from one paired call and verified zero-call decision reuse, not five live answers"
+      }
+    },
+    {
+      "id": "exact-identifier",
+      "runId": "context-eval-exact-identifier-78788cb5-1922-44dc-a444-884ebd3d1eec",
+      "goal": "Return JSON with artifact and sha for the approved rollback bundle.",
+      "requiredIds": [
+        "f1",
+        "f2"
+      ],
+      "retainedIds": [
+        "f1",
+        "f2",
+        "recent"
+      ],
+      "fullRecall": true,
+      "tailRecall": false,
+      "jevRecall": true,
+      "metrics": {
+        "source": "openrouter:typesafe/jev-1.13",
+        "beforeChars": 7212,
+        "afterChars": 142,
+        "budgetChars": 1600,
+        "retained": 3,
+        "archived": 12,
+        "duplicateOmissions": 0,
+        "decisionCalls": 2,
+        "cacheHits": 0,
+        "inputTokens": 3029,
+        "outputTokens": 260,
+        "reportedCost": 0.00012721800000000001,
+        "costKnown": true,
+        "usageKnown": true,
+        "errors": [],
+        "status": "compacted"
+      },
+      "latencyMs": 521,
+      "restartDecisionCalls": 0,
+      "archiveRecovery": true,
+      "decisions": [
+        {
+          "id": "f1",
+          "digest": "1f9e3a4fb5d83b4e700f2c99b3727af7af282b7ce0fd7a8e56e2f869d0bcf263",
+          "probability": 0.96,
+          "distribution": {
+            "keep": 0.96,
+            "omit": 0.040000000000000036
+          },
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-0",
+          "digest": "f352ac788d362fa64503cf49d5a7ad588ad4506f2e8576d6878d235dfcaf5f05",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-1",
+          "digest": "d19c5da25b68f0dce1c0eda75f65e4646f3bc3d6b4843edac3e7261308edac59",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-2",
+          "digest": "2bd45c4e3cfdc31cf5f6b14a06ddbf2434878c2e22d6b043e8eb011c74b04a78",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-3",
+          "digest": "8522a5a05add7a72faaa4ef6b2212e943dd15e13c928c5f356844fb30dfe579c",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-4",
+          "digest": "0fc42eccf130a7cd5b6d5974404d1498956d179294e44d25ff13abbd4749baee",
+          "probability": 0.03,
+          "distribution": {
+            "keep": 0.03,
+            "omit": 0.97
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-5",
+          "digest": "0537626a954c6c57e3a140eb0b9998d6898ad8f830a9af0fadd19889ab36a351",
+          "probability": 0.04,
+          "distribution": {
+            "keep": 0.04,
+            "omit": 0.96
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "f2",
+          "digest": "283294fa74d75588c3923f387f28241fb6f518400bb2c119db869df79519f3ee",
+          "probability": 0.97,
+          "distribution": {
+            "keep": 0.97,
+            "omit": 0.030000000000000027
+          },
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-6",
+          "digest": "c676c3b03668b5e76c30d9b497ebfc47d43ed037b016c17e1a28b8482477b874",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-7",
+          "digest": "cbc88a5c58b8d25bd97b6800599c5e1c539543032d9e59b3c5195ea4230d7082",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-8",
+          "digest": "4d54d8c58dfb09f87ada7d1c9a53b4e1fdf9fa7772ac35bf0c479b7fa14ba938",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-9",
+          "digest": "54e88000556ce948c16fbbd854d8e19e4048f6376d9b4ad5ee08622b372efe92",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-10",
+          "digest": "ea6d4d5d994e0a41c941a3e151a15cef1f9ffcfa93b1d30edc356deb491ded8f",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "noise-11",
+          "digest": "ac32170503136860749dfdbc636d65c20a6c549139e54d796059a54dc605d02c",
+          "probability": 0.02,
+          "distribution": {
+            "keep": 0.02,
+            "omit": 0.98
+          },
+          "kept": false,
+          "duplicateOf": null,
+          "reason": "jev"
+        },
+        {
+          "id": "recent",
+          "digest": "530d5e4c4ef09a9e2d5f827a4c77f32387f829d1d04867aedcd452c39af479cc",
+          "probability": null,
+          "distribution": null,
+          "kept": true,
+          "duplicateOf": null,
+          "reason": "recent"
+        }
+      ],
+      "baseline": {
+        "answer": {
+          "artifact": "bundle-a41.zip",
+          "sha": "7b31a90c4d20"
+        },
+        "inputTokens": 1317,
+        "outputTokens": 27,
+        "cost": 0.00021375,
+        "latencyMs": 691,
+        "pass": true
+      },
+      "compacted": {
+        "answer": {
+          "artifact": "bundle-a41.zip",
+          "sha": "7b31a90c4d20"
+        },
+        "inputTokens": 81,
+        "outputTokens": 20,
+        "cost": 0.00002415,
+        "latencyMs": 650,
+        "pass": true
+      },
+      "baselineTotal": 1344,
+      "compactedTotal": 3390,
+      "repeatedFiveCalls": {
+        "baseline": 6720,
+        "compacted": 3794,
+        "label": "Projection from one paired call and verified zero-call decision reuse, not five live answers"
+      }
+    }
+  ]
+}

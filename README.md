@@ -6,9 +6,9 @@ Offload learns the work you repeat, so next time you can hand it over. Its engin
 runs the harness on a day/night cycle:
 
 - **Day.** The agent works long-horizon tasks through connected accounts, durably. Every step writes a checkpoint. Every
-  side effect is claimed in an effects ledger before it runs, so a crash or an expired login never loses progress or
-  sends the same email twice.
-- **Night.** It replays the day, merges duplicate memories and forgets noise, distills repeated work into a tested skill,
+  side effect is claimed in an effects ledger before it runs. Recovery is verified against the persisted fixture provider;
+  real external services still require their own idempotency and reconciliation contract.
+- **Night.** It replays the day, merges duplicate memories and archives omitted raw evidence, distills repeated work into a tested skill,
   and evolves its own harness (rules, guardrails, tool scopes, context policy, model routing) against a gym with a
   held-out split. Every edit carries a falsifiable prediction, and a no-regression gate decides what ships.
 - **Morning.** It asks once for any new authority it wants, such as letting a skill that sends email run on its own,
@@ -18,6 +18,97 @@ Built for the MongoDB × Cerebral Valley **Harness Engineering & Model Wrangling
 both problem statements: recursive harnessing (the harness edits its own rules, guardrails, tool access and routing) and
 long-horizon engineering (durable execution, plus memory that gets smaller and more precise as it grows, judged by hard
 metrics).
+
+## Sleep: measured context compaction (September 26, 2026)
+
+Sleep now selects useful tool history with **Jev probabilities**, archives omitted records in **MongoDB**, and recovers
+original evidence by run-scoped id. It preserves complete tool exchanges and detected constraints, reuses decisions
+when the task state is unchanged, and removes identical read-only results without a model call. This is integrated
+before planner/executor calls in the REM runtime and displayed under **Sleep > Context memory**.
+
+**Latest complete development result: 17.69% fewer total tokens on evolving tasks, including Jev and recovery.**
+Full context uses 39,196 tokens; Offload uses 32,264. Offload passes 12/12 exact JSON checks, versus 11/12 for full
+context. The baseline failure is an extra `reason` field in an otherwise correct answer. The same GPT-4o-mini model,
+three synthetic tasks and twelve chronological stages are used on both paths. These inputs were used during
+optimization, so this is a development benchmark, not an untouched evaluation or a general intelligence claim.
+
+| Live workload and policy | Full context | Offload, including Jev | Exact checks, baseline / Offload |
+| --- | ---: | ---: | --- |
+| Evolving, original causal policy | 43,623 | 69,384, 59.05% more | 11/12 / 11/12 |
+| Evolving, shortened prompt | 43,606 | 56,664, 29.95% more | 11/12 / 11/12 |
+| Evolving, lossless v4 | 43,627 | 46,610, 6.84% more | 11/12 / 11/12 |
+| Evolving, evidence policy plus v5 | 34,910 | 36,238, 3.80% more | 12/12 / 12/12 |
+| Evolving, evidence policy plus v9 | 39,196 | 32,264, 17.69% fewer | 11/12 / 12/12 |
+| Stable snapshots, five calls each, v9 | 26,640 | 9,052, 66.02% fewer | 20/20 / 20/20 |
+
+V9 factors exact repeated text, shares the encoding schema and retention rubric, and batches decisions while keeping
+original source identities, order, whitespace and multiplicity. New evidence still invalidates scores. It also keeps
+explicit retention questions: shorter experimental prompts failed live selection and were rejected. Their paid tokens
+remain in the evidence. This is measured optimization, not removal of safeguards or a changed answer checker.
+
+The evolving total comprises 12,011 answer-model tokens and 20,253 Jev tokens; archive recovery passes 1/1 and
+restarted selections make zero new scoring calls. Answer-model tool choices vary between runs even with temperature
+zero, so changes in paired baselines are visible above. Direct TypeSafe did not return prices; combined evolving
+monetary savings are unknown. The repeated workload contains four snapshots answered five times per path, with 2,435
+answer tokens and 6,617 scoring tokens. Its reported OpenRouter spend is $0.000714378 versus $0.0023805. Neither test
+establishes universal savings, calibrated probabilities, or billion-token performance.
+
+[Latest evolving receipt](docs/evidence/jev-context-evolving-combined-v9.json),
+[latest repeated receipt](docs/evidence/jev-context-repeated-schema-v9.json),
+[all versions and adverse results](docs/context-evolving-evidence.md), and
+[research and configuration](docs/sleep-context-compaction.md).
+
+### Bounded memory and actual restart recovery
+
+REM now stores canonical exchanges in indexed MongoDB event/part documents and keeps only a bounded working transcript
+in each checkpoint. Source selection never deletes the originals. Changed goals reconsider bounded archive pages;
+new observations invalidate stale decisions, and the model can explicitly recover older parts. Guard proofs survive
+omission. Uncertain or protected context that cannot fit pauses for review.
+
+| Check | Before or comparison | Current observed result | Boundary |
+| --- | --- | --- | --- |
+| 300-step checkpoint | Reconstructed full-history checkpoint: 1,245,224 bytes | Maximum working checkpoint: 18,852 bytes, 98.49% smaller | Deterministic fixture, not tokens |
+| Tool-message replay | Reconstructed full-history replay: 191,814,470 bytes | 2,832,660 bytes, 98.52% less | Same 300-step fixture; 179 scripted decision calls counted separately |
+| Restart and exact source recovery | Full canonical history: 1,242,822 bytes | All 300 steps retained; old source recovered after new worker | No billion-token claim |
+| Stale Mongo workers | Three reproduced overwrite races | All three rejected after fencing fixes | Local MongoDB 8.2.6 replica set |
+| Actual process termination | SIGKILL after simulated send, before ledger commit | Fresh process: exactly one send, one provider receipt, reconciled ledger | Real processes and MongoDB; fixture provider, no real email |
+
+[Transcript evidence and limitations](docs/sleep-transcript-storage.md),
+[real Mongo race evidence](docs/evidence/rem-transcript-mongo.json), and
+[process-recovery contract](docs/completion-contract.md).
+
+Completion requires valid evidence. Missing checks, failed checks, invalid probabilities and a configured Jev outage
+cannot become verified completion. Permission expansions are validated against train, held-out and adversarial cases,
+then promoted transactionally. The shared REM demo API remains local and is disabled in production.
+
+Enable with `REM_COMPACTION=jev`, a private Jev API key, and the intended Atlas environment. Run
+`npm run context:benchmark` for labeled deterministic fixtures, or the documented `--live --atlas` commands for paid
+live measurements. The implementation adapts state-aware compression principles from
+[StateComp (September 2026)](https://arxiv.org/abs/2609.27298) and reversible, just-in-time memory ideas from
+[Anthropic (September 2025)](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents).
+
+### Native OpenRouter context selection
+
+The actual OpenRouter tool loop now accepts the same selector with `OFFLOAD_COMPACTION=jev` and MongoDB configured.
+User instructions, tool/result pairs, file effects, denied permissions, errors and archive reads stay protected.
+Decision usage is included in the task total, including a failed selection; unknown provider usage remains marked unknown.
+An over-budget protected context stops before the next answer-model request. This opt-in adapter bounds selected tool history during a 40-step turn; initial instructions and images remain intact outside that budget; it does not implement native cross-turn recovery or replace Codex's context system.
+
+A paired scripted-provider test uses real local file tools and seven reads. Both paths recover the exact original key
+(1/1 each). Cumulative serialized model prompts fall from **116,021 to 49,891 characters (57.00%)**, including one extra
+archive-recovery call. Model requests rise from **8 to 9**, and selection uses **15 scripted decision calls**. These are
+measured prompt characters and a correctness test, not paid-model token savings. Native-context tests cover recovery, protocol, owner isolation, protected denials, images and provider-call prevention after overflow. Cancellation preserves 105 already-reported fixture tokens; a malformed paid reply preserves its 130 reported tokens instead of recording zero; duplicate tool IDs execute zero tools.
+Run `node scripts/benchmark-native-context.mjs docs/evidence/native-context-current.json`.
+[Raw paired evidence](docs/evidence/native-context-current.json) and [integration details](docs/native-context.md).
+
+### Source-backed next actions
+
+Next actions learns a repeated context-recovery habit from explicitly selected history. Reopening a project can propose
+one supported task. Accepting it runs four durable checkpoints, produces a source-checked Markdown artifact, and records
+feedback for a versioned policy change. Importing history alone cannot start work. No private history is imported automatically. Imported notes use configured MongoDB storage; remote model scoring
+requires explicit configuration. A five-read Atlas measurement beside 10,000 unrelated records reduced median
+read latency from 1,474 ms to 436 ms while examining three source documents; this is a small retrieval measurement,
+not a long-term usefulness score. [Behavior, tests and reproduction](docs/personal-suggestions.md).
 
 ## See the cycle in one minute
 
@@ -250,8 +341,8 @@ For the built site, open the [Offload homepage](http://127.0.0.1:5194/). The wor
 | `POST /api/rem/reset` | start a fresh instance; on Atlas this drops the REM database |
 | `GET /api/rem/stream` | Server-Sent Events from change streams |
 
-The API is one shared demo instance with no authentication. The server listens on 127.0.0.1 only. Add authentication
-before exposing it anywhere.
+The API is one shared local demo instance. Every REM route checks the loopback peer, Host and Origin; mutations
+require the local client header. Production mode disables the shared API. These checks are not multi-user authentication.
 
 ### ChatGPT on this Mac
 
@@ -261,9 +352,9 @@ The composer lists models from Codex's `model/list`. GPT-5.5 has completed a liv
 
 Chat uses the original Beautiful UI Prompt Bar, Streaming Text, Loading State and Context Cards. The sidebar uses its published Sidebar Nav. Offload sends its identity, up to four relevant notes of 360 characters each, and at most five earlier messages. Retrieval uses keyword matches with a small preference for saved rules. There is no embedding service. Codex adds its own system context, which appears in the token receipt.
 
-The local bridge accepts only the loopback app origins and requires the app request header. It runs one model task at a time. Child runs use read-only permissions, an empty temporary folder, and disabled shell, app, plugin, hook, image, web and agent tools. It does not copy credentials into the browser. The bridge is disabled when `NODE_ENV=production`. This is a single-user local integration, not a public authentication service.
+The local bridge accepts loopback app origins and requires the app request header. Foreground Codex tasks use scoped working folders and per-turn approvals. Opt-in idle Sleep uses the bounded local draft executor described below. The bridge is disabled in production and is not public authentication.
 
-Overnight tasks save a brief, deadline and token target. They do not execute until an overnight worker is connected. Jev and external app authorization remain unconfigured.
+Overnight tasks execute through the connected Sleep worker with a deadline, token budget, output permissions and acceptance checks. Native OpenRouter context selection is opt-in and documented above. Codex manages its own context.
 
 ### Appearance and reasoning
 
@@ -344,7 +435,15 @@ Chat uses the original Beautiful UI Prompt Bar, Streaming Text, Loading State an
 
 The local bridge accepts only the loopback app origins and requires the app request header. It runs one model task at a time. Codex runs use App Server with persistent conversation threads, image input, workspace-write permissions, live tool activity, and approval prompts. Each chat has its own working folder under `~/.offload/workspaces`, unless a project folder is selected in Settings. Installed tools depend on the local Codex configuration and account. Additional permissions are requested for the current turn; inherited automatic app/tool approval settings are overridden. Stopping a run terminates its process group. Generated files are snapshotted for download; HTML and SVG files are never embedded as active content. It does not copy credentials into the browser. The bridge is disabled when `NODE_ENV=production`. This is a single-user local integration, not a public authentication service.
 
-Overnight tasks save a brief, deadline and token target. They do not execute until an overnight worker is connected. Jev and external app authorization remain unconfigured. The desktop package must be rebuilt separately; this change is running in the local browser app. No public deployment was made. Code is on the MyName branch of SpectrrT/MongoDB_HarnessHack.
+Sleep assigned tasks now execute local drafts with a connected worker, a deadline, token reservations, explicit output-file permissions, and independent acceptance checks. Legacy saved briefs remain unassigned until the user adds output checks. See [Sleep task execution](docs/sleep-task-execution.md) for setup, recovery behavior, and scope. The desktop package must be rebuilt separately; no public deployment was made.
+
+### Assigned Sleep task evidence
+
+On three short synthetic local drafting tasks, the old queue saved 3/3 briefs but produced 0 verified artifacts because its runner was unconfigured. The new worker produced 3/3 verified files with OpenRouter `openai/gpt-4.1-mini`: **815 reported input plus output tokens, 3 calls, $0.000608, and 3.791 seconds**. One draft paused for explicit approval and resumed from persisted state without another generation. The initial implementation passed 2/3 using 1,721 tokens and 7 calls; clarifying exact acceptance phrases and retaining the failed draft reduced unnecessary repair calls. Both runs used temporary local MongoDB, fixed checks, and the same tasks. They are small smoke tests, not evidence of general savings or long-horizon scale. The former queue's zero token use reflects no execution.
+
+Raw results, artifacts, costs, and checks: [initial live run](docs/evidence/sleep-execution-live-initial.json), [refined live run](docs/evidence/sleep-execution-live.json). Reproduce with `node --env-file=.env scripts/sleep-execution-demo.mjs --live`. The initial focused durability and ownership suite passed 20/20 Node test results, including its parent suite. Scope is isolated local draft files; broader external tasks and semantic completion require additional executors and checks.
+
+The continuation policy also detects unchanged failed checks. A scripted eight-attempt task now pauses after three calls when two repair attempts make no verified progress. Five permitted attempts remain unspent; explicit resume with corrected output completes on call four. This is a measured stopping-policy test, not an additional live token-savings claim. That milestone passed 28/28 Sleep and shared continuation-policy test results; final integration results are reported separately.
 
 ## Appearance and reasoning
 
@@ -369,3 +468,45 @@ See [Local HTTPS setup](docs/LOCAL-HTTPS.md) for https://offload.ai on this Mac.
 Screen records the chosen display, window or tab. Microphone records the selected audio input. Both records those video and microphone tracks into one file. Browser permissions are required. Closing the session panel or changing workspace pages does not stop capture. Stop session, the browser's Stop sharing control, or closing the app tab stops it. Reloading ends the recording; it never silently restarts.
 
 Recording chunks are saved in this browser's IndexedDB as they arrive. Reopen the session panel to download recent recordings. Audio is recorded locally; automatic transcription is not included. While screen capture is active in the same tab, messages to an image-capable model include the current screen image (when an image slot is free). This is on-demand context, not continuous model analysis.
+
+
+## Verified process recovery for Sleep and REM
+
+The durable handoff test runs one task across three actual Node processes. It kills the first worker during draft generation, waits for its lease to expire, and verifies that the replacement completes with four unique checkpoint receipts. The third process makes no new model call. The fixture draft provider is called twice because the interrupted call is retried.
+
+REM previously recreated its simulated provider state when the server restarted, even with MongoDB checkpoints. With MongoDB enabled, REM now transactionally persists simulated Sent, Drafts, Trash, sequence numbers and effect receipts. The restart test kills a worker after one simulated send but before the ledger/checkpoint commit, then waits for its real 30-second lease to expire. The replacement reconciles that send; one sent message and one provider receipt remain. Concurrent replay, argument mismatch, receipt rollback and simulated human restoration are covered separately.
+
+These are fixture-model tasks against disposable local MongoDB, including a replica set for transactions. They do not exercise real Gmail/Drive, live Atlas, Jev or paid model providers. No token, latency or cost improvement is claimed. The fixture state is a single MongoDB document intended for the bounded demo, not billion-token storage. Raw regression evidence is in `docs/evidence/process-recovery.txt`; implementation and test conditions are in `docs/completion-contract.md`.
+
+### Evidence interpretation repair: isolated probe before the combined result
+
+A live GPT-4o-mini probe reproduced the incorrect choice of an unselected routing plan. A shared production prompt
+now binds facts to the requested subject and treats retrieval time separately from event time. The original case plus
+two new shipping variants improve from 2/3 to 3/3 exact answers. Both paths take seven calls; total tokens rise from
+5,666 to 7,870. A shorter candidate also passes 3/3 but uses 8,493 tokens, so it was not selected. This is an accuracy
+repair with measured overhead. The later complete v9 result is reported above. [All probe outcomes](docs/evidence/evidence-policy-probe.json)
+and [shorter candidate](docs/evidence/evidence-policy-probe-concise.json). No expected answer is supplied to the model.
+
+Benchmark receipts now persist after each answer and decision pass. Three accounting checks cover restart/rescore charges, interrupted paid calls and unavailable prices. Missing usage makes savings unknown; failed answers make the benchmark exit unsuccessfully. These are accounting checks, not additional live performance results.
+
+### Opt-in idle Sleep: actual work and verification
+
+After explicit consent and 30 idle minutes, Sleep derives one supported unfinished goal from the conversation and
+executes it inside a bounded isolated task. It preserves source provenance, pauses on activity, remembers compound
+stop requests even when a foreground provider fails, and allows revocation regardless of snapshot validity. An
+explicit continuation resumes the same task and preserves cumulative usage. Slow mode belongs inside Sleep.
+
+One synthetic live GPT-4.1-mini idle counter case used one paid call, 1,346 tokens, $0.0014084 and 8.227 seconds. It
+created two artifacts; a real offline browser observed 0, 1, 2 and Reset to 0 with stable values. Restart made zero
+additional calls. Before consent and before the injected 30-minute threshold there were zero calls and zero tasks.
+This is one bounded case using an injected idle clock, not proof of overnight autonomy. Independent browser tests
+reject a counter with inert buttons and animated values, nested-document escapes, forbidden resources and leaked
+processes. [Runtime evidence and limitations](docs/idle-sleep-validation.md), [browser checks](docs/sleep-prototype-checks.md).
+
+Raw episodes now archive transactionally before noise removal or new TTL retirement, in 64 KiB BSON parts with
+integrity checks. Agent tools recover bounded pages; explicit reset deletes the archive too. Startup backfill also archives surviving legacy
+records before their existing TTL can remove them. Previously deleted records cannot be recovered.
+
+The landing page shows measured evidence directly below the hero headline and links its receipt. Personal-history
+artifact replay is a separate evaluation using frozen pre-return context and private checkers. It does not compare
+historical cumulative session tokens against a small reconstructed artifact. Failed protocol trials remain in the ledger.

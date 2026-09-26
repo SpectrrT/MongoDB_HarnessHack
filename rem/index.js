@@ -14,10 +14,13 @@ import { runNight } from "./night.js";
 import { createCatalogProposer, trackRecord } from "./proposer.js";
 import { OFFLOAD_ALIASES, TASK_KINDS, describeTask, taskParams } from "./tasks.js";
 import { createWorld } from "./world.js";
+import { createPersistentWorld } from "./persistent-world.js";
+import { readEpisodePage, listEpisodeArchive, archiveLegacyEpisodes } from "./episode-archive.js";
 import { createCompletionGate } from "./completion.js";
 import { checkRun } from "./tasks.js";
 import { settleSearch } from "./search.js";
 import { createClock } from "./util.js";
+import { createContextCompactor } from "../server/context/compaction.js";
 
 const strip = (doc) => {
   if (!doc || typeof doc !== "object") return doc;
@@ -36,14 +39,16 @@ export async function createRem({
   workspace = LIVE_WORKSPACE,
   proposer = createCatalogProposer(),
   completion = createCompletionGate(),
+  compactor = process.env.REM_COMPACTION === "jev" ? createContextCompactor({db}) : null,
   onEvent = null,
 } = {}) {
   // Traced model calls (model id, token usage, cost): a pass-through when tracing is off, so this
   // touches every model.chat call in the day, gym, evolve validation and skill practice alike.
   model = traceModel(model, { costOf });
-  await ensureIndexes(db, { dims: embedder.dims || 1024 });
-  const ctx = { db, model, embedder, clock, workspace, proposer, chaos: null, day: 1, onEvent };
-  ctx.world = createWorld(workspace);
+  await ensureIndexes(db, { dims: embedder.dims || 1024, search: db.kind !== "mongo" || db.atlasSearch !== false });
+  await archiveLegacyEpisodes(db, { now: clock.now() });
+  const ctx = { db, model, embedder, clock, workspace, proposer, completion, chaos: null, day: 1, onEvent };
+  ctx.world = db.kind === "mongo" ? await createPersistentWorld(db, workspace) : createWorld(workspace);
   ctx.agent = createAgent({
     db,
     world: ctx.world,
@@ -56,6 +61,7 @@ export async function createRem({
     },
     chaos: { point: (p) => ctx.chaos?.point(p), expireNow: () => ctx.chaos?.expireNow() ?? false },
     completion,
+    compactor,
     // The completion gate's evidence: the end-state checks on the live workspace, run before finishing.
     evidence: completion
       ? async (cp, final) => {
@@ -115,6 +121,8 @@ export async function createRem({
     simulateDays: (n, opts) => simulateDays(rem, n, opts),
     memoryMetrics: (week = scheduleFor(Math.max(1, ctx.day - 1)).week) => memoryMetrics(ctx, week),
     trackRecord: () => trackRecord(db),
+    episode: (id, opts) => readEpisodePage(db, id, opts),
+    episodeArchive: (opts) => listEpisodeArchive(db, opts),
     async state() {
       const [harness, versions, edits, metrics, asks, skills, runs, effects, brief, connections] = await Promise.all([
         currentHarness(db),
@@ -137,6 +145,7 @@ export async function createRem({
         metrics,
         asks,
         memory: {
+          archivedEpisodes: await db.collection("episode_archive").countDocuments(),
           active: await memories.countDocuments({ active: true }),
           retired: await memories.countDocuments({ active: false }),
           episodes: await db.collection("episodes").countDocuments({ kind: { $ne: "trajectory" } }),
@@ -154,6 +163,8 @@ export async function createRem({
           embedder: embedder.name,
           model: model.name || "scripted",
           completion: completion?.name || "off",
+          compaction: compactor?.name || "off",
+          world: ctx.world.persistence || "memory-fixture",
         },
         recall: recallOf(harness.genome),
         completionThreshold: completionThresholdOf(harness.genome),

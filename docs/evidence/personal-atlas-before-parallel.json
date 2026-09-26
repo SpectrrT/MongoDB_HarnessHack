@@ -1,0 +1,279 @@
+{
+  "createdAt": "2026-09-26T17:48:29.656Z",
+  "database": "personal_eval_37f0dae98eed463bba32a69180937a31",
+  "source": "Synthetic engineering fixtures only. No personal history uploaded.",
+  "checks": {
+    "restartFromCheckpoint": true,
+    "concurrentAcceptIdempotence": true,
+    "verifiedArtifact": true,
+    "workspaceIsolation": true,
+    "policyPromotionPersistenceRollback": true,
+    "sourceWithdrawal": true
+  },
+  "policyEvaluation": {
+    "train": {
+      "before": {
+        "total": 2,
+        "correct": 0,
+        "truePositives": 0,
+        "falsePositives": 2,
+        "falseNegatives": 0,
+        "precision": 0,
+        "results": [
+          {
+            "id": "f265970036776eb0811154839834181db3c7a811a3673cd9926d6cd0b950c2c1",
+            "expected": false,
+            "proposed": true
+          },
+          {
+            "id": "b27670180b5c307ef470206113f399cadd4f1f4ffb61a49faf3873612f6f9d10",
+            "expected": false,
+            "proposed": true
+          }
+        ]
+      },
+      "after": {
+        "total": 2,
+        "correct": 1,
+        "truePositives": 0,
+        "falsePositives": 1,
+        "falseNegatives": 0,
+        "precision": 0,
+        "results": [
+          {
+            "id": "f265970036776eb0811154839834181db3c7a811a3673cd9926d6cd0b950c2c1",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "b27670180b5c307ef470206113f399cadd4f1f4ffb61a49faf3873612f6f9d10",
+            "expected": false,
+            "proposed": true
+          }
+        ]
+      },
+      "regressions": [],
+      "improved": true
+    },
+    "heldOut": {
+      "before": {
+        "total": 18,
+        "correct": 15,
+        "truePositives": 5,
+        "falsePositives": 3,
+        "falseNegatives": 0,
+        "precision": 0.625,
+        "results": [
+          {
+            "id": "useful-0",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "useful-1",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "useful-2",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "useful-3",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "two-real-sessions",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "recent-dismissal-0",
+            "expected": false,
+            "proposed": true
+          },
+          {
+            "id": "recent-dismissal-1",
+            "expected": false,
+            "proposed": true
+          },
+          {
+            "id": "recent-dismissal-2",
+            "expected": false,
+            "proposed": true
+          },
+          {
+            "id": "reject-sourceCount",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-sameProject",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-active",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-completed",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-muted",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-snoozed",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-independentSessions",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-independentDays",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-trigger",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-kind",
+            "expected": false,
+            "proposed": false
+          }
+        ]
+      },
+      "after": {
+        "total": 18,
+        "correct": 18,
+        "truePositives": 5,
+        "falsePositives": 0,
+        "falseNegatives": 0,
+        "precision": 1,
+        "results": [
+          {
+            "id": "useful-0",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "useful-1",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "useful-2",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "useful-3",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "two-real-sessions",
+            "expected": true,
+            "proposed": true
+          },
+          {
+            "id": "recent-dismissal-0",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "recent-dismissal-1",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "recent-dismissal-2",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-sourceCount",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-sameProject",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-active",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-completed",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-muted",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-snoozed",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-independentSessions",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-independentDays",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-trigger",
+            "expected": false,
+            "proposed": false
+          },
+          {
+            "id": "reject-kind",
+            "expected": false,
+            "proposed": false
+          }
+        ]
+      },
+      "regressions": [],
+      "improved": true
+    },
+    "accepted": true,
+    "method": "Recorded feedback train split; fixed evaluator-only held-out opportunities."
+  },
+  "retrieval": {
+    "fixtureRows": 10000,
+    "samplesMs": [
+      1996,
+      1682,
+      1445,
+      1153,
+      1474
+    ],
+    "medianMs": 1474,
+    "sourceDocumentsExamined": 3,
+    "scope": "Single client, five sequential reads. Not a production load test."
+  },
+  "passed": true
+}
