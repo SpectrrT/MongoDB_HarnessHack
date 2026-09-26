@@ -178,7 +178,9 @@ Two more MongoDB-backed services live under `server/`:
   produces internal artifacts only; it sends nothing external.
 - **Sleep v2** (`server/sleep/`): memories in Atlas Vector Search with Voyage embeddings, versioned harness policies,
   promotion only on held-out improvement with no regression, and a guarded rollback. Promotion is one compare-and-swap
-  on the policy head. Tool-access requests are never promoted automatically.
+  on the policy head. Tool-access requests are never promoted automatically. Its recall and lessons ideas now live in
+  REM, the single Sleep engine (see [docs/rem-engine.md](docs/rem-engine.md), "One Sleep"). `server/sleep/` stays in
+  the repo and its API is still mounted, but REM doesn't use it and its pages are out of the app's navigation.
 
 ## What is real
 
@@ -189,7 +191,7 @@ Environment variables switch on the external services:
 | --- | --- | --- |
 | REM database | in-memory store with the Node driver's call shapes: unique indexes, TTL sweep, change streams, transactions | `MONGODB_URI` (Atlas Sandbox), optional `REM_DB_NAME` (default `rem`); gym and practice runs still use in-memory scratch databases |
 | REM model | `ScriptedModel`: deterministic, follows the rules, guardrails, memories and skills in its prompt | `REM_MODEL=openrouter`, `OPENROUTER_API_KEY` |
-| REM embeddings and search | local hashing embedder; app-side BM25 and cosine fused by reciprocal rank | `REM_EMBEDDINGS=voyage`, `VOYAGE_API_KEY`; `REM_ATLAS_SEARCH=1` for `$rankFusion` |
+| REM embeddings and search | local hashing embedder; app-side BM25 and cosine fused by reciprocal rank | on Atlas: `autoEmbed` (voyage-4) vector indexes and Atlas Search, fused with `$rankFusion` by default (`REM_ATLAS_SEARCH=0` turns it off); `REM_VECTOR_MODE=explicit` for clusters without autoEmbed |
 | REM proposer | a fixed catalog of 12 bounded edits, with predictions calibrated by the track record | an LLM proposer exists in `rem/proposer.js` but is not wired to an env switch |
 | REM consolidator | a deterministic fact extractor over the fixture notes | not yet model-backed |
 | Accounts and reviewer | a fixture Drive, Gmail and Calendar workspace with a deterministic revoke; day-one corrections come from the gym's checkers | no real OAuth yet |
@@ -203,12 +205,15 @@ Limits, stated plainly:
 - The numbers above come from the scripted model, which responds to the catalog's rules by design, so the improvements
   are expected rather than discovered. The loop around it (mining, predictions, validation, the gate, the ledger) is
   real code. Running a real model through OpenRouter is what tests whether the edits help.
-- Live runs against Atlas, OpenRouter and Voyage are not yet verified. `npm run rem:demo` always runs in memory; REM
-  reaches Atlas only through the server and `/api/rem/*`.
-- REM has no panel in the app yet. Its demo is the terminal story and the API.
-- The Offload workspace in the app still runs on a deterministic mock engine (`shared/workspace.js`) in browser
-  storage. The **Durable handoff** (`/app/harness`) and **Harness sleep** (`/app/adapt`) pages use the MongoDB-backed
-  services.
+- REM is verified on the Atlas Sandbox (MongoDB 8.0.32): all 8 `autoEmbed` indexes reach READY and hybrid recall runs
+  as `$rankFusion`. `node --env-file=.env scripts/rem-demo.mjs --atlas` runs the five-day story in the `rem_demo`
+  database and writes [docs/DEMO-NUMBERS-ATLAS.md](docs/DEMO-NUMBERS-ATLAS.md); plain `npm run rem:demo` still runs in
+  memory. OpenRouter is used for the completion check when `REM_COMPLETION=jev`; the day agent stays scripted unless
+  `REM_MODEL=openrouter`.
+- REM has its own page in the app (**REM**, `/app/rem`), showing the day, night and morning from the live API.
+- Suggestions, routines and the sample account in the Offload workspace still come from the deterministic engine in
+  `shared/workspace.js`. Workspaces live in browser storage by default; with `VITE_STORAGE_MODE=api` and `MONGODB_URI`,
+  the local API keeps them in Atlas (`offload.workspaces`). Chat runs on Codex or OpenRouter with local tools.
 
 ## Run the app
 
@@ -229,8 +234,9 @@ npm run activity:collector   # computer history; add -- --dry-run to print sampl
 npm run activity:seed        # optional: the labeled sample week, so routines show up
 ```
 
-Open http://127.0.0.1:5194/app/harness to create a durable handoff and http://127.0.0.1:5194/app/adapt to add
-corrections and run a sleep review. Open http://127.0.0.1:5194/app/history for computer history. With Sleep v2 configured, the server creates the `memory_vector` Atlas Vector Search
+Open http://127.0.0.1:5194/app/rem for REM and http://127.0.0.1:5194/app/history for computer history. The older
+Sleep v2 pages still work at http://127.0.0.1:5194/app/harness (durable handoff) and /app/adapt (sleep review), but
+they are no longer in the navigation. With Sleep v2 configured, the server creates the `memory_vector` Atlas Vector Search
 index on first start; wait until it is READY.
 
 ### REM API

@@ -40,7 +40,7 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - `.mcp.json` gives Claude Code a MongoDB MCP server that reads the same `MONGODB_URI`, read-only unless `.env` sets
   `MDB_MCP_READ_ONLY=false`. It loads when a session starts, so start a new one after editing `.env`.
 
-## Where things stand (Sat Sep 26, about 1:30 PM ET)
+## Where things stand (Sat Sep 26, about 1:45 PM ET)
 
 - Merged and green: the UI and polish pass, Floyd's transitions, ASCII landing, ChatGPT chat through the local Codex
   CLI and SlowMode's overnight queue, REM, Ryan's durable harness and Sleep v2, Floyd's local agent tools, image
@@ -57,11 +57,12 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
   window and page on macOS; sessions, hybrid search and routines are aggregations on Atlas. `npm run activity:seed`
   added a sample week to Atlas, labeled `source: "seed"` everywhere.
 - REM's agent uses a scripted model until OpenRouter is configured. Say so if a judge asks.
-- Open decisions: REM's night loop (`rem/`) and Sleep v2 (`server/sleep/`) overlap, so pick one for the demo or combine
-  them. REM has no UI panel yet.
-- Before the repo goes public (required for submission): `vendor/beautiful-ui` has no license. Before any public
-  deploy: `/api/rem/reset` and `/api/rem/simulate` have no auth.
-- Submission: public repo, demo link, one-minute video, every teammate added, by 5:00 PM ET.
+- REM is the single Sleep engine (Ryan's `ryan/sleep-consolidated`, merged 1:13 PM). Sleep v2's recall and lessons
+  ideas live in `rem/`, REM runs on Atlas and has a REM page, and `server/sleep/` is off REM's paths with its pages out
+  of the nav. See `docs/rem-engine.md`, "One Sleep".
+- The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). Before any public deploy:
+  `/api/rem/reset` and `/api/rem/simulate` have no auth.
+- Submission: public repo, demo link, one-minute video, by 5:00 PM ET. All three teammates are on the repo.
 
 ## Conventions
 
