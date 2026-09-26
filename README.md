@@ -26,7 +26,7 @@ original evidence by run-scoped id. It preserves complete tool exchanges and det
 when the task state is unchanged, and removes identical read-only results without a model call. This is integrated
 before planner/executor calls in the REM runtime and displayed under **Sleep > Context memory**.
 
-**Live measured result: 44.15% fewer total tokens across repeated context, with the same 20/20 exact-answer
+**Earlier live result (commit `00a412b`): 44.15% fewer total tokens across repeated context, with the same 20/20 exact-answer
 success rate.** Both paths used `openai/gpt-4o-mini`. Four synthetic task snapshots were each answered five times per
 path. Totals include provider-reported input/output tokens and Jev's initial screening overhead; cached tokens are not
 added twice. The compacted path used 14,878 tokens versus 26,640 for the full-context baseline.
@@ -51,8 +51,8 @@ added twice. The compacted path used 14,878 tokens versus 26,640 for the full-co
 
 **Limits:** these are repeated-snapshot microbenchmarks, not evolving multi-day tasks. Selection bounds active tool
 history, while the existing checkpoint still stores the full canonical transcript. This does **not** establish
-billion-token scalability or universal savings. Native Codex/OpenRouter chat and the separate chat-Sleep worktree are
-not wired into this REM selector. This work does not expand Jev's separate, pre-existing completion gate.
+billion-token scalability or universal savings. The newer OpenRouter adapter supports opt-in selection with
+`OFFLOAD_COMPACTION=jev`; Codex manages its own context. Later evidence below reports the updated implementation.
 
 Evidence and reproduction: [repeated live measurements](docs/evidence/jev-context-repeated.json),
 [first-call overhead](docs/evidence/jev-context-atlas-paired.json),
@@ -64,6 +64,22 @@ Enable with `REM_COMPACTION=jev`, a private Jev API key, and the intended Atlas 
 live measurements. The implementation adapts state-aware compression principles from
 [StateComp (September 2026)](https://arxiv.org/abs/2609.27298) and reversible, just-in-time memory ideas from
 [Anthropic (September 2025)](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents).
+
+### Native OpenRouter context selection
+
+The actual OpenRouter tool loop now accepts the same selector with `OFFLOAD_COMPACTION=jev` and MongoDB configured.
+User instructions, tool/result pairs, file effects, denied permissions, errors and archive reads stay protected.
+Decision usage is included in the task total, including a failed selection; unknown provider usage remains marked unknown.
+An over-budget protected context stops before the next answer-model request. This opt-in adapter bounds the model
+prompt during a 40-step turn; it does not implement native cross-turn recovery or replace Codex's context system.
+
+A paired scripted-provider test uses real local file tools and seven reads. Both paths recover the exact original key
+(1/1 each). Cumulative serialized model prompts fall from **111,805 to 45,148 characters (59.62%)**, including one extra
+archive-recovery call. Model requests rise from **8 to 9**, and selection uses **15 scripted decision calls**. These are
+measured prompt characters and a correctness test, not paid-model token savings. Three new native-context tests cover
+recovery/protocol/owner isolation, protected denial/incomplete exchanges, and provider-call prevention after overflow.
+Run `node scripts/benchmark-native-context.mjs docs/evidence/native-context-paired.json`.
+[Raw paired evidence](docs/evidence/native-context-paired.json) and [integration details](docs/native-context.md).
 
 ## See the cycle in one minute
 

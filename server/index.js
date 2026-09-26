@@ -133,6 +133,7 @@ export function createApp({
   sleep = null,
   atlas = null,
   activity = null,
+  chatCompactor = null,
 } = {}) {
   const app = express(),
     queues = new Map(),
@@ -266,7 +267,7 @@ export function createApp({
       if (queues.get(key) === task) queues.delete(key);
     }
   }
-  mountModel(app,{dataDir,activity});
+  mountModel(app,{dataDir,activity,compactor:chatCompactor});
   app.get("/api/state", async (req, res, next) => {
     try {
       res.json(await access(req, (s) => s));
@@ -332,7 +333,13 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
         .createActivity(connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon'), { log: console.warn })
         .catch((error) => (console.warn('Computer history is off:', error.message), null))
     : null;
-  createApp({ harnessStore: connection?.store, sleep, atlas, activity }).listen(port, "127.0.0.1", () =>
+  const chatCompactor = connection && process.env.OFFLOAD_COMPACTION === 'jev'
+    ? (await import('./context/compaction.js')).createContextCompactor({db:connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon')}) : null;
+  if (chatCompactor) {
+    const db=connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon');
+    await Promise.all([db.collection('context_archive').createIndex({runId:1,unitId:1,part:1},{name:'context_run_unit'}),db.collection('context_decisions').createIndex({runId:1,stateKey:1},{name:'context_run_state'})]);
+  }
+  createApp({ harnessStore: connection?.store, sleep, atlas, activity, chatCompactor }).listen(port, "127.0.0.1", () =>
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
 }

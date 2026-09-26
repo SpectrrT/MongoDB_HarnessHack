@@ -5,7 +5,7 @@ older tool exchanges, while MongoDB preserves the originals, decision cache, and
 omitted evidence by id. Critical records stay protected, identical reads are deduplicated without model calls, and
 unchanged task states reuse decisions after a restart.
 
-In a live Atlas-backed microbenchmark using the same GPT-4o-mini answer model on both paths, four synthetic task snapshots
+At the earlier `00a412b` revision, in a live Atlas-backed microbenchmark using the same GPT-4o-mini answer model on both paths, four synthetic task snapshots
 were answered five times each. Both paths passed all 20 exact-answer checks. Sleep used 14,878 total tokens including
 Jev screening, versus 26,640 with full context: 44.15% fewer. The first answer cost more; savings came from repeated use
 of the selected context. Batching storage operations brought observed selection latency from 4.45-8.22 seconds to
@@ -18,3 +18,8 @@ with 97 passing unit/API checks, one optional Atlas search smoke skipped, four p
 a passing production build. Code changes remain local.
 
 Raw measurements and reproduction commands are linked from README.md and docs/sleep-context-compaction.md.
+
+The native OpenRouter tool loop now also uses the selector when enabled. In a separate scripted-provider test with real
+local file tools, both paths recover the same archived key; serialized prompt text is 111,805 versus 45,148 characters
+(59.62% lower). The compacted path needs one additional model request (8 to 9) and 15 scripted decision calls. This
+checks integration and overhead accounting, not live model token efficiency. Evidence: `docs/evidence/native-context-paired.json`.

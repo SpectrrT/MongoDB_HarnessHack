@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "at": "2026-09-26T17:46:33.868Z",
+  "mode": "scripted provider and retention scores; real local file tools",
+  "tasks": 1,
+  "criterion": "Return exact ARCHIVE_KEY_7D91 after seven file reads, recovering the archive if the first read was omitted.",
+  "limits": "Serialized prompt characters are measured. Fixture token counters only test overhead accounting and are not actual model usage or token savings. This does not benchmark reasoning quality or cross-turn recovery.",
+  "baseline": {
+    "passed": true,
+    "calls": 8,
+    "recoveries": 0,
+    "promptChars": [
+      1121,
+      4799,
+      8470,
+      12141,
+      15812,
+      19483,
+      23154,
+      26825
+    ],
+    "totalPromptChars": 111805,
+    "maxPromptChars": 26825,
+    "fixtureUsage": {
+      "input_tokens": 800,
+      "output_tokens": 80,
+      "cost": 0,
+      "usageKnown": true,
+      "costKnown": true
+    }
+  },
+  "compacted": {
+    "passed": true,
+    "calls": 9,
+    "recoveries": 1,
+    "promptChars": [
+      1121,
+      4799,
+      8470,
+      5043,
+      5043,
+      5043,
+      5043,
+      5043,
+      5543
+    ],
+    "totalPromptChars": 45148,
+    "maxPromptChars": 8470,
+    "fixtureUsage": {
+      "input_tokens": 1200,
+      "output_tokens": 120,
+      "cost": 0,
+      "usageKnown": true,
+      "costKnown": true,
+      "compaction": {
+        "input_tokens": 300,
+        "output_tokens": 30,
+        "cost": 0,
+        "calls": 15,
+        "usageKnown": true,
+        "costKnown": true,
+        "latest": {
+          "source": "scripted-retention-fixture",
+          "beforeChars": 31005,
+          "afterChars": 5294,
+          "budgetChars": 10000,
+          "retained": 3,
+          "archived": 7,
+          "duplicateOmissions": 0,
+          "decisionCalls": 4,
+          "cacheHits": 0,
+          "inputTokens": 80,
+          "outputTokens": 8,
+          "reportedCost": 0,
+          "costKnown": true,
+          "usageKnown": true,
+          "errors": [],
+          "status": "compacted",
+          "evidenceKey": "3874378a959d85b9db7a0fa099330a1891986296129d349e3051e71ad66d4318",
+          "stateChars": 3871,
+          "statePartial": true,
+          "unscored": 0
+        }
+      }
+    }
+  },
+  "promptCharacterReductionPct": 59.618979473189924
+}
