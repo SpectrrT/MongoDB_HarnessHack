@@ -41,5 +41,24 @@ export async function resolveGeneratedArtifact(cwd,relativePath,since){
 export async function collectArtifacts(cwd,destination,since){
  const root=await fs.realpath(cwd),out=[];await fs.mkdir(destination,{recursive:true,mode:0o700});let inspected=0;
  const walk=async(dir,depth=0)=>{for(const entry of await fs.readdir(dir,{withFileTypes:true})){if(++inspected>3000||out.length>=24)return;if(entry.name.startsWith('.')||['node_modules','vendor'].includes(entry.name))continue;const file=path.join(dir,entry.name);if(entry.isDirectory()&&depth<3){await walk(file,depth+1);continue;}if(!entry.isFile()||!allowed.has(path.extname(file).toLowerCase())||/(credential|secret|token|password|private.?key)/i.test(entry.name))continue;const real=await fs.realpath(file);if(!real.startsWith(root+path.sep))continue;const stat=await fs.stat(real);if(stat.nlink>1||stat.mtimeMs<since||stat.size>20*1024*1024)continue;const handle=await fs.open(real,constants.O_RDONLY|constants.O_NOFOLLOW);try{const current=await handle.stat();if(!current.isFile()||current.ino!==stat.ino||current.size>20*1024*1024)continue;const data=await handle.readFile();if(data.length>20*1024*1024)continue;const id=crypto.randomUUID();await fs.writeFile(path.join(destination,id),data,{mode:0o600});out.push({id,name:path.relative(root,real),size:data.length,image:/\.(png|jpe?g|webp|gif)$/i.test(file)});}finally{await handle.close();}}};
- await walk(root);return out;
+ await walk(root);
+ // The benchmark's legacy output folder is the only hidden folder collected. Read exact
+ // report names one run deep, using the generated-download guard before snapshotting bytes.
+ const queryRoot=path.join(root,'.data','query-demo');let runs;
+ try{
+  for(const directory of [path.join(root,'.data'),queryRoot])if(!(await fs.lstat(directory)).isDirectory())return out;
+  runs=await fs.readdir(queryRoot,{withFileTypes:true});
+ }catch{return out;}
+ for(const run of runs){
+  if(++inspected>3000||out.length>=24)return out;
+  if(!run.isDirectory())continue;
+  for(const filename of ['report.json','baseline-explain.json','baseline-results.json','candidate-explain.json','candidate-results.json']){
+   if(++inspected>3000||out.length>=24)return out;
+   const artifact=await resolveGeneratedArtifact(cwd,`.data/query-demo/${run.name}/${filename}`,since);
+   if(!artifact)continue;
+   const id=crypto.randomUUID();await fs.writeFile(path.join(destination,id),artifact.data,{mode:0o600});
+   out.push({id,name:artifact.name,size:artifact.size,image:artifact.image});
+  }
+ }
+ return out;
 }
