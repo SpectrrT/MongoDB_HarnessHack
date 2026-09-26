@@ -62,17 +62,19 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - REM's agent runs on the scripted model by default. `REM_MODEL=openrouter` works (tested 1:30 PM): three real-model
   day runs cost $0.99 in total and all three failed the completion check (a customer-name leak, missed standup items, a
   stale blocker). The demo stays on the scripted model. Say so if a judge asks.
-- Decided: REM is the one Sleep engine, with its panel under "REM" in the nav. The moon "Sleep" item is the Sleep page
-  as Floyd and Tensae built it, kept as is.
+- REM is the single Sleep engine (Ryan's `ryan/sleep-consolidated`, merged 1:13 PM). Sleep v2's recall and lessons
+  ideas live in `rem/`, REM runs on Atlas and has a REM page, and `server/sleep/` is off REM's paths with its pages out
+  of the nav. See `docs/rem-engine.md`, "One Sleep". The moon "Sleep" nav item is the Sleep page as Floyd and Tensae
+  built it, kept as is.
 - LangSmith: `rem/trace.js` traces day runs, night phases, recall, effects and model calls when `LANGSMITH_API_KEY` is
   set, and does nothing without it. `npm run rem:langsmith` runs the gym as two LangSmith experiments side by side.
 - Tests: `npm test` runs 113 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
   `OFFLOAD_SKIP_ENV=1` (point `PW_BASE_URL` at it). Floyd's 1:12 PM redesign lands onboarding on the Overview and drops
   the in-app recording checkbox (the browser's permission prompt remains); the e2e suite follows both.
-- Before the repo goes public (required for submission): `vendor/beautiful-ui` has no license. Before any public
-  deploy: `/api/rem/reset` and `/api/rem/simulate` have no auth.
-- Submission: public repo, demo link, one-minute video, every teammate added, by 5:00 PM ET. At 1:45 PM the repo was
-  still private (only Tensae is an admin), with no demo link or video yet; all three teammates are collaborators.
+- The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). Before any public deploy:
+  `/api/rem/reset` and `/api/rem/simulate` have no auth.
+- Submission: public repo, demo link, one-minute video, by 5:00 PM ET. All three teammates are on the repo. At 1:45 PM
+  the repo was still private (only Tensae is an admin), with no demo link or video yet.
 
 ## Conventions
 
