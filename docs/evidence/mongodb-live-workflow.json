@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "title": "A real model drafts a workflow from sample meeting notes",
+  "sourceType": "synthetic",
+  "sourceLabel": "Pre-given MongoDB engineer example",
+  "generatedAt": "2026-09-26T19:50:39.121Z",
+  "status": "completed_local_draft",
+  "scope": "Local proposed checklist only. No database queries, index changes, issue updates or messages were executed.",
+  "execution": {
+    "provider": "OpenRouter",
+    "requestedModel": "openai/gpt-4o",
+    "returnedModel": "openai/gpt-4o",
+    "modelCalls": 1,
+    "approvalModelCalls": 0,
+    "inputTokens": 963,
+    "outputTokens": 457,
+    "totalTokens": 1420,
+    "reportedCostUsd": 0.0069775,
+    "usageUnknown": 0
+  },
+  "suppliedBaseline": {
+    "p95LatencyMs": 180,
+    "timeoutRatePercent": 0.6,
+    "measuredOnLiveDatabase": false
+  },
+  "modelProposals": {
+    "rollbackIfP95ExceedsMs": 200,
+    "rollbackIfTimeoutExceedsPercent": 1,
+    "source": "Generated suggestions, not source facts or approved operational thresholds.",
+    "approvedForDatabaseExecution": false
+  },
+  "checks": {
+    "declaredContentPassed": 8,
+    "declaredContentTotal": 8,
+    "fileChecksPassed": 2,
+    "fileChecksTotal": 2,
+    "artifactHashesVerified": true,
+    "meaning": "Content presence, scope statements and exact artifact bytes were checked. This is not a measured database improvement or general correctness guarantee."
+  },
+  "artifacts": [
+    {
+      "receipt": "/evidence/mongodb-live-workflow.md",
+      "sha256": "222ece294850f26bbe3bf6ff529bc217d8e17638025e39221482292ec012ce75",
+      "bytes": 649
+    },
+    {
+      "receipt": "/evidence/mongodb-live-workflow-sources.md",
+      "sha256": "e561f1d67a3e5ce5f5f552af5de46874e8202c5202fd14239804c0392f661f2b",
+      "bytes": 861
+    }
+  ],
+  "notes": "Generation paused for exact-draft review. Approval reused that draft without another model call. Source identifiers in the evidence file refer only to synthetic notes."
+}
