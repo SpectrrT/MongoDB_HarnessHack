@@ -18,3 +18,11 @@ The derivation is deliberately deterministic and limited. It does not understand
 Run `node --test tests/idle-candidates.test.js` for eleven focused contract checks.
 
 For an explicit counter goal whose supplied user context requests both Increment and Reset, `browserCheck: 'counter'` is emitted as metadata. The contract requires one visible `[data-testid="counter-value"]` showing 0, a unique visible native Increment button producing 1 then 2, and a native Reset button returning 0. A conflicting denial disables this metadata. It is not permission to launch a browser. The idle lifecycle and independent verifier own consent and execution. Other outputs remain behavior-unverified drafts.
+
+## Live generated solution verification
+
+`node scripts/verify-idle-candidate-live.mjs output-directory` uses a public synthetic counter conversation, the actual Sleep executor and OpenRouter provider, then independently tests the resulting HTML in a browser with all network requests blocked. Existing environment credentials are required; no personal history is read. The test explicitly grants only the two isolated synthetic draft paths. It does not exercise the idle timer or opt-in UI.
+
+The final frozen counter-contract run passed in one call: 1,408 measured tokens and $0.0015076 reported cost. The independent browser observed 0, 1, 2, then Reset to 0, native visible buttons, zero network requests and zero page errors. Artifact hashes and provider usage are retained in `docs/evidence/idle-candidate-live-verification.json`.
+
+An initial run failed because the evidence file omitted the exact required `Unverified draft` label. The executor correctly ended incomplete. Clarifying the formatting produced two successful follow-up runs. Across the three smoke runs there were five provider calls, but usage from the first three was not retained before their temporary database was removed. Aggregate token and dollar totals are therefore unknown, not zero. `idle-candidate-live-accounting.json` preserves the missing-accounting limitation; subsequent tests record provider usage before assertions can fail. No total cost-saving claim is made.
