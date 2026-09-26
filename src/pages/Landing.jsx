@@ -1,0 +1,189 @@
+import { Link } from "react-router-dom";
+import { ArrowUpRight, ArrowRight, Plus } from "lucide-react";
+import { ThinkingOrb } from "thinking-orbs";
+import Net from "../components/Net";
+import AsciiField from "../components/AsciiField";
+import AsciiMemory from "../components/AsciiMemory";
+import "../landing-ascii.css";
+export default function Landing() {
+  return (
+    <div className="site ascii-site">
+      <nav className="site-nav">
+        <Link to="/" className="wordmark">
+          offload
+        </Link>
+        <div className="site-links">
+          <a href="#how">How it works</a>
+          <a href="#control">Your control</a>
+        </div>
+        <Link to="/app" className="button small">
+          Open Offload <ArrowUpRight size={16} />
+        </Link>
+      </nav>
+      <main>
+        <section className="hero">
+          <Net />
+          <div className="hero-copy">
+            <p className="eyebrow"><span aria-hidden="true">[ + ] </span>A little less to do.</p>
+            <h1>
+              You have done
+              <br />
+              <em>this before.</em>
+            </h1>
+            <p className="hero-description">
+              Offload learns the work you repeat.
+              <br />
+              So the next time, you can hand it over.
+            </p>
+            <Link to="/app" className="button">
+              Try the local demo <ArrowUpRight size={17} />
+            </Link>
+            <span className="hero-note">
+              Your workspace stays on this device.
+            </span>
+          </div>
+          <AsciiField />
+        </section>
+        <div className="ascii-sequence" aria-hidden="true"><span>[ observe ]</span><span>··············&gt;</span><span>[ remember ]</span><span>··············&gt;</span><span>[ suggest ]</span><span>··············&gt;</span><span>[ offload ]</span></div>
+        <section className="site-preview" id="how">
+          <div className="section-heading">
+            <h2>
+              A useful suggestion.
+              <br />A reason behind it.
+            </h2>
+            <p>
+              Not another list of things you might do.
+              <br />
+              Work that already belongs to your day.
+            </p>
+          </div>
+          <div className="preview-window">
+            <div className="preview-top">
+              <span className="wordmark">offload</span>
+              <span>Suggested for you</span>
+              <span className="ascii-small">[ SAMPLE WORKSPACE ]</span>
+            </div>
+            <div className="preview-content">
+              <div className="preview-message">
+                <ThinkingOrb state="composing" size={64} />
+                <h3>
+                  The Friday update,
+                  <br />
+                  already on your mind.
+                </h3>
+                <p>
+                  You have prepared it four times this month.
+                  <br />
+                  Offload can help with the next draft.
+                </p>
+                <Link to="/app" className="text-link">
+                  See your workspace <ArrowRight size={16} />
+                </Link>
+              </div>
+              <div className="preview-suggestions">
+                {[
+                  [
+                    "Prepare the Friday update",
+                    "The same routine, four Fridays in a row.",
+                  ],
+                  [
+                    "Collect the open decisions",
+                    "Details from your latest work session.",
+                  ],
+                  [
+                    "Draft the promised follow-up",
+                    "A commitment that has not made the task list.",
+                  ],
+                  [
+                    "Check the release handoff",
+                    "The checklist your team used last time.",
+                  ],
+                ].map(([t, d]) => (
+                  <Link to="/app" className="preview-row" key={t}>
+                    <div>
+                      <strong>{t}</strong>
+                      <p>{d}</p>
+                    </div>
+                    <span className="ascii-row-arrow" aria-hidden="true">↗</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+        <AsciiMemory />
+        <section className="site-story" id="control">
+          <div>
+            <p className="eyebrow">On your terms</p>
+            <h2>
+              Help with the work.
+              <br />
+              You keep the say.
+            </h2>
+          </div>
+          <div className="story-details">
+            <article>
+              <h3>A session you start.</h3>
+              <p>
+                Choose when to capture context. Pause when you want.
+                Conversations require everyone’s agreement.
+              </p>
+            </article>
+            <article>
+              <h3>A routine you approve.</h3>
+              <p>
+                The sleep review tests a routine before you approve it. Drafts
+                stay drafts until you decide what happens next.
+              </p>
+            </article>
+          </div>
+        </section>
+        <section className="faq">
+          <h2>A few things to know.</h2>
+          {[
+            [
+              "Does this connect to my real accounts?",
+              "This version uses sample account connections and a local demo engine. It does not read your email or send messages. Live integrations are the next build phase.",
+            ],
+            [
+              "Where does my work go?",
+              "The web demo saves its workspace in your browser on this device. You can export or delete it in Settings. The optional local API saves to your computer.",
+            ],
+            [
+              "Can I use it on my computer?",
+              "Yes. Run the app in your browser, install it as a web app, or use the included desktop wrapper. The source repository includes setup instructions.",
+            ],
+            [
+              "Does it listen all the time?",
+              "No. A microphone session starts only after you choose it and grant permission. The current build records locally. Automatic transcription is not connected.",
+            ],
+          ].map(([q, a]) => (
+            <details key={q}>
+              <summary>
+                {q}
+                <Plus size={18} />
+              </summary>
+              <p>{a}</p>
+            </details>
+          ))}
+        </section>
+        <section className="site-close">
+          <pre className="ascii-horizon" aria-hidden="true">{"          .        +        .\n      .   :   .    :    .   :   .\n  . : . : + : . : + : . : + : . : .\n------[ less on your plate ]------"}</pre>
+          <h2>
+            Something you can
+            <br />
+            <em>take off your plate.</em>
+          </h2>
+          <Link to="/app" className="button">
+            Open Offload <ArrowUpRight size={17} />
+          </Link>
+        </section>
+      </main>
+      <footer>
+        <span className="wordmark">offload</span>
+        <span>Built for the work between the work.</span>
+        <Link to="/app/settings">Privacy & local data</Link>
+      </footer>
+    </div>
+  );
+}

@@ -1,0 +1,379 @@
+/* Design pass: readability, state clarity, and a few deliberate motion moments.
+   Loaded after styles.css so it can refine the base without rewriting it.
+   Keeps the monochrome + Instrument Serif identity. */
+
+:root {
+  /* #707070 (4.9:1) carried almost all secondary text at 9–11px.
+     Small text now uses --ink-soft (7:1). */
+  --ink-soft: #595959;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes offload-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes offload-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(23 23 23 / 0.4);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 6px rgb(23 23 23 / 0);
+  }
+}
+
+/* ---- Readability floor: nothing readable below 12px ---- */
+
+.demo-banner,
+.suggestion-source,
+.suggestion-foot > span,
+.panel-bottom,
+.section-line > span,
+.workspace-summary small,
+.profile small,
+.sidebar-recent > span,
+.memory-meta,
+.skill details small,
+.list-rows small,
+.setting-row small,
+.onboard-main > .step-label,
+.onboarding footer,
+.session-live p,
+.chat-composer > small,
+.search-results small,
+.gallery-layout nav button {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.demo-banner .demo-label {
+  color: #171717;
+}
+.suggestion > p,
+.home-tasks p,
+.panel-intro,
+.recent-activity p,
+.sidebar-recent p,
+.connection-list p,
+.skill-rules p,
+.skill details p,
+.chart-section > p,
+.check-label,
+.error-banner,
+.message .text-button {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.error-banner {
+  color: #171717;
+}
+.breadcrumb,
+.sidebar-recent a,
+.suggestion-foot > button,
+.filter-strip button,
+.session-button,
+.session-modes button,
+.settings-section .button-row .button {
+  font-size: 12.5px;
+}
+.breadcrumb {
+  color: var(--ink-soft);
+}
+.new-chat span {
+  font-size: 11px;
+}
+.list-rows strong {
+  font-size: 14px;
+}
+.page-title p,
+.chat-empty p,
+.detail-page > .muted {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+.muted,
+.small-copy,
+.eyebrow,
+.section-heading p,
+.story-details p,
+.faq details p,
+.preview-message p {
+  color: var(--ink-soft);
+}
+
+/* Landing */
+.site-links {
+  color: #4a4a4a;
+}
+.hero-note,
+.site footer {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.preview-top > span:last-child {
+  font-size: 11.5px;
+}
+.preview-row p {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+/* Inputs: a focus ring you can actually see (vendored composer keeps its own) */
+:is(input, textarea, select):not(.beautiful-ui *):focus-visible {
+  border-color: #171717;
+  box-shadow: 0 0 0 3px rgb(23 23 23 / 0.09);
+}
+.panel-search input {
+  font-size: 13px;
+}
+
+/* ---- Run status: the demo's pause → resume moment should read from the back row ---- */
+
+.status-label,
+.page-title .status-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 12px 0 10px;
+  border: 1px solid #d4d4d4;
+  border-radius: 999px;
+  background: #fff;
+  color: #171717;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+  transition:
+    background-color 0.24s,
+    border-color 0.24s,
+    color 0.24s;
+}
+.page-title .status-label {
+  margin-top: 12px;
+}
+.status-label::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status-label.is-running::before {
+  animation: offload-pulse 1.6s var(--ease-out-quart) infinite;
+}
+.status-label.is-blocked {
+  border-style: dashed;
+  border-color: #8c8c8c;
+}
+.status-label.is-blocked::before {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+.status-label.is-ready {
+  background: #171717;
+  border-color: #171717;
+  color: #fff;
+}
+.status-label.is-cancelled {
+  color: var(--ink-soft);
+}
+.status-label.is-cancelled::before {
+  height: 1.5px;
+  border-radius: 1px;
+}
+
+.notice {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* The pause notice is the "asks once" beat: give it weight and an entrance */
+.detail-page .notice {
+  border-color: #d4d4d4;
+  box-shadow: inset 3px 0 0 #171717;
+  background: #fafafa;
+  padding: 24px 26px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  animation: offload-rise 0.52s var(--ease-out-expo) both;
+}
+.detail-page .notice > svg {
+  color: #171717;
+}
+.detail-page .notice h3 {
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: #171717;
+  margin-bottom: 8px;
+}
+
+/* Draft: the product's output deserves reading-size type */
+.draft-editor textarea {
+  font-size: 13.5px;
+  line-height: 1.75;
+  padding: 20px 22px;
+  border-color: #e3e3e3;
+  background: #fcfcfc;
+}
+
+/* ---- Connections ---- */
+
+.connection-icon {
+  color: #171717;
+  background: #fafafa;
+  border-color: #e3e3e3;
+}
+.connection-list article.is-disconnected .connection-icon {
+  color: #8c8c8c;
+  background: #fff;
+}
+.connection-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 9px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.connection-state::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+.connection-state.is-connected {
+  color: #171717;
+}
+.connection-state.is-connected::before {
+  background: currentColor;
+  box-shadow: 0 0 0 3px rgb(23 23 23 / 0.08);
+}
+.connection-state.is-expired {
+  color: #171717;
+  font-weight: 500;
+}
+.connection-state.is-expired::before {
+  width: 9px;
+  height: 9px;
+  background: linear-gradient(
+    135deg,
+    transparent 42%,
+    currentColor 42% 58%,
+    transparent 58%
+  );
+}
+.demo-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px dashed #b3b3b3;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #3d3d3d;
+  transition:
+    border-color 0.18s,
+    color 0.18s,
+    background-color 0.18s;
+}
+.demo-control:hover {
+  border-color: #171717;
+  color: #171717;
+  background: #fafafa;
+}
+
+/* ---- Motion: one orchestrated entrance per surface ---- */
+
+.hero-copy > * {
+  animation: offload-rise 0.8s var(--ease-out-expo) both;
+}
+.hero-copy > :nth-child(2) {
+  animation-delay: 70ms;
+}
+.hero-copy > :nth-child(3) {
+  animation-delay: 150ms;
+}
+.hero-copy > :nth-child(4) {
+  animation-delay: 220ms;
+}
+.hero-copy > :nth-child(5) {
+  animation-delay: 280ms;
+}
+.hero-aside {
+  animation: offload-rise 0.9s 0.4s var(--ease-out-expo) both;
+}
+/* ScreenTransition owns screen motion, avoiding a second animation on children. */
+.app-screen { min-height: 100dvh; }
+.orb-loading { gap: 18px; }
+.orb-loading > p { margin: 0; color: var(--ink-soft); font-size: 13px; }
+.orb-loading.compact {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 18px 0;
+}
+.onboard-step > p {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.85;
+  margin-bottom: 26px;
+}
+.onboard-step > label { margin-bottom: 25px; }
+.onboard-step > .button { width: 100%; }
+.onboard-step > .button-row { justify-content: space-between; }
+.sidebar, .suggestions-panel {
+  animation: offload-panel-in 0.3s var(--ease-out-quart) both;
+}
+@keyframes offload-panel-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal[open] {
+  animation: offload-dialog-in 0.24s var(--ease-out-expo) both;
+}
+.modal[open]::backdrop {
+  animation: offload-panel-in 0.2s ease-out both;
+}
+@keyframes offload-dialog-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .suggestions-panel, .modal[open], .modal[open]::backdrop {
+    animation: none;
+  }
+}
+
+/* Phones: 16px inputs stop iOS from zooming on focus */
+@media (max-width: 600px) {
+  .panel-search input,
+  .draft-editor textarea {
+    font-size: 16px;
+  }
+  .status-label,
+  .page-title .status-label {
+    height: 26px;
+    font-size: 12px;
+  }
+  /* Floyd's phone size; longer breadcrumbs otherwise push it onto two lines */
+  .session-button {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+}

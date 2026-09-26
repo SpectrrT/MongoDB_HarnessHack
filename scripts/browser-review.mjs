@@ -1,0 +1,22 @@
+import { chromium } from "@playwright/test";
+import fs from "node:fs/promises";
+const browser = await chromium.launch({ channel: "chrome", headless: true });
+const page = await browser.newPage({ viewport: { width: 1496, height: 850 } });
+const errors = [];
+page.on("pageerror", (e) => errors.push(e.message));
+page.on("console", (m) => {
+  if (m.type() === "error") errors.push(m.text());
+});
+await page.goto("http://127.0.0.1:5193/");
+await page.waitForTimeout(1800);
+console.log(
+  "net",
+  await page.evaluate(() => ({
+    canvases: document.querySelectorAll(".net-background canvas").length,
+    vanta: typeof window.VANTA,
+    net: typeof window.VANTA?.NET,
+  })),
+);
+console.log(errors);
+await page.screenshot({ path: "test-results/landing-desktop-review.png" });
+await browser.close();

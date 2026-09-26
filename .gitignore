@@ -1,0 +1,11 @@
+node_modules/
+dist/
+release/
+.data/
+.env*
+!.env.example
+playwright-report/
+test-results/
+.DS_Store
+
+desktop/dist/

@@ -1,0 +1,25 @@
+import { EChartsBarChart } from "../vendor/evilcharts/bar";
+export default function ProgressChart() {
+  return (
+    <div
+      className="progress-chart"
+      role="img"
+      aria-label="Sample comparison: first run 12 steps, saved routine 7 steps"
+    >
+      <EChartsBarChart
+        data={[
+          { run: "First run", steps: 12 },
+          { run: "Saved routine", steps: 7 },
+        ]}
+        config={{ steps: { label: "Steps", color: "#222222" } }}
+        xDataKey="run"
+        animation={false}
+      >
+        <EChartsBarChart.Bar dataKey="steps" />
+        <EChartsBarChart.XAxis dataKey="run" />
+        <EChartsBarChart.YAxis />
+        <EChartsBarChart.Tooltip />
+      </EChartsBarChart>
+    </div>
+  );
+}
