@@ -1,7 +1,7 @@
 /* Offload graphics: existing serif/sans typography, with color reserved for meaning. */
 .work-diagram {position:relative;z-index:1;margin:0;width:100%;max-width:520px;justify-self:end;}
 .diagram-index {display:flex;justify-content:space-between;gap:12px;font:10px/1.5 var(--ascii-font,monospace);letter-spacing:.07em;color:#647068;margin-bottom:16px;}
-.work-diagram svg {display:block;width:100%;height:auto;}
+.work-diagram > svg {display:block;width:100%;height:auto;}
 .diagram-node {font-family:'Inter',sans-serif;font-size:18px;font-weight:500;fill:#26332a;}
 .diagram-sub {font-family:'Inter',sans-serif;font-size:14px;}
 .diagram-wordmark {font:40px 'Instrument Serif',serif;}
