@@ -10,6 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { mountRem } from "./rem.js";
+import { REM_ADMIN_PATHS, remAdminGuard } from "./rem-guard.js";
 import {
   createWorkspace,
   transition,
@@ -298,6 +299,7 @@ export function createApp({
       next(e);
     }
   });
+  app.use(REM_ADMIN_PATHS, remAdminGuard());
   mountRem(app);
   if (serveStatic) {
     const dist = path.join(here, "../dist");

@@ -71,8 +71,9 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - Tests: `npm test` runs 113 (1 Atlas-only skip). `npm run test:e2e` passes 12 of 12 against a server started with
   `OFFLOAD_SKIP_ENV=1` (point `PW_BASE_URL` at it). Floyd's 1:12 PM redesign lands onboarding on the Overview and drops
   the in-app recording checkbox (the browser's permission prompt remains); the e2e suite follows both.
-- The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). Before any public deploy:
-  `/api/rem/reset` and `/api/rem/simulate` have no auth.
+- The team has permission to use `vendor/beautiful-ui` (Tensae, Sep 26). `/api/rem/reset` and `/api/rem/simulate`
+  only answer requests from this machine (`server/rem-guard.js`); set `REM_ADMIN_TOKEN` and send it as
+  `x-rem-admin-token` to allow them on a public deploy. The other REM routes stay open.
 - Submission: public repo, demo link, one-minute video, by 5:00 PM ET. All three teammates are on the repo. At 1:45 PM
   the repo was still private (only Tensae is an admin), with no demo link or video yet.
 
