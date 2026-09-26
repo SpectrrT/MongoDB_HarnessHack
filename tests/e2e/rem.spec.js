@@ -32,7 +32,8 @@ test("REM: run a task live, sleep, and see the morning brief and diff", async ({
   await expect(page.locator(".rem-run-row").first()).toBeVisible();
 
   // Night: sleep once and see the real phases render (Replay, Merge, Distill, Evolve, asks, brief).
-  await page.getByRole("button", { name: "Sleep", exact: true }).click();
+  // The workspace shell has its own Sleep control; target the REM night section.
+  await page.getByRole("region", { name: "Night" }).getByRole("button", { name: "Sleep", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Replay", exact: true })).toBeVisible({ timeout: 20000 });
   await expect(page.getByRole("heading", { name: "Merge", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Distill", exact: true })).toBeVisible();
