@@ -1,0 +1,44 @@
+.history-page .hx-next-actions {padding-top:26px;}
+.hx-next-heading {display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:20px;}
+.hx-next-heading h2 {font-size:16px;font-weight:500;line-height:1.4;}
+.hx-next-heading p {font-size:12px;line-height:1.7;color:var(--ink-soft);margin-top:6px;}
+.hx-next-heading>button {display:flex;align-items:center;gap:7px;font-size:12px;flex:none;}
+.hx-next-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.hx-next-card {display:flex;flex-direction:column;align-items:stretch;min-width:0;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--surface);}
+.hx-next-kind {display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--ink-soft);font-size:10px;line-height:1.5;margin-bottom:14px;}
+.hx-next-kind>.hx-tag {margin-left:auto;font-size:9px;}
+.hx-next-card h3 {font-size:14px;font-weight:500;line-height:1.5;overflow-wrap:anywhere;}
+.hx-next-card>p {font-size:12px;line-height:1.7;color:var(--ink-soft);margin:8px 0 16px;}
+.hx-next-evidence {margin-top:auto;border-top:1px solid var(--line);padding-top:12px;}
+.hx-next-evidence>summary {cursor:pointer;font-size:11px;line-height:1.6;}
+.hx-next-evidence>summary>span {margin-left:6px;color:var(--ink-soft);}
+.hx-next-evidence>ol {list-style:none;padding:0;margin:12px 0 0;max-height:250px;overflow-y:auto;overscroll-behavior:contain;}
+.hx-next-evidence li {padding:10px 0;border-top:1px solid var(--line);}
+.hx-next-source {display:flex;align-items:flex-start;gap:7px;}
+.hx-next-source>:first-child {flex:none;margin-top:2px;}
+.hx-next-source strong {font-size:11px;font-weight:500;line-height:1.6;overflow-wrap:anywhere;}
+.hx-next-evidence time {display:block;font-size:10px;color:var(--ink-soft);margin-top:5px;}
+.hx-next-evidence p {font-size:11px;line-height:1.7;white-space:pre-wrap;color:var(--ink-soft);margin:7px 0;overflow-wrap:anywhere;}
+.hx-next-evidence button {display:inline-flex;gap:5px;align-items:center;font-size:10px;margin-top:5px;}
+.hx-next-actions-row {display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px;}
+.hx-next-actions-row .button {font-size:11px;gap:6px;padding:8px 10px;}
+.hx-next-actions-row .text-button {font-size:10px;}
+.hx-next-routine {display:inline-flex;align-items:center;gap:6px;width:100%;font-size:11px;color:var(--ink-soft);padding-top:4px;}
+.hx-next-card>.hx-next-input {font-size:11px;margin-top:-6px;}
+.hx-next-empty,.hx-next-notice {font-size:12px;line-height:1.7;color:var(--ink-soft);margin:0 0 12px;}
+.hx-next-notice {color:var(--ink);}
+.hx-meeting-entry {margin-top:20px;border-top:1px solid var(--line);padding-top:16px;}
+.hx-meeting-entry>summary {display:flex;align-items:center;gap:7px;list-style:none;cursor:pointer;font-size:12px;}
+.hx-meeting-entry>summary::-webkit-details-marker {display:none;}
+.hx-meeting-entry>p {font-size:12px;color:var(--ink-soft);line-height:1.7;margin:12px 0;}
+.hx-meeting-entry form {max-width:640px;}
+.history-page .hx-meeting-entry label {display:flex;flex-direction:column;gap:7px;min-width:0;font-size:12px;margin-bottom:14px;}
+.hx-meeting-entry label>span {font-size:10px;color:var(--ink-soft);}
+.hx-meeting-fields {display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.history-page .hx-meeting-entry input,.history-page .hx-meeting-entry textarea {width:100%;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:7px;font:12px/1.6 var(--font-sans);background:var(--surface);color:var(--ink);}
+.hx-saved-meetings {list-style:none;padding:0;margin:18px 0 0;}
+.hx-saved-meetings li {display:flex;align-items:center;gap:9px;font-size:12px;padding:10px 0;border-top:1px solid var(--line);}
+.hx-saved-meetings li>span {flex:1;min-width:0;overflow-wrap:anywhere;}
+.hx-saved-meetings time {font-size:11px;color:var(--ink-soft);}
+@media(max-width:1100px){.hx-next-grid{grid-template-columns:1fr;}.hx-next-kind{margin-bottom:9px;}.hx-next-card>p{margin-bottom:12px;}.hx-next-evidence{margin-top:0;}}
+@media(max-width:600px){.hx-next-heading{gap:12px;}.hx-next-card{padding:16px;}.hx-meeting-fields{grid-template-columns:1fr;gap:0;}.hx-saved-meetings li{flex-wrap:wrap;}}

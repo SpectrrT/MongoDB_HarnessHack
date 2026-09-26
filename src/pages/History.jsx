@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play, Search, X, Code2, Terminal, Globe, Monitor, Lock, Coffee } from "lucide-react";
 import { ConnectionLogo } from "../components/ConnectionLogo";
+import HistoryNextActions from "../components/HistoryNextActions";
 import { Modal } from "../components/Modal";
 import "../history.css";
 
@@ -21,7 +22,7 @@ async function api(url, body) {
       url,
       body === undefined
         ? undefined
-        : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) },
+        : { method: "POST", headers: { "Content-Type": "application/json", "X-Offload-Client": "local" }, body: JSON.stringify(body) },
     );
   } catch {
     throw Error("Offload's local API isn't answering.");
@@ -202,7 +203,11 @@ const STATE_LABEL = {
   off: "Not connected",
   paused: "Paused",
   recording: "Recording",
-  idle: "Collector off",
+  idle: "Not recording",
+  stopped: "Not recording",
+  starting: "Starting…",
+  error: "Needs attention",
+  unsupported: "Recording unavailable",
 };
 
 export default function History() {
@@ -292,6 +297,11 @@ export default function History() {
     loadStatus();
   }, [loadStatus]);
   useEffect(() => {
+    if (!status?.collector?.running) return;
+    const timer = setInterval(() => loadStatus({ quiet: true }), 5000);
+    return () => clearInterval(timer);
+  }, [status?.collector?.running, loadStatus]);
+  useEffect(() => {
     if (!configured) return;
     loadSettings();
     loadRoutines();
@@ -367,11 +377,15 @@ export default function History() {
   const lastSample = devices.reduce((max, d) => Math.max(max, Date.parse(d.lastSeen) || 0), 0);
   // With the live stream open, "now" is current; without it, judge from when the status was read.
   const reference = live === "open" ? Math.max(now, status?.fetchedAt || 0) : status?.fetchedAt || now;
+  const collector = status?.collector;
+  const captureScope = ["app names", collector?.scope?.windowTitles !== false && "window titles", collector?.enabled && collector?.scope?.browserUrls && "browser URLs"].filter(Boolean).join(", ");
   const state = !status
     ? "checking"
     : !configured
       ? "off"
-      : paused
+      : collector?.state
+        ? collector.state
+        : paused
         ? "paused"
         : lastSample && reference - lastSample < RECENT_MS
           ? "recording"
@@ -387,9 +401,15 @@ export default function History() {
     setPauseBusy(true);
     setHeaderError("");
     try {
-      const next = await api("/api/activity/settings", { paused: !paused });
-      setSettings(next);
-      setStatus((s) => (s ? { ...s, paused: next.paused } : s));
+      if (collector?.supported) {
+        const next = await api("/api/activity/collector", { action: collector.running ? "pause" : "start" });
+        setStatus({ ...next, fetchedAt: Date.now() });
+        await loadSettings();
+      } else {
+        const next = await api("/api/activity/settings", { paused: !paused });
+        setSettings(next);
+        setStatus((s) => (s ? { ...s, paused: next.paused } : s));
+      }
     } catch (error) {
       setHeaderError(error.message);
     } finally {
@@ -467,29 +487,23 @@ export default function History() {
             <span className={`hx-pill is-${state}`} role="status">
               {STATE_LABEL[state]}
             </span>
-            {configured && (
+            {configured && (collector?.supported || (!collector && ["recording", "paused"].includes(state))) && (
               <button
                 className="button small secondary"
-                disabled={pauseBusy}
-                aria-label={paused ? "Resume recording" : "Pause recording"}
+                disabled={pauseBusy || (collector && !collector.running && !collector.canStart)}
+                aria-label={collector?.running || state === "recording" ? "Pause recording" : !collector && paused ? "Resume recording" : "Start recording"}
+                title={collector?.running ? "Pause computer history recording" : `Record ${captureScope}. No screenshots or keystrokes.`}
                 onClick={togglePause}
               >
-                {paused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}
-                {paused ? "Resume" : "Pause"}
+                {collector?.running || state === "recording" ? <Pause size={14} aria-hidden="true" /> : <Play size={14} aria-hidden="true" />}
+                {pauseBusy ? "Updating…" : collector?.running || state === "recording" ? "Pause" : !collector && paused ? "Resume" : "Start recording"}
               </button>
             )}
           </div>
-          {deviceLine && (
-            <p className="hx-device">
-              {deviceLine}
-              {state === "idle" && (
-                <>
-                  {" "}
-                  Start <code>npm run activity:collector</code> to record.
-                </>
-              )}
-            </p>
-          )}
+          {deviceLine && <p className="hx-device">{deviceLine}</p>}
+          {collector?.supported && <p className="hx-device hx-capture-scope">Records {captureScope}.</p>}
+          {collector?.permissions?.windowTitles === 'unavailable' && <p className="hx-device">Window-title access is unavailable. App names can still be recorded.</p>}
+          {collector?.error && <p className="hx-device hx-error" role="alert">{collector.error}</p>}
         </div>
       </div>
       {headerError && (
@@ -502,6 +516,7 @@ export default function History() {
       {configured && (
         <>
           <SearchPanel status={status} onShow={showInDay} refreshKey={searchKey} />
+          <HistoryNextActions refreshKey={status?.fetchedAt} />
           <Routines
             routines={routines}
             error={routineError}
@@ -544,12 +559,10 @@ function Setup({ error }) {
     <section className="hx-setup" aria-labelledby="hx-setup-title">
       <h2 id="hx-setup-title">Connect MongoDB to start</h2>
       <p>
-        {error ? `${error} ` : ""}Set <code>MONGODB_URI</code> and start <code>npm run harness:server</code> and{" "}
-        <code>npm run activity:collector</code>.
+        {error ? `${error} ` : ""}The local history service needs a MongoDB connection. Once connected, you can start recording here.
       </p>
       <p>
-        Every 5 seconds the collector notes the front app, its window title and the page open in your browser. It
-        never takes screenshots or reads keystrokes.
+        Recording saves app names and permitted window titles. Browser URLs are optional. It never takes screenshots or reads keystrokes.
       </p>
     </section>
   );
@@ -886,9 +899,7 @@ function EmptyDay({ isToday, state }) {
         ) : state === "recording" ? (
           "Sessions appear here as you work."
         ) : (
-          <>
-            Start <code>npm run activity:collector</code> on this computer and today fills in as you work.
-          </>
+          "Choose Start recording above to add history as you work."
         )}
       </p>
     </div>

@@ -149,6 +149,7 @@ export default function PromptBar({
   tall = false,
   modelDisabled,
   placeholder,
+  initialText = "",
   onSend,
   models, modelValue, onModelChange, disabled = false, controls, onAttach, hasAttachments = false,
 }: {
@@ -166,10 +167,12 @@ export default function PromptBar({
   tall?: boolean;
   modelDisabled?: boolean;
   placeholder?: string;
+  initialText?: string;
   onSend?: (text: string) => void | boolean | Promise<void | boolean>;
 }) {
   const pill = variant === "Pill";
   const [draft, setDraft] = useState("");
+  useEffect(() => { setDraft(initialText); }, [initialText]);
   const [dismissed, setDismissed] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
   const [modelOpen, setModelOpen] = useState(false);

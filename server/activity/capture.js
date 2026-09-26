@@ -11,6 +11,8 @@ const run = (cmd, args, timeout = 2500) =>
   });
 
 const retryAt = new Map();
+const permissions = {windowTitles:'unknown',browserUrls:'unknown'};
+export const captureStatus = () => ({...permissions});
 const blocked = (key) => (retryAt.get(key) || 0) > Date.now();
 const block = (key, ms = 60000) => retryAt.set(key, Date.now() + ms);
 
@@ -38,54 +40,65 @@ export async function windowTitle() {
   const out = await run('osascript', ['-e', TITLE_SCRIPT]);
   if (out === null) {
     block('title');
+    permissions.windowTitles='unavailable';
     return null;
   }
+  permissions.windowTitles='available';
   return out && out !== 'missing value' ? out : null;
 }
 
-const chromium = (name) =>
-  `tell application "${name}" to if (count of windows) > 0 then return ` +
-  '(URL of active tab of front window) & linefeed & (title of active tab of front window)';
+const PRIVATE_MARKER='__OFFLOAD_PRIVATE_WINDOW__';
+const chromium = (name) => ({urls}) =>
+  `tell application "${name}"\nif (count of windows) = 0 then return ""\n` +
+  (name==='Google Chrome'?`if mode of front window is "incognito" then return "${PRIVATE_MARKER}"\n`:'') +
+  'return '+(urls?'(URL of active tab of front window) & linefeed & ':'')+'(title of active tab of front window)\nend tell';
 const BROWSER_SCRIPTS = {
   'Google Chrome': chromium('Google Chrome'),
   Arc: chromium('Arc'),
   'Microsoft Edge': chromium('Microsoft Edge'),
   'Brave Browser': chromium('Brave Browser'),
   Chromium: chromium('Chromium'),
-  Safari:
+  Safari: ({urls}) =>
     'tell application "Safari" to if (count of documents) > 0 then return ' +
-    '(URL of front document) & linefeed & (name of front document)',
+    (urls?'(URL of front document) & linefeed & ':'')+'(name of front document)',
 };
 
 // Only asked while that browser is frontmost, so AppleScript never launches a browser.
-export async function browserTab(app) {
-  const script = BROWSER_SCRIPTS[app];
-  if (!script || blocked(`browser:${app}`)) return null;
+export async function browserTab(app,{urls=true}={}) {
+  const makeScript = BROWSER_SCRIPTS[app];
+  if (!makeScript || blocked(`browser:${app}`)) return null;
+  const script=makeScript({urls});
   const out = await run('osascript', ['-e', script]);
   if (out === null) {
     block(`browser:${app}`);
+    permissions[urls?'browserUrls':'windowTitles']='unavailable';
     return null;
   }
+  permissions.windowTitles='available';if(urls)permissions.browserUrls='available';
+  if(out===PRIVATE_MARKER)return {url:null,title:'Private browsing',private:true};
+  if(!urls)return {url:null,title:out||null};
   const [url, ...title] = out.split('\n');
   return { url: url || null, title: title.join(' ').trim() || null };
 }
 
-export async function sample({ titles = true, urls = true, excludedApps = [] } = {}) {
-  const front = await frontmostApp();
+export async function sample({ titles = true, urls = true, excludedApps = [] } = {}, readers={}) {
+  const readFront=readers.frontmostApp||frontmostApp,readIdle=readers.idleSeconds||idleSeconds,readTab=readers.browserTab||browserTab,readTitle=readers.windowTitle||windowTitle;
+  const front = await readFront();
   if (!front) return null;
   const s = { ts: new Date().toISOString(), ...front, title: null, url: null, idle: false, source: 'collector' };
   // Seconds since any keyboard or mouse input: "hands-on" versus reading. Which keys were pressed is never read.
-  const quiet = await idleSeconds();
+  const quiet = await readIdle();
   if (quiet >= IDLE_SECONDS) return { ...s, idle: true, active: false };
   s.active = quiet < ACTIVE_SECONDS;
   if (excludedApps.some((a) => a.toLowerCase() === front.app.toLowerCase())) return s;
   if (titles || urls) {
-    const tab = await browserTab(front.app);
+    const tab = await readTab(front.app,{urls});
     if (tab) {
+      if(tab.private)return {...s,title:'Private browsing'};
       if (urls) s.url = tab.url;
       if (titles) s.title = tab.title;
     }
   }
-  if (titles && !s.title) s.title = await windowTitle();
+  if (titles && !s.title) s.title = await readTitle();
   return s;
 }
