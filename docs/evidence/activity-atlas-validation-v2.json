@@ -1,0 +1,83 @@
+{
+  "purpose": "Synthetic Computer History integration check. No personal activity was captured.",
+  "startedAt": "2026-09-26T19:41:48.330Z",
+  "namespace": "offload_activity_verify_1790451708331",
+  "source": "seed",
+  "checks": [
+    {
+      "name": "ingestion",
+      "passed": true,
+      "inserted": 324
+    },
+    {
+      "name": "sessionization",
+      "passed": true,
+      "sessions": 9
+    },
+    {
+      "name": "day retrieval and totals",
+      "passed": true,
+      "sessions": 3,
+      "seconds": 540
+    },
+    {
+      "name": "search",
+      "passed": true,
+      "mode": "atlas-hybrid",
+      "results": 3,
+      "allSynthetic": true
+    },
+    {
+      "name": "routine mining",
+      "passed": true,
+      "routines": 1,
+      "days": 3,
+      "occurrences": 3
+    },
+    {
+      "name": "forget removes source and derived evidence",
+      "passed": true,
+      "deletedEvents": 324,
+      "deletedSessions": 9,
+      "deletedRoutines": 1
+    }
+  ],
+  "cleanup": true,
+  "sourceHashes": {
+    "server/activity/store.js": "b7f7319bb1dc2d340d5141143c13a80eec483b8be6ca3c9fdbe7a397d2500ed3",
+    "server/activity/routes.js": "f1b498d6223dce22f46c2df818178555af5a2bebc8e0c360ef0c6ef5644f51c4",
+    "server/activity/capture.js": "6066770303a1e6f4ebca10593bbd457373ebea7703882359264803a37ae095f6"
+  },
+  "indexes": [
+    {
+      "name": "activity_text",
+      "status": "READY",
+      "queryable": true
+    },
+    {
+      "name": "activity_vector_local256",
+      "status": "READY",
+      "queryable": true
+    }
+  ],
+  "passed": true,
+  "collectionCleanup": [
+    {
+      "collection": "activity_events",
+      "dropped": true
+    },
+    {
+      "collection": "activity_sessions",
+      "dropped": true
+    },
+    {
+      "collection": "activity_routines",
+      "dropped": true
+    },
+    {
+      "collection": "activity_settings",
+      "dropped": true
+    }
+  ],
+  "finishedAt": "2026-09-26T19:42:17.328Z"
+}

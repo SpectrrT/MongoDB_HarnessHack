@@ -47,7 +47,10 @@ const chromium = (name) =>
   `tell application "${name}" to if (count of windows) > 0 then return ` +
   '(URL of active tab of front window) & linefeed & (title of active tab of front window)';
 const BROWSER_SCRIPTS = {
-  'Google Chrome': chromium('Google Chrome'),
+  'Google Chrome': 'tell application "Google Chrome"\n' +
+    'if (count of windows) is 0 then return ""\n' +
+    'if mode of front window is "incognito" then return "__OFFLOAD_PRIVATE__"\n' +
+    'return (URL of active tab of front window) & linefeed & (title of active tab of front window)\nend tell',
   Arc: chromium('Arc'),
   'Microsoft Edge': chromium('Microsoft Edge'),
   'Brave Browser': chromium('Brave Browser'),
@@ -66,7 +69,12 @@ export async function browserTab(app) {
     block(`browser:${app}`);
     return null;
   }
-  const [url, ...title] = out.split('\n');
+  return parseBrowserTab(out);
+}
+
+export function parseBrowserTab(out) {
+  if (out === '__OFFLOAD_PRIVATE__') return { private: true, url: null, title: null };
+  const [url, ...title] = String(out || '').split('\n');
   return { url: url || null, title: title.join(' ').trim() || null };
 }
 
@@ -81,6 +89,7 @@ export async function sample({ titles = true, urls = true, excludedApps = [] } =
   if (excludedApps.some((a) => a.toLowerCase() === front.app.toLowerCase())) return s;
   if (titles || urls) {
     const tab = await browserTab(front.app);
+    if (tab?.private) return { ...s, private: true };
     if (tab) {
       if (urls) s.url = tab.url;
       if (titles) s.title = tab.title;

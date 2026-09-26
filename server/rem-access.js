@@ -1,7 +1,7 @@
 // REM is a shared, local demonstration engine, not an authenticated hosted service.
-export function remAccess({ enabled = process.env.NODE_ENV !== 'production' } = {}) {
+export function remAccess({ enabled = process.env.NODE_ENV !== 'production', label = 'REM' } = {}) {
   return (req, res, next) => {
-    const deny = () => res.status(403).json({ error: 'REM is available only in the local Offload app.' });
+    const deny = () => res.status(403).json({ error: `${label} is available only in the local Offload app.` });
     const peer = req.socket.remoteAddress || '';
     if (!enabled || !/^(?:127\.\d+\.\d+\.\d+|::1|::ffff:127\.\d+\.\d+\.\d+)$/.test(peer)) return deny();
     try {

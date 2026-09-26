@@ -35,6 +35,7 @@ export const sampleSchema = z.object({
   url: z.string().max(4000).nullish(),
   idle: z.boolean().default(false),
   active: z.boolean().optional(),
+  private: z.boolean().optional(),
   source: z.enum(['collector', 'seed']).default('collector'),
 }).strict();
 export const samplesSchema = z.array(sampleSchema).max(20000);
@@ -73,7 +74,7 @@ export function cleanUrl(raw) {
 
 export function normalizeSample(s, settings) {
   const excluded = new Set(settings.excludedApps.map((a) => a.toLowerCase()));
-  const hidden = excluded.has(s.app.toLowerCase()) || PRIVATE_WINDOW.test(s.title || '');
+  const hidden = !!s.private || excluded.has(s.app.toLowerCase()) || PRIVATE_WINDOW.test(s.title || '');
   const { url, domain } = settings.captureUrls && !hidden && !s.idle ? cleanUrl(s.url) : { url: null, domain: null };
   return {
     ts: s.ts,
@@ -89,7 +90,7 @@ export function normalizeSample(s, settings) {
   };
 }
 
-const textOf = (s) => [s.app, s.title, s.domain].filter(Boolean).join(' — ');
+const textOf = (s) => [s.app, s.title, s.domain].filter(Boolean).join(' | ');
 const stable = (value) =>
   JSON.stringify(value, (_, v) =>
     v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b))) : v,
@@ -99,7 +100,7 @@ const stable = (value) =>
 function collapse(results, limit) {
   const groups = new Map();
   for (const r of results) {
-    const key = `${r.app}\u0001${r.title || ''}\u0001${r.domain || ''}`;
+    const key = `${r.source || 'collector'}\u0001${r.app}\u0001${r.title || ''}\u0001${r.url || r.domain || ''}`;
     const group = groups.get(key);
     if (!group) groups.set(key, { ...r, count: 1, days: [r.day] });
     else {
@@ -281,8 +282,8 @@ export class ActivityStore {
           key: {
             $cond: [
               '$idle',
-              'idle',
-              { $concat: ['$app', '\u0001', { $ifNull: ['$title', ''] }, '\u0001', { $ifNull: ['$domain', ''] }] },
+              { $concat: ['idle', '\u0001', { $ifNull: ['$source', 'collector'] }, '\u0001', { $dateToString: { date: '$ts', format: '%Y-%m-%d', timezone } }] },
+              { $concat: ['$app', '\u0001', { $ifNull: ['$title', ''] }, '\u0001', { $ifNull: ['$url', ''] }, '\u0001', { $ifNull: ['$source', 'collector'] }, '\u0001', { $dateToString: { date: '$ts', format: '%Y-%m-%d', timezone } }] },
             ],
           },
         },
@@ -511,14 +512,19 @@ export class ActivityStore {
         },
       },
       { $limit: limit },
-      { $project: { start: 1, end: 1, durationSec: 1, app: 1, title: 1, domain: 1, day: 1, label: 1, source: 1, private: 1, activeShare: 1 } },
+      { $project: { start: 1, end: 1, durationSec: 1, app: 1, title: 1, url: 1, domain: 1, day: 1, label: 1, source: 1, private: 1, activeShare: 1 } },
     ];
   }
 
   async search(workspace, query, { limit = 10 } = {}) {
     const q = String(query || '').trim().slice(0, 200);
     if (!q) return { mode: this.searchMode.atlas ? 'atlas-hybrid' : 'local', results: [] };
-    const queryVector = await this.embedder.embedQuery(q);
+    let queryVector;
+    try { queryVector = await this.embedder.embedQuery(q); }
+    catch (error) {
+      this.log(`Query embedding failed; using keyword search: ${error.message}`);
+      queryVector = new Array(this.embedder.dims).fill(0);
+    }
     if (this.searchMode.atlas) {
       try {
         const results = await this.sessions.aggregate(this.rankFusionPipeline(workspace, q, queryVector, Math.min(100, limit * 10))).toArray();
@@ -556,10 +562,10 @@ export class ActivityStore {
   // Work you repeat. Each day splits into stretches at breaks (away time, or a gap longer than
   // BREAK_MS). A stretch of 2 to 6 steps that takes under an hour and recurs on several days, or many
   // times, is a routine worth handing off; long working blocks are not. Consecutive visits to the same
-  // place collapse, and steps under a minute are ignored. $merge keeps each routine's status
-  // (candidate, approved, dismissed) across reruns.
+  // place collapse, and steps under a minute are ignored. Cached candidates preserve the human's
+  // decision (candidate, approved, dismissed) across reruns.
   routinesPipeline(workspace, { since, minDays, minCount }) {
-    const perDay = { device: '$device', day: '$day' };
+    const perDay = { device: '$device', day: '$day', source: '$source' };
     const minutes = { $divide: [{ $subtract: ['$end', '$start'] }, 60000] };
     return [
       {
@@ -608,16 +614,34 @@ export class ActivityStore {
       { $match: { idle: false } },
       {
         $setWindowFields: {
-          partitionBy: { device: '$device', day: '$day', stretch: '$stretch' },
+          partitionBy: { device: '$device', day: '$day', source: '$source', stretch: '$stretch' },
           sortBy: { start: 1 },
           output: { previousLabel: { $shift: { output: '$label', by: -1, default: null } } },
         },
       },
-      { $match: { $expr: { $ne: ['$label', '$previousLabel'] } } },
+      { $set: { labelBoundary: { $cond: [{ $ne: ['$label', '$previousLabel'] }, 1, 0] } } },
+      {
+        $setWindowFields: {
+          partitionBy: { device: '$device', day: '$day', source: '$source', stretch: '$stretch' },
+          sortBy: { start: 1 },
+          output: { step: { $sum: '$labelBoundary', window: { documents: ['unbounded', 'current'] } } },
+        },
+      },
+      // Merge adjacent visits without losing their final end time. Dropping duplicate labels
+      // understated routine duration and could turn a long working block into a short routine.
+      {
+        $group: {
+          _id: { device: '$device', day: '$day', source: '$source', stretch: '$stretch', step: '$step' },
+          device: { $first: '$device' }, day: { $first: '$day' }, source: { $first: '$source' },
+          stretch: { $first: '$stretch' }, label: { $first: '$label' }, title: { $first: '$title' },
+          start: { $min: '$start' }, end: { $max: '$end' }, hour: { $first: '$hour' },
+          weekday: { $first: '$weekday' }, activeShare: { $avg: '$activeShare' },
+        },
+      },
       { $sort: { device: 1, day: 1, start: 1 } },
       {
         $group: {
-          _id: { device: '$device', day: '$day', stretch: '$stretch' },
+          _id: { device: '$device', day: '$day', source: '$source', stretch: '$stretch' },
           steps: { $push: '$label' },
           titles: { $push: '$title' },
           start: { $min: '$start' },
@@ -641,6 +665,8 @@ export class ActivityStore {
             $concat: [
               workspace,
               ':',
+              { $ifNull: ['$source', 'collector'] },
+              ':',
               {
                 $reduce: {
                   input: '$steps',
@@ -656,6 +682,8 @@ export class ActivityStore {
           days: { $addToSet: '$_id.day' },
           weekdays: { $addToSet: '$weekday' },
           typicalHour: { $median: { input: '$hour', method: 'approximate' } },
+          earliestHour: { $min: '$hour' },
+          latestHour: { $max: '$hour' },
           minutes: { $median: { input: minutes, method: 'approximate' } },
           sources: { $addToSet: '$source' },
           lastSeen: { $max: '$start' },
@@ -681,15 +709,26 @@ export class ActivityStore {
     ];
   }
 
-  async routines(workspace, { days = 14, minDays = 3, minCount = 4 } = {}) {
+  async routines(workspace, { days = 28, minDays = 3, minCount = 4 } = {}) {
     const since = new Date(Date.now() - days * 86400e3);
-    await this.sessions.aggregate(this.routinesPipeline(workspace, { since, minDays, minCount })).toArray();
+    // Read the current candidates first so a stale cache entry cannot survive missing evidence.
+    // Use candidate ids rather than comparing client and database clocks.
+    const pipeline = this.routinesPipeline(workspace, { since, minDays, minCount });
+    const candidates = await this.sessions.aggregate(pipeline.slice(0, -1)).toArray();
+    if (!candidates.length) return [];
+    await this.routinesCollection.bulkWrite(candidates.map(({ _id, ...fields }) => ({
+      updateOne: { filter: { _id }, update: { $set: fields }, upsert: true },
+    })));
     const found = await this.routinesCollection
-      .find({ workspace, status: { $ne: 'dismissed' }, lastSeen: { $gte: since } }, { projection: { workspace: 0 } })
+      .find({ workspace, status: { $ne: 'dismissed' }, _id: { $in: candidates.map(r => r._id) } }, { projection: { workspace: 0 } })
       .sort({ dayCount: -1, count: -1, minutes: -1 })
       .limit(12)
       .toArray();
-    return found.map((r) => ({ ...r, status: r.status || 'candidate' }));
+    return found.map((r) => {
+      const spanDays = (new Date(r.days.at(-1)) - new Date(r.days[0])) / 86400e3;
+      const weekly = r.days.length >= 3 && r.weekdays.length === 1 && spanDays >= 14 && r.latestHour - r.earliestHour <= 1;
+      return { ...r, status: r.status || 'candidate', cadence: weekly ? 'weekly' : 'repeated', timeZone: this.timeZone };
+    });
   }
 
   async decide(workspace, id, decision) {
@@ -703,7 +742,10 @@ export class ActivityStore {
   async forget(workspace, { from, to }) {
     const events = await this.events.deleteMany({ 'meta.workspace': workspace, ts: { $gte: from, $lt: to } });
     const sessions = await this.sessions.deleteMany({ workspace, start: { $lt: to }, end: { $gt: from } });
-    return { deletedEvents: events.deletedCount, deletedSessions: sessions.deletedCount };
+    // Routine titles and counts are derived from sessions. Remove the cached copies as well.
+    // The next read rebuilds candidates only from surviving source sessions.
+    const routines = await this.routinesCollection.deleteMany({ workspace });
+    return { deletedEvents: events.deletedCount, deletedSessions: sessions.deletedCount, deletedRoutines: routines.deletedCount };
   }
 
   async status(workspace) {
@@ -712,10 +754,11 @@ export class ActivityStore {
       this.sessions
         .aggregate([
           { $match: { workspace } },
-          { $group: { _id: '$device', lastSeen: { $max: '$end' }, source: { $first: '$source' } } },
+          { $sort: { end: -1 } },
+          { $group: { _id: '$device', lastSeen: { $max: '$end' }, source: { $first: '$source' }, sources: { $addToSet: '$source' } } },
           { $sort: { lastSeen: -1 } },
           { $limit: 5 },
-          { $project: { _id: 0, device: '$_id', lastSeen: 1, source: 1 } },
+          { $project: { _id: 0, device: '$_id', lastSeen: 1, source: 1, sources: 1 } },
         ])
         .toArray(),
     ]);
