@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
-import {idleControlState} from './idle-intent.js';
+import {idleControlState,normalizeIdleText} from './idle-intent.js';
 const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
-const canonical=text=>text.toLowerCase().replace(/\s+/g,' ').replace(/[.!?]+$/,'').trim();
+const canonical=text=>normalizeIdleText(text).toLowerCase().replace(/\s+/g,' ').replace(/[.!?]+$/,'').trim();
 const ACTION=/\b(build|create|make|implement|fix|debug|investigate|test|verify|compare|design|plan|draft|write|prototype|explore|research|solve|improve|optimi[sz]e)\b/i;
 const DENIAL=/\b(?:must not|do not|don't|never|no need|not asking|avoid|stop|not authorized|no permission|without (?:my )?approval|denied)\b/i;
 const CONSTRAINT=/\b(?:must|never|do not|don't|no need|not asking|avoid|stop|only|keep|preserve|constraint|permission|approval|deadline|budget|correction|instead|actually|pending|unresolved|blocked|not authorized)\b/i;
@@ -35,7 +35,7 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
  // Only explicit user confirmation closes an earlier objective. Assistant claims are evidence, not a verdict.
  const controlIds=new Set(control.controls.map(m=>m.id));
  const active=users.filter(m=>m.index>control.closedAt&&!controlIds.has(m.id));
- const constraints=records.filter(m=>m.role==='context'||m.role==='user'&&CONSTRAINT.test(m.text));
+ const constraints=records.filter(m=>m.role==='context'||m.role==='user'&&CONSTRAINT.test(normalizeIdleText(m.text)));
  // Never silently drop an older denial to fit a prompt. Ask the lifecycle to abstain instead.
  if(constraints.reduce((n,m)=>n+m.text.length,0)>1600)return [];
  const goals=[];
@@ -45,7 +45,7 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
   const parts=message.text.split(/\n+|;\s*|(?<=[.!?])\s+/).filter(Boolean);
   for(const part of parts){
    const match=ACTION.exec(part)||/^(?:why|how)\b.{0,200}\b(?:crash|fail|error|broken)/i.exec(part);if(!match)continue;
-   if(DENIAL.test(part.slice(0,match.index+match[0].length)))continue;
+   if(DENIAL.test(normalizeIdleText(part.slice(0,match.index+match[0].length))))continue;
    if(/\b(?:already|successfully)\s+(?:built|created|fixed|implemented|tested|verified)\b/i.test(part))continue;
    if(EXTERNAL.test(part)&&!LOCAL.test(part))continue;
    if(part.length>900)continue;
@@ -55,7 +55,7 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
  const distinct=[...new Map(goals.map(g=>[canonical(g.text),g])).values()].sort((a,b)=>b.message.index-a.message.index);
  const candidates=[];
  for(const goal of distinct){
-  if(active.some(m=>m.index>goal.message.index&&/\b(?:don't|do not|never|stop|no need to|not asking you to|avoid)\s+(?:work(?:ing)?|build(?:ing)?|creat(?:e|ing)|mak(?:e|ing)|implement(?:ing)?|fix(?:ing)?|debug(?:ging)?|investigat(?:e|ing)|test(?:ing)?|verify(?:ing)?|explor(?:e|ing)|research(?:ing)?)\b/i.test(m.text)))continue;
+  if(active.some(m=>m.index>goal.message.index&&/\b(?:don't|do not|never|stop|no need to|not asking you to|avoid)\s+(?:work(?:ing)?|build(?:ing)?|creat(?:e|ing)|mak(?:e|ing)|implement(?:ing)?|fix(?:ing)?|debug(?:ging)?|investigat(?:e|ing)|test(?:ing)?|verify(?:ing)?|explor(?:e|ing)|research(?:ing)?)\b/i.test(normalizeIdleText(m.text))))continue;
   const objective=goal.text,goalKey=hash([conversationId,canonical(objective)]);
   // Goal identity excludes timer generation. Repeated ticks and assistant restatements do not create new work.
   if(priorAttempts.some(a=>a&&(a.goalKey===goalKey||canonical(a.objective||'')===canonical(objective))&&BLOCKED_STATUSES.has(a.status)))continue;
@@ -69,7 +69,7 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
   const isWeb=goal.kind==='prototype'&&/\b(?:web|website|html|page|widget|calculator|dashboard|form|todo|counter)\b/i.test(objective);
   const supplied=facts.map(m=>m.text).join('\n');
   const counterCheck=isWeb&&/\bcounter\b/i.test(objective)&&/\bincrement\b/i.test(supplied)&&/\breset\b/i.test(supplied)
-   &&!/\b(?:no|without|don't|do not|never)\b[^.!?\n]{0,70}\b(?:reset|increment)\b/i.test(supplied);
+   &&!/\b(?:no|without|don't|do not|never)\b[^.!?\n]{0,70}\b(?:reset|increment)\b/i.test(normalizeIdleText(supplied));
   const solutionFile=isWeb?'prototype.html':'solution.md';
   const instructions=[
    ...(control.replacement?[`The user assigned a new task at [source:${control.replacement.id}]. Earlier paused goals remain closed; other constraints still apply.`]:[]),
