@@ -40,7 +40,7 @@ test('does not invent work from greeting, assistant output, external command or 
 });
 
 test('explicit stop, confirmed completion, gratitude and later denials suppress stale objectives',()=>{
- for(const text of ['Stop working','That is done.','It is fixed.','Thanks.','Do not build that.'])
+ for(const text of ['Stop working','That is done.','It is fixed.','Thanks.','Do not build that.','No need to build that.','Please stop working','Stop working on this.','Not now.','I do not need that anymore.'])
   assert.equal(deriveIdleDraft(input([user('a','Build a counter widget.'),user('b',text)])),null,text);
  const next=deriveIdleDraft(input([user('a','Build a counter widget.'),user('b','That is done.'),user('c','Investigate why the login fails.')]));
  assert.equal(next.kind,'investigation');assert.doesNotMatch(next.brief,/counter widget/);

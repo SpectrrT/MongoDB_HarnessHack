@@ -2,9 +2,9 @@ import {createHash} from 'node:crypto';
 const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const canonical=text=>text.toLowerCase().replace(/\s+/g,' ').replace(/[.!?]+$/,'').trim();
 const ACTION=/\b(build|create|make|implement|fix|debug|investigate|test|verify|compare|design|plan|draft|write|prototype|explore|research|solve|improve|optimi[sz]e)\b/i;
-const DENIAL=/\b(?:must not|do not|don't|never|not authorized|no permission|without (?:my )?approval|denied)\b/i;
-const CONSTRAINT=/\b(?:must|never|do not|don't|only|keep|preserve|constraint|permission|approval|deadline|budget|correction|instead|actually|pending|unresolved|blocked|not authorized)\b/i;
-const STOP=/^(?:stop(?:\s+(?:working|doing|here|now|this))?|pause(?:\s+(?:work|this|here))?|cancel(?:\s+(?:this|the task))?|never\s?mind|that's enough|do not continue|don't continue|no more work)[.!\s]*$/i;
+const DENIAL=/\b(?:must not|do not|don't|never|no need|not asking|avoid|stop|not authorized|no permission|without (?:my )?approval|denied)\b/i;
+const CONSTRAINT=/\b(?:must|never|do not|don't|no need|not asking|avoid|stop|only|keep|preserve|constraint|permission|approval|deadline|budget|correction|instead|actually|pending|unresolved|blocked|not authorized)\b/i;
+const STOP=/^(?:please\s+)?(?:stop(?:\s+(?:working|doing|here|now|this))?|pause(?:\s+(?:work|this|here))?|cancel(?:\s+(?:this|the task))?|never\s?mind|that's enough|do not continue|don't continue|no more work|not now|leave it|forget it|(?:I\s+)?(?:don't|do not) (?:want|need) (?:that|this)(?: anymore)?)[.!\s]*$/i;
 const DONE=/^(?:(?:yes[, ]+)?(?:that(?:'s| is)|it(?:'s| is)|this(?: is)?)\s+(?:done|fixed|complete|working|resolved)|(?:all )?done|thanks[, ]+(?:that works|all done))[.!\s]*$/i;
 const SECRET=/(?:Bearer\s+[\w.-]{12,}|sk-[\w-]{15,}|mongodb(?:\+srv)?:\/\/|(?:password|api[_ -]?key|access[_ -]?token)\s*[:=]\s*\S+)/i;
 const EXTERNAL=/\b(?:send|email|publish|deploy|purchase|buy|charge|transfer|delete|erase|submit|release|book|cancel|import)\b/i;
@@ -53,7 +53,7 @@ export function deriveIdleCandidates({messages,conversationId,generation=0,prior
  const distinct=[...new Map(goals.map(g=>[canonical(g.text),g])).values()].sort((a,b)=>b.message.index-a.message.index);
  const candidates=[];
  for(const goal of distinct){
-  if(active.some(m=>m.index>goal.message.index&&/\b(?:don't|do not|never|stop)\s+(?:work|build|create|make|implement|fix|debug|investigate|test|verify|explore|research)\b/i.test(m.text)))continue;
+  if(active.some(m=>m.index>goal.message.index&&/\b(?:don't|do not|never|stop|no need to|not asking you to|avoid)\s+(?:work(?:ing)?|build(?:ing)?|creat(?:e|ing)|mak(?:e|ing)|implement(?:ing)?|fix(?:ing)?|debug(?:ging)?|investigat(?:e|ing)|test(?:ing)?|verify(?:ing)?|explor(?:e|ing)|research(?:ing)?)\b/i.test(m.text)))continue;
   const objective=goal.text,goalKey=hash([conversationId,canonical(objective)]);
   // Goal identity excludes timer generation. Repeated ticks and assistant restatements do not create new work.
   if(priorAttempts.some(a=>a&&(a.goalKey===goalKey||canonical(a.objective||'')===canonical(objective))&&BLOCKED_STATUSES.has(a.status)))continue;
