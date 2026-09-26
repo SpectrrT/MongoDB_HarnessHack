@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {encodeRepeatedEvidence, expandRepeatedEvidence} from '../server/context/repeat-evidence.js';
+import {encodeRepeatedEvidence, expandRepeatedEvidence, encodeEvidenceRecords} from '../server/context/repeat-evidence.js';
 import {createJevScorer} from '../server/context/jev.js';
 import {createContextCompactor} from '../server/context/compaction.js';
 import {createMemoryDb} from '../rem/db/index.js';
@@ -45,6 +45,33 @@ test('Jev combines up to sixteen bounded candidates and archives unchanged origi
   assert.equal(selected.metrics.decisionCalls, 1);
   assert.equal(Object.keys(request.questions).length, 14);
   assert.ok(Buffer.byteLength(JSON.stringify(request)) < 65536);
-  for (const [i, record] of request.state.records.entries()) assert.equal(expandRepeatedEvidence(record.text), units[i].text);
+  for (const [i, record] of request.state.records.entries()) assert.equal(expandRepeatedEvidence(record.text, request.state.dictionary), units[i].text);
   assert.equal((await compactor.read({runId: 'bounded', id: 'item-0'})).text, units[0].text);
+});
+
+test('shared blocks preserve distinct identities, exact counts and unique record corrections', () => {
+  const repeated = 'A shared event body with exact receipt id INV-21 and a stable source observation. ';
+  const records = Array.from({length: 16}, (_, i) => ({record: i, text: `Unique source ${i}. ` + repeated.repeat(3 + i % 4) + ` Final distinct decision ${i}.`}));
+  const encoded = encodeEvidenceRecords(records);
+  assert.ok(encoded.dictionary && Object.keys(encoded.dictionary).length > 0);
+  const independentlyEncoded = {records: records.map(record => ({...record, text: encodeRepeatedEvidence(record.text)}))};
+  assert.ok(JSON.stringify(encoded).length < JSON.stringify(independentlyEncoded).length);
+  for (const [i, record] of encoded.records.entries()) {
+    assert.equal(record.record, i);
+    assert.equal(expandRepeatedEvidence(record.text, encoded.dictionary), records[i].text);
+  }
+  assert.throws(() => expandRepeatedEvidence({encoding: 'exact-repeat-v1', segments: [{ref: 'missing', repeat: 2}]}));
+});
+
+test('batch encoding never expands the wire representation or changes source objects', () => {
+  for (let count = 1; count <= 16; count++) {
+    const records = Array.from({length: count}, (_, i) => ({id: `record-${i}`, metadata: {position: i}, text:
+      i % 3 === 0 ? `Unique observation ${i}.` : `Start ${i}. ` + ('An exact shared observation with whitespace\tand Unicode café.\n').repeat(2 + i) + `Final ${i}.`,
+    }));
+    const original = JSON.stringify(records);
+    const encoded = encodeEvidenceRecords(records);
+    assert.equal(JSON.stringify(records), original);
+    assert.ok(JSON.stringify(encoded).length <= JSON.stringify({records}).length);
+    assert.deepEqual(encoded.records.map(record => ({...record, text: expandRepeatedEvidence(record.text, encoded.dictionary)})), records);
+  }
 });
