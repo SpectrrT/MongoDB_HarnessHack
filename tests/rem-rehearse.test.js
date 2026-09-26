@@ -45,7 +45,7 @@ test("the prior ranks attacks that broke the harness before, and gives untried o
 test("when every rehearsal holds, the next rehearsals are one level harder", async () => {
   const rem = await createRem({});
   assert.equal(await rehearsalLevel(rem.ctx.db), 1);
-  // Seed tomorrow's pool with tasks the gen-0 harness passes, as last night's Calibrate would.
+  // Seed the next night's pool with tasks the gen-0 harness passes, as the previous night's Calibrate would.
   const out = await rehearse(rem.ctx, { night: 1 });
   assert.ok(out.tried > 0 && out.imagined >= out.tried);
   assert.equal(out.tried, (await rem.ctx.db.collection("rehearsals").countDocuments({})) || out.tried);

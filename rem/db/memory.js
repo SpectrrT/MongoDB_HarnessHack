@@ -1,4 +1,4 @@
-// In-process stand-in for the MongoDB Node driver: same call shapes, so tomorrow's Atlas swap is
+// In-process stand-in for the MongoDB Node driver: same call shapes, so switching to Atlas is
 // createMongoDb() instead of createMemoryDb(). Reads can see uncommitted transaction writes.
 import { EventEmitter } from "node:events";
 import { randomBytes } from "node:crypto";

@@ -175,7 +175,7 @@ export function createCatalogProposer() {
   };
 }
 
-// For an LLM proposer (tomorrow, via OpenRouter): same inputs, same outputs.
+// For an LLM proposer (via OpenRouter): same inputs, same outputs.
 export function buildProposerPrompt({ genome, patterns, view, pastEdits = [], trackRecord: record = [], maxEdits = 3 }) {
   const system = [
     "You are the proposer for the REM agent harness. You may edit only the harness genome: rules,",
@@ -206,7 +206,7 @@ export function buildProposerPrompt({ genome, patterns, view, pastEdits = [], tr
   ];
 }
 
-// TOMORROW: an LLM proposer. Falls back to the catalog when the reply is not valid JSON.
+// An LLM proposer (REM_PROPOSER=llm). Falls back to the catalog when the reply is not valid JSON.
 export function createLlmProposer({ model, modelId, fallback = createCatalogProposer() }) {
   return {
     name: `llm:${modelId}`,

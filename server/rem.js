@@ -13,7 +13,7 @@ let instance = null;
 let queue = Promise.resolve();
 const clients = new Set();
 
-// Tonight: in-memory db. Tomorrow: MONGODB_URI (Atlas Sandbox), REM_MODEL=openrouter, REM_EMBEDDINGS=voyage.
+// In-memory db by default. MONGODB_URI (Atlas Sandbox), REM_MODEL=openrouter and REM_EMBEDDINGS=voyage switch to real services.
 async function build({ fresh = false } = {}) {
   let db;
   if (process.env.MONGODB_URI) {

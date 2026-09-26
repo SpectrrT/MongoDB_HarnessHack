@@ -20,7 +20,7 @@ export function createWorkspace(now = Date.now()) {
     [
       "follow-up",
       "Draft a reply to the open design review",
-      "The review has two unanswered questions and a deadline tomorrow.",
+      "The review has two unanswered questions and a deadline on Friday.",
       "Gmail",
       "12 min",
       2,

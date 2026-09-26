@@ -44,7 +44,7 @@ Measured on Atlas today: run 4 to 6 s, reconnect 10 to 15 s, Sleep 31 to 43 s, m
 0:55  Night. Press Sleep and narrate the phases as they light up (30 to 45 s):
       Replay; Merge (near-duplicate memories folded into one, contradictions resolved, noise dropped);
       Distill (repeated work becomes a tested skill); Rehearse (harder versions of work it already passes);
-      Atlas embeds the new memories with voyage-4 so tomorrow's recall ($rankFusion) finds them;
+      Atlas embeds the new memories with voyage-4 so the next day's recall ($rankFusion) finds them;
       Evolve (proposes edits with predictions, validates on train plus held-out); Calibrate (grades the
       completion gate against the checkers).
 1:45  Morning. Night 1 on Atlas: gym train 3/9 -> 6/9, held-out 1/5 -> 3/5, collateral 8 -> 3.
