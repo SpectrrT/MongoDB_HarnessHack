@@ -20,6 +20,7 @@ import { connectStore, RunConflict } from './harness/store.js';
 import { inputSchema } from './harness/workflow.js';
 import { sleepExecutionRoutes } from './sleep/execution-routes.js';
 import { activityRoutes } from './activity/routes.js';
+import { suggestionRoutes } from './suggestions/routes.js';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const types = [
   "request-connection",
@@ -137,6 +138,7 @@ export function createApp({
   atlas = null,
   activity = null,
   chatCompactor = null,
+  suggestions = null,
 } = {}) {
   const app = express(),
     queues = new Map(),
@@ -238,6 +240,7 @@ export function createApp({
   });
   sleepExecutionRoutes(app, { store: sleepTasks, root: sleepTaskRoot, enabled: sleepTaskWorkerEnabled });
   activityRoutes(app, { activity });
+  suggestionRoutes(app, { suggestions });
   async function access(req, fn) {
     const key = req.workspaceKey;
     const previous = queues.get(key) || Promise.resolve();
@@ -352,7 +355,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     const worker = startSleepExecutionWorker(sleepTasks, sleepOpenRouterExecutor({ dataDir }), { root: sleepTaskRoot });
     process.once('SIGTERM', worker.stop); process.once('SIGINT', worker.stop);
   }
-  createApp({ harnessStore: connection?.store, atlas, activity, sleepTasks, sleepTaskRoot, sleepTaskWorkerEnabled, chatCompactor }).listen(port, "127.0.0.1", () =>
+  const suggestions = connection ? await (await import('./suggestions/service.js')).createPersonalSuggestions({
+    db: connection.client.db(process.env.MONGODB_DATABASE || 'offload_hackathon') }) : null;
+  createApp({ harnessStore: connection?.store, atlas, activity, sleepTasks, sleepTaskRoot, sleepTaskWorkerEnabled, chatCompactor, suggestions }).listen(port, "127.0.0.1", () =>
 
     console.log(`Offload local service: http://127.0.0.1:${port}`),
   );
