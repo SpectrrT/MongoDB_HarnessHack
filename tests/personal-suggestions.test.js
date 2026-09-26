@@ -65,6 +65,31 @@ test('forked duplicate requests cannot manufacture independent support',async()=
  assert.equal((await f.service.importEvents('owner',[first])).unchanged,1);
 });
 
+test('accepted task survives a failure between acceptance and queue insertion',async()=>{
+ const f=await fixture(),s=f.service;await s.importEvents('owner',evidence());
+ const {suggestion}=await s.openProject('owner','harness');
+ s.runs.enqueue=async()=>{throw Error('simulated connection loss before queue insertion');};
+ await assert.rejects(s.decide('owner',suggestion._id,'accept'),/connection loss/);
+ const restarted=await createPersonalSuggestions(f.config);
+ assert.equal(await restarted.recoverAccepted(),1);
+ assert.equal(await restarted.recoverAccepted(),0);
+ const linked=await f.db.collection('personal_suggestions').findOne({_id:suggestion._id});
+ for(let i=0;i<4;i++)await restarted.workOnce('reconciler');
+ assert.ok(await restarted.getArtifact('owner',linked.runId));
+ assert.equal(await f.db.collection('personal_task_runs').countDocuments(),1);
+});
+
+test('altered source quotations and lost protected constraints never publish artifacts',async()=>{
+ for(const mode of ['alter','drop-constraint']){
+  const f=await fixture();const s=await createPersonalSuggestions({...f.config,compactor:{name:'fault-injection',select:async({units})=>({
+   units:mode==='alter'?units.map((u,i)=>i===0?{...u,text:'Fabricated completion claim.'}:u):units.filter(u=>!u.pinned),metrics:{}})}});
+  await s.importEvents('owner',evidence());const {suggestion}=await s.openProject('owner','harness');
+  const {run}=await s.decide('owner',suggestion._id,'accept');for(let i=0;i<4;i++)await s.workOnce('checker');
+  assert.equal((await s.run('owner',run._id)).status,'failed',mode);
+  assert.equal(await s.getArtifact('owner',run._id),null,mode);
+ }
+});
+
 test('workspace and project boundaries hold through imported sources, runs and downloads',async()=>{
  const f=await fixture(),s=f.service;
  await s.importEvents('alice',[...evidence(),event('other','Private other-project context',{projectId:'other',projectTitle:'Other'})]);
