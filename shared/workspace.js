@@ -4,75 +4,596 @@ export const SCHEMA_VERSION = 1;
 const uid = () => globalThis.crypto.randomUUID();
 const clone = (x) => structuredClone(x);
 export function createWorkspace(now = Date.now()) {
- const suggestions = [
-  ['weekly-update','Prepare the Friday update','You collected project changes on the last four Fridays.','Google Drive','28 min',4,'Writing'],
-  ['follow-up','Draft a reply to the open design review','The review has two unanswered questions and a deadline tomorrow.','Gmail','12 min',2,'Email'],
-  ['standup','Turn today’s notes into a standup','Your work sessions contain decisions that are not in the task list yet.','Notes','8 min',5,'Writing'],
-  ['release','Check the next release handoff','The last two handoffs used the same checklist.','GitHub','18 min',2,'Development'],
-  ['meeting','Prepare for the product review','You usually gather open decisions before this meeting.','Calendar','15 min',3,'Planning'],
-  ['blockers','Collect the unresolved blockers','Several sample tasks still need an owner.','Notes','6 min',3,'Planning'],
-  ['recap','Write the week’s project recap','A short summary could replace another pass through your notes.','Google Drive','16 min',3,'Writing'],
-  ['follow-through','Draft the promised follow-ups','Your sample work session contains two follow-up commitments.','Gmail','10 min',2,'Email'],
- ].map(([id,title,reason,source,estimate,occurrences,category],i)=>({id,title,reason,source,estimate,occurrences,category,status:'pending',snoozedUntil:null,createdAt:now-i*3600000,evidence:[`${occurrences} related examples in sample history`,`${source} sample workspace`]}));
- return {version:SCHEMA_VERSION,revision:0,createdAt:now,profile:{name:'',role:'Product team',onboarded:false},settings:{suggestions:true,notifications:false,sleepSchedule:false,sleepHour:'22:00',theme:'light'},connections:[{id:'drive',name:'Google Drive',detail:'Drafts and selected documents',status:'disconnected'},{id:'gmail',name:'Gmail',detail:'Selected threads and draft replies',status:'disconnected'},{id:'github',name:'GitHub',detail:'Issues and pull request context',status:'disconnected'},{id:'calendar',name:'Calendar',detail:'Upcoming meetings',status:'disconnected'}],suggestions,memory:[{id:'m1',text:'Include the export bug in the Friday update. Keep the customer’s name out.',source:'Sample work conversation',createdAt:now-86400000,kind:'decision',sample:true},{id:'m2',text:'Ask for an owner when an action has no assignee.',source:'Sample project review',createdAt:now-7200000,kind:'rule',sample:true},{id:'m3',text:'Keep the weekly update short. Group changes under shipped, next, and blocked.',source:'Sample correction',createdAt:now-3600000,kind:'preference',sample:true}],sessions:[],conversations:[],runs:[],skills:[],sleepHistory:[],audit:[],lastSleepDay:null};
+  const suggestions = [
+    [
+      "weekly-update",
+      "Prepare the Friday update",
+      "You collected project changes on the last four Fridays.",
+      "Google Drive",
+      "28 min",
+      4,
+      "Writing",
+    ],
+    [
+      "follow-up",
+      "Draft a reply to the open design review",
+      "The review has two unanswered questions and a deadline tomorrow.",
+      "Gmail",
+      "12 min",
+      2,
+      "Email",
+    ],
+    [
+      "standup",
+      "Turn today’s notes into a standup",
+      "Your work sessions contain decisions that are not in the task list yet.",
+      "Notes",
+      "8 min",
+      5,
+      "Writing",
+    ],
+    [
+      "release",
+      "Check the next release handoff",
+      "The last two handoffs used the same checklist.",
+      "GitHub",
+      "18 min",
+      2,
+      "Development",
+    ],
+    [
+      "meeting",
+      "Prepare for the product review",
+      "You usually gather open decisions before this meeting.",
+      "Calendar",
+      "15 min",
+      3,
+      "Planning",
+    ],
+    [
+      "blockers",
+      "Collect the unresolved blockers",
+      "Several sample tasks still need an owner.",
+      "Notes",
+      "6 min",
+      3,
+      "Planning",
+    ],
+    [
+      "recap",
+      "Write the week’s project recap",
+      "A short summary could replace another pass through your notes.",
+      "Google Drive",
+      "16 min",
+      3,
+      "Writing",
+    ],
+    [
+      "follow-through",
+      "Draft the promised follow-ups",
+      "Your sample work session contains two follow-up commitments.",
+      "Gmail",
+      "10 min",
+      2,
+      "Email",
+    ],
+  ].map(([id, title, reason, source, estimate, occurrences, category], i) => ({
+    id,
+    title,
+    reason,
+    source,
+    estimate,
+    occurrences,
+    category,
+    status: "pending",
+    snoozedUntil: null,
+    createdAt: now - i * 3600000,
+    evidence: [
+      `${occurrences} related examples in sample history`,
+      `${source} sample workspace`,
+    ],
+  }));
+  return {
+    version: SCHEMA_VERSION,
+    revision: 0,
+    createdAt: now,
+    profile: { name: "", role: "Product team", onboarded: false },
+    settings: {
+      suggestions: true,
+      notifications: false,
+      sleepSchedule: false,
+      sleepHour: "22:00",
+      theme: "light",
+    },
+    connections: [
+      {
+        id: "drive",
+        name: "Google Drive",
+        detail: "Drafts and selected documents",
+        status: "disconnected",
+      },
+      {
+        id: "gmail",
+        name: "Gmail",
+        detail: "Selected threads and draft replies",
+        status: "disconnected",
+      },
+      {
+        id: "github",
+        name: "GitHub",
+        detail: "Issues and pull request context",
+        status: "disconnected",
+      },
+      {
+        id: "calendar",
+        name: "Calendar",
+        detail: "Upcoming meetings",
+        status: "disconnected",
+      },
+    ],
+    suggestions,
+    memory: [
+      {
+        id: "m1",
+        text: "Include the export bug in the Friday update. Keep the customer’s name out.",
+        source: "Sample work conversation",
+        createdAt: now - 86400000,
+        kind: "decision",
+        sample: true,
+      },
+      {
+        id: "m2",
+        text: "Ask for an owner when an action has no assignee.",
+        source: "Sample project review",
+        createdAt: now - 7200000,
+        kind: "rule",
+        sample: true,
+      },
+      {
+        id: "m3",
+        text: "Keep the weekly update short. Group changes under shipped, next, and blocked.",
+        source: "Sample correction",
+        createdAt: now - 3600000,
+        kind: "preference",
+        sample: true,
+      },
+    ],
+    sessions: [],
+    conversations: [],
+    runs: [],
+    skills: [],
+    sleepHistory: [],
+    audit: [],
+    lastSleepDay: null,
+  };
 }
-const providerFor=(s)=>({'Google Drive':'drive',Gmail:'gmail',GitHub:'github',Calendar:'calendar'}[s]);
-function required(x,message){if(!x)throw new Error(message);return x;}
-function record(s,text,now){s.audit.unshift({id:uid(),text,at:now});s.audit=s.audit.slice(0,150);}
-export function transition(current,action,now=Date.now()) {
- const s=clone(current); const {type,payload:p={}}=action;
- switch(type){
- case 'onboard': s.profile={name:String(p.name||'').trim().slice(0,60),role:p.role||'Product team',onboarded:true}; required(s.profile.name,'Enter your first name.');record(s,'Completed local onboarding',now);break;
- case 'settings': {const keys=['suggestions','notifications','sleepSchedule','sleepHour','theme'];for(const k of keys)if(k in p)s.settings[k]=p[k];break;}
- case 'profile': s.profile.name=String(p.name).trim().slice(0,60);required(s.profile.name,'Enter your first name.');break;
- case 'connect': {const c=required(s.connections.find(c=>c.id===p.id),'Connection not found.'); c.status=p.disconnect?'disconnected':'connected';c.updatedAt=now;record(s,`${p.disconnect?'Disconnected':'Connected'} ${c.name} sample account`,now);break;}
- case 'expire': {const c=required(s.connections.find(c=>c.id===p.id),'Connection not found.');c.status='expired';record(s,`${c.name} demo access expired`,now);break;}
- case 'suggestion': {const a=required(s.suggestions.find(x=>x.id===p.id),'Suggestion not found.');required(['dismissed','pending','snoozed'].includes(p.status),'Unknown suggestion status.');a.status=p.status;a.snoozedUntil=p.status==='snoozed'?now+86400000:null;break;}
- case 'start-run': {
-  const suggestion=required(s.suggestions.find(x=>x.id===p.id),'Suggestion not found.');
-  const existing=s.runs.find(r=>r.suggestionId===p.id&&['running','blocked','ready'].includes(r.status));if(existing)return s;
-  const run={id:uid(),suggestionId:p.id,title:suggestion.title,provider:providerFor(suggestion.source),status:'running',checkpoint:0,startedAt:now,updatedAt:now,steps:['Read selected sample context','Apply saved rules','Prepare a local draft','Check the draft'],draft:'',saved:false,receipts:[]};s.runs.unshift(run);suggestion.status='active';record(s,`Started ${run.title}`,now);break;
- }
- case 'resume-run': {const r=required(s.runs.find(x=>x.id===p.id),'Task not found.');required(r.status==='blocked','Only blocked tasks can resume.');required(!r.provider||s.connections.find(x=>x.id===r.provider)?.status==='connected','Reconnect the sample account first.');r.status='running';r.startedAt=now-r.checkpoint*1800;r.updatedAt=now;record(s,`Resumed ${r.title} at step ${r.checkpoint+1}`,now);break;}
- case 'cancel-run': {const r=required(s.runs.find(x=>x.id===p.id),'Task not found.');required(['running','blocked'].includes(r.status),'This task cannot be cancelled.');r.status='cancelled';const sg=s.suggestions.find(x=>x.id===r.suggestionId);if(sg)sg.status='pending';record(s,`Cancelled ${r.title}`,now);break;}
- case 'save-draft': {const r=required(s.runs.find(x=>x.id===p.id),'Task not found.');required(r.status==='ready'||r.status==='completed','The draft is not ready.');r.draft=String(p.text).slice(0,20000);r.saved=true;r.status='completed';r.updatedAt=now;const sg=s.suggestions.find(x=>x.id===r.suggestionId);if(sg)sg.status='completed';record(s,`Saved a local draft: ${r.title}`,now);break;}
- case 'new-conversation': s.conversations.unshift({id:p.id||uid(),title:'New conversation',createdAt:now,messages:[]});break;
- case 'chat': {let c=s.conversations.find(x=>x.id===p.id);if(!c){c={id:p.id||uid(),title:String(p.text).slice(0,48),createdAt:now,messages:[]};s.conversations.unshift(c);}const t=String(p.text).trim().slice(0,4000);required(t,'Write a message first.');c.title=c.messages.length?c.title:t.slice(0,48);c.messages.push({id:uid(),role:'user',text:t,at:now});
-  const reply=/sleep|routine|learn/i.test(t)?'The sleep review can combine your notes into a routine. Open Sleep to review the evidence and run the sample checks. You decide whether to enable the result.':/connect|login|sign in/i.test(t)?'Open Connections to link a sample account. This demo can pause a task when access expires and resume from its last saved step. It does not access a real account.':'I can help you work through this in the demo. Choose a suggested task to prepare a draft from sample context, or save this message as a memory for the next review. A live model is not connected yet.';
-  c.messages.push({id:uid(),role:'assistant',text:reply,at:now+1});break;}
- case 'delete-conversation': s.conversations=s.conversations.filter(x=>x.id!==p.id);break;
- case 'memory': {const text=String(p.text||'').trim().slice(0,4000);required(text,'Write a note first.');s.memory.unshift({id:uid(),text,source:p.source||'Your note',createdAt:now,kind:p.kind||'note',sample:false});record(s,'Saved a memory',now);break;}
- case 'delete-memory': s.memory=s.memory.filter(x=>x.id!==p.id);break;
- case 'session-start': required(!s.sessions.some(x=>x.status==='active'),'End the current session first.');s.sessions.unshift({id:p.id||uid(),name:p.name||'Work session',mode:p.mode||'notes',status:'active',startedAt:now,notes:[],consented:!!p.consented});record(s,'Started a work session',now);break;
- case 'session-note': {const a=required(s.sessions.find(x=>x.id===p.id&&x.status==='active'),'No active session.');const t=String(p.text||'').trim().slice(0,4000);required(t,'Write a note first.');a.notes.push(t);s.memory.unshift({id:uid(),text:t,source:a.name,createdAt:now,kind:'decision',sample:false});break;}
- case 'session-end': {const a=required(s.sessions.find(x=>x.id===p.id),'Session not found.');a.status='ended';a.endedAt=now;record(s,'Ended work session',now);break;}
- case 'sleep': {if(s.sleepHistory.some(x=>x.status==='running'))return s;required(s.memory.length,'Add a memory before reviewing.');s.sleepHistory.unshift({id:uid(),startedAt:now,status:'running',inputCount:s.memory.length,phase:0});record(s,'Started a demo sleep review',now);break;}
- case 'skill': {const a=required(s.skills.find(x=>x.id===p.id),'Routine not found.');a.enabled=!!p.enabled;record(s,`${a.enabled?'Enabled':'Paused'} ${a.name}`,now);break;}
- default: throw new Error('Unknown action.');
- }
- s.revision++;return s;
+const providerFor = (s) =>
+  ({
+    "Google Drive": "drive",
+    Gmail: "gmail",
+    GitHub: "github",
+    Calendar: "calendar",
+  })[s];
+function required(x, message) {
+  if (!x) throw new Error(message);
+  return x;
 }
-function draftFor(s,r){
- const context=s.memory.map(x=>x.text).join('\n');
- if(r.suggestionId==='weekly-update'||r.suggestionId==='recap')return `# Weekly product update\n\n## Shipped\n- Prepared the export bug summary from the sample task list.\n- Collected the latest project decisions.\n\n## Next\n- Confirm an owner for the export fix.\n- Review the release checklist before Friday.\n\n## Blocked\n- The export task still needs an owner.\n\n## Notes\nCustomer names are excluded from this draft.\n\n---\nLocal demo draft. Review against your real project before use.`;
- return `# ${r.title}\n\nThis local draft uses the context you selected.\n\n${context?context.split('\n').map(x=>'- '+x).join('\n'):'No context selected yet.'}\n\n## Next step\nReview the open decisions and confirm the owner before sharing.\n\n---\nLocal demo draft. Nothing has been sent.`;
+function record(s, text, now) {
+  s.audit.unshift({ id: uid(), text, at: now });
+  s.audit = s.audit.slice(0, 150);
 }
-export function advanceWorkspace(current,now=Date.now()) {
- let s=clone(current),changed=false;
- for(const a of s.suggestions){if(a.status==='snoozed'&&a.snoozedUntil<=now){a.status='pending';a.snoozedUntil=null;changed=true;}}
- for(const r of s.runs){if(r.status!=='running')continue;
-  if(r.provider&&s.connections.find(x=>x.id===r.provider)?.status!=='connected'){r.status='blocked';r.updatedAt=now;record(s,`Saved progress for ${r.title}. Account access is needed.`,now);changed=true;continue;}
-  const next=Math.min(4,Math.floor((now-r.startedAt)/1800));
-  if(next>r.checkpoint){for(let i=r.checkpoint;i<next;i++)if(!r.receipts.includes(i))r.receipts.push(i);r.checkpoint=next;r.updatedAt=now;changed=true;}
-  if(r.checkpoint===4){r.status='ready';r.draft=draftFor(s,r);record(s,`Draft ready: ${r.title}`,now);changed=true;}
- }
- for(const review of s.sleepHistory){if(review.status!=='running')continue;const phase=Math.min(4,Math.floor((now-review.startedAt)/1800));if(phase!==review.phase){review.phase=phase;changed=true;}
-  if(phase===4){const seen=new Set();const original=s.memory.length;s.memory=s.memory.filter(m=>{const key=m.text.toLowerCase().replace(/\s+/g,' ').trim();if(seen.has(key))return false;seen.add(key);return true;});review.duplicates=original-s.memory.length;review.status='completed';review.endedAt=now;
-   const existing=s.skills.find(x=>x.key==='weekly-update');const skill={id:existing?.id||uid(),key:'weekly-update',name:'Friday product update',description:'Prepare a short update from the selected project context.',enabled:existing?.enabled||false,version:(existing?.version||0)+1,createdAt:now,sourceIds:s.memory.map(x=>x.id),rules:['Exclude private customer names.','Ask when an action has no owner.','Create a draft for review.'],checks:[{name:'Draft contains the export task',passed:true},{name:'Private customer names excluded',passed:true},{name:'Missing owner remains a question',passed:true}],sample:true};s.skills=s.skills.filter(x=>x.key!==skill.key);s.skills.unshift(skill);review.skillId=skill.id;record(s,'Saved a candidate routine after sample checks',now);changed=true;
+export function transition(current, action, now = Date.now()) {
+  const s = clone(current);
+  const { type, payload: p = {} } = action;
+  switch (type) {
+    case "onboard":
+      s.profile = {
+        name: String(p.name || "")
+          .trim()
+          .slice(0, 60),
+        role: p.role || "Product team",
+        onboarded: true,
+      };
+      required(s.profile.name, "Enter your first name.");
+      record(s, "Completed local onboarding", now);
+      break;
+    case "settings": {
+      const keys = [
+        "suggestions",
+        "notifications",
+        "sleepSchedule",
+        "sleepHour",
+        "theme",
+      ];
+      for (const k of keys) if (k in p) s.settings[k] = p[k];
+      break;
+    }
+    case "profile":
+      s.profile.name = String(p.name).trim().slice(0, 60);
+      required(s.profile.name, "Enter your first name.");
+      break;
+    case "connect": {
+      const c = required(
+        s.connections.find((c) => c.id === p.id),
+        "Connection not found.",
+      );
+      c.status = p.disconnect ? "disconnected" : "connected";
+      c.updatedAt = now;
+      record(
+        s,
+        `${p.disconnect ? "Disconnected" : "Connected"} ${c.name} sample account`,
+        now,
+      );
+      break;
+    }
+    case "expire": {
+      const c = required(
+        s.connections.find((c) => c.id === p.id),
+        "Connection not found.",
+      );
+      c.status = "expired";
+      record(s, `${c.name} demo access expired`, now);
+      break;
+    }
+    case "suggestion": {
+      const a = required(
+        s.suggestions.find((x) => x.id === p.id),
+        "Suggestion not found.",
+      );
+      required(
+        ["dismissed", "pending", "snoozed"].includes(p.status),
+        "Unknown suggestion status.",
+      );
+      a.status = p.status;
+      a.snoozedUntil = p.status === "snoozed" ? now + 86400000 : null;
+      break;
+    }
+    case "start-run": {
+      const suggestion = required(
+        s.suggestions.find((x) => x.id === p.id),
+        "Suggestion not found.",
+      );
+      const existing = s.runs.find(
+        (r) =>
+          r.suggestionId === p.id &&
+          ["running", "blocked", "ready"].includes(r.status),
+      );
+      if (existing) return s;
+      const run = {
+        id: uid(),
+        suggestionId: p.id,
+        title: suggestion.title,
+        provider: providerFor(suggestion.source),
+        status: "running",
+        checkpoint: 0,
+        startedAt: now,
+        updatedAt: now,
+        steps: [
+          "Read selected sample context",
+          "Apply saved rules",
+          "Prepare a local draft",
+          "Check the draft",
+        ],
+        draft: "",
+        saved: false,
+        receipts: [],
+      };
+      s.runs.unshift(run);
+      suggestion.status = "active";
+      record(s, `Started ${run.title}`, now);
+      break;
+    }
+    case "resume-run": {
+      const r = required(
+        s.runs.find((x) => x.id === p.id),
+        "Task not found.",
+      );
+      required(r.status === "blocked", "Only blocked tasks can resume.");
+      required(
+        !r.provider ||
+          s.connections.find((x) => x.id === r.provider)?.status ===
+            "connected",
+        "Reconnect the sample account first.",
+      );
+      r.status = "running";
+      r.startedAt = now - r.checkpoint * 1800;
+      r.updatedAt = now;
+      record(s, `Resumed ${r.title} at step ${r.checkpoint + 1}`, now);
+      break;
+    }
+    case "cancel-run": {
+      const r = required(
+        s.runs.find((x) => x.id === p.id),
+        "Task not found.",
+      );
+      required(
+        ["running", "blocked"].includes(r.status),
+        "This task cannot be cancelled.",
+      );
+      r.status = "cancelled";
+      const sg = s.suggestions.find((x) => x.id === r.suggestionId);
+      if (sg) sg.status = "pending";
+      record(s, `Cancelled ${r.title}`, now);
+      break;
+    }
+    case "save-draft": {
+      const r = required(
+        s.runs.find((x) => x.id === p.id),
+        "Task not found.",
+      );
+      required(
+        r.status === "ready" || r.status === "completed",
+        "The draft is not ready.",
+      );
+      r.draft = String(p.text).slice(0, 20000);
+      r.saved = true;
+      r.status = "completed";
+      r.updatedAt = now;
+      const sg = s.suggestions.find((x) => x.id === r.suggestionId);
+      if (sg) sg.status = "completed";
+      record(s, `Saved a local draft: ${r.title}`, now);
+      break;
+    }
+    case "new-conversation":
+      s.conversations.unshift({
+        id: p.id || uid(),
+        title: "New conversation",
+        createdAt: now,
+        messages: [],
+      });
+      break;
+    case "chat": {
+      let c = s.conversations.find((x) => x.id === p.id);
+      if (!c) {
+        c = {
+          id: p.id || uid(),
+          title: String(p.text).slice(0, 48),
+          createdAt: now,
+          messages: [],
+        };
+        s.conversations.unshift(c);
+      }
+      const t = String(p.text).trim().slice(0, 4000);
+      required(t, "Write a message first.");
+      c.title = c.messages.length ? c.title : t.slice(0, 48);
+      c.messages.push({ id: uid(), role: "user", text: t, at: now });
+      const reply = /sleep|routine|learn/i.test(t)
+        ? "The sleep review can combine your notes into a routine. Open Sleep to review the evidence and run the sample checks. You decide whether to enable the result."
+        : /connect|login|sign in/i.test(t)
+          ? "Open Connections to link a sample account. This demo can pause a task when access expires and resume from its last saved step. It does not access a real account."
+          : "I can help you work through this in the demo. Choose a suggested task to prepare a draft from sample context, or save this message as a memory for the next review. A live model is not connected yet.";
+      c.messages.push({
+        id: uid(),
+        role: "assistant",
+        text: reply,
+        at: now + 1,
+      });
+      break;
+    }
+    case "delete-conversation":
+      s.conversations = s.conversations.filter((x) => x.id !== p.id);
+      break;
+    case "memory": {
+      const text = String(p.text || "")
+        .trim()
+        .slice(0, 4000);
+      required(text, "Write a note first.");
+      s.memory.unshift({
+        id: uid(),
+        text,
+        source: p.source || "Your note",
+        createdAt: now,
+        kind: p.kind || "note",
+        sample: false,
+      });
+      record(s, "Saved a memory", now);
+      break;
+    }
+    case "delete-memory":
+      s.memory = s.memory.filter((x) => x.id !== p.id);
+      break;
+    case "session-start":
+      required(
+        !s.sessions.some((x) => x.status === "active"),
+        "End the current session first.",
+      );
+      s.sessions.unshift({
+        id: p.id || uid(),
+        name: p.name || "Work session",
+        mode: p.mode || "notes",
+        status: "active",
+        startedAt: now,
+        notes: [],
+        consented: !!p.consented,
+      });
+      record(s, "Started a work session", now);
+      break;
+    case "session-note": {
+      const a = required(
+        s.sessions.find((x) => x.id === p.id && x.status === "active"),
+        "No active session.",
+      );
+      const t = String(p.text || "")
+        .trim()
+        .slice(0, 4000);
+      required(t, "Write a note first.");
+      a.notes.push(t);
+      s.memory.unshift({
+        id: uid(),
+        text: t,
+        source: a.name,
+        createdAt: now,
+        kind: "decision",
+        sample: false,
+      });
+      break;
+    }
+    case "session-end": {
+      const a = required(
+        s.sessions.find((x) => x.id === p.id),
+        "Session not found.",
+      );
+      a.status = "ended";
+      a.endedAt = now;
+      record(s, "Ended work session", now);
+      break;
+    }
+    case "sleep": {
+      if (s.sleepHistory.some((x) => x.status === "running")) return s;
+      required(s.memory.length, "Add a memory before reviewing.");
+      s.sleepHistory.unshift({
+        id: uid(),
+        startedAt: now,
+        status: "running",
+        inputCount: s.memory.length,
+        phase: 0,
+      });
+      record(s, "Started a demo sleep review", now);
+      break;
+    }
+    case "skill": {
+      const a = required(
+        s.skills.find((x) => x.id === p.id),
+        "Routine not found.",
+      );
+      a.enabled = !!p.enabled;
+      record(s, `${a.enabled ? "Enabled" : "Paused"} ${a.name}`, now);
+      break;
+    }
+    default:
+      throw new Error("Unknown action.");
   }
- }
- // Scheduling is local to a running app. A cloud/background scheduler is not connected.
- if(s.settings.sleepSchedule){const d=new Date(now),day=d.toLocaleDateString('en-CA'),time=d.toTimeString().slice(0,5);if(time>=s.settings.sleepHour&&s.lastSleepDay!==day&&s.memory.length&&!s.sleepHistory.some(x=>x.status==='running')){s=transition(s,{type:'sleep'},now);s.lastSleepDay=day;changed=true;}}
- if(changed)s.revision++;return changed?s:current;
+  s.revision++;
+  return s;
 }
-export function activeSuggestions(s,now=Date.now()){return s.settings.suggestions?s.suggestions.filter(x=>x.status==='pending'||(x.status==='snoozed'&&x.snoozedUntil<=now)):[];}
+function draftFor(s, r) {
+  const context = s.memory.map((x) => x.text).join("\n");
+  if (r.suggestionId === "weekly-update" || r.suggestionId === "recap")
+    return `# Weekly product update\n\n## Shipped\n- Prepared the export bug summary from the sample task list.\n- Collected the latest project decisions.\n\n## Next\n- Confirm an owner for the export fix.\n- Review the release checklist before Friday.\n\n## Blocked\n- The export task still needs an owner.\n\n## Notes\nCustomer names are excluded from this draft.\n\n---\nLocal demo draft. Review against your real project before use.`;
+  return `# ${r.title}\n\nThis local draft uses the context you selected.\n\n${
+    context
+      ? context
+          .split("\n")
+          .map((x) => "- " + x)
+          .join("\n")
+      : "No context selected yet."
+  }\n\n## Next step\nReview the open decisions and confirm the owner before sharing.\n\n---\nLocal demo draft. Nothing has been sent.`;
+}
+export function advanceWorkspace(current, now = Date.now()) {
+  let s = clone(current),
+    changed = false;
+  for (const a of s.suggestions) {
+    if (a.status === "snoozed" && a.snoozedUntil <= now) {
+      a.status = "pending";
+      a.snoozedUntil = null;
+      changed = true;
+    }
+  }
+  for (const r of s.runs) {
+    if (r.status !== "running") continue;
+    if (
+      r.provider &&
+      s.connections.find((x) => x.id === r.provider)?.status !== "connected"
+    ) {
+      r.status = "blocked";
+      r.updatedAt = now;
+      record(
+        s,
+        `Saved progress for ${r.title}. Account access is needed.`,
+        now,
+      );
+      changed = true;
+      continue;
+    }
+    const next = Math.min(4, Math.floor((now - r.startedAt) / 1800));
+    if (next > r.checkpoint) {
+      for (let i = r.checkpoint; i < next; i++)
+        if (!r.receipts.includes(i)) r.receipts.push(i);
+      r.checkpoint = next;
+      r.updatedAt = now;
+      changed = true;
+    }
+    if (r.checkpoint === 4) {
+      r.status = "ready";
+      r.draft = draftFor(s, r);
+      record(s, `Draft ready: ${r.title}`, now);
+      changed = true;
+    }
+  }
+  for (const review of s.sleepHistory) {
+    if (review.status !== "running") continue;
+    const phase = Math.min(4, Math.floor((now - review.startedAt) / 1800));
+    if (phase !== review.phase) {
+      review.phase = phase;
+      changed = true;
+    }
+    if (phase === 4) {
+      const seen = new Set();
+      const original = s.memory.length;
+      s.memory = s.memory.filter((m) => {
+        const key = m.text.toLowerCase().replace(/\s+/g, " ").trim();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      review.duplicates = original - s.memory.length;
+      review.status = "completed";
+      review.endedAt = now;
+      const existing = s.skills.find((x) => x.key === "weekly-update");
+      const skill = {
+        id: existing?.id || uid(),
+        key: "weekly-update",
+        name: "Friday product update",
+        description:
+          "Prepare a short update from the selected project context.",
+        enabled: existing?.enabled || false,
+        version: (existing?.version || 0) + 1,
+        createdAt: now,
+        sourceIds: s.memory.map((x) => x.id),
+        rules: [
+          "Exclude private customer names.",
+          "Ask when an action has no owner.",
+          "Create a draft for review.",
+        ],
+        checks: [
+          { name: "Draft contains the export task", passed: true },
+          { name: "Private customer names excluded", passed: true },
+          { name: "Missing owner remains a question", passed: true },
+        ],
+        sample: true,
+      };
+      s.skills = s.skills.filter((x) => x.key !== skill.key);
+      s.skills.unshift(skill);
+      review.skillId = skill.id;
+      record(s, "Saved a candidate routine after sample checks", now);
+      changed = true;
+    }
+  }
+  // Scheduling is local to a running app. A cloud/background scheduler is not connected.
+  if (s.settings.sleepSchedule) {
+    const d = new Date(now),
+      day = d.toLocaleDateString("en-CA"),
+      time = d.toTimeString().slice(0, 5);
+    if (
+      time >= s.settings.sleepHour &&
+      s.lastSleepDay !== day &&
+      s.memory.length &&
+      !s.sleepHistory.some((x) => x.status === "running")
+    ) {
+      s = transition(s, { type: "sleep" }, now);
+      s.lastSleepDay = day;
+      changed = true;
+    }
+  }
+  if (changed) s.revision++;
+  return changed ? s : current;
+}
+export function activeSuggestions(s, now = Date.now()) {
+  return s.settings.suggestions
+    ? s.suggestions.filter(
+        (x) =>
+          x.status === "pending" ||
+          (x.status === "snoozed" && x.snoozedUntil <= now),
+      )
+    : [];
+}

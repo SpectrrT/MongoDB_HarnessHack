@@ -12,12 +12,12 @@
     "start": "node server/index.js",
     "preview": "vite preview --host 127.0.0.1",
     "desktop": "npm run build && electron .",
-    "desktop:package": "npm run build && electron-builder --mac dir",
+    "desktop:package": "npm run build && node scripts/stage-desktop.mjs && electron-builder --mac dir",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test",
     "check": "npm run test && npm run build",
     "vendor:build": "node scripts/vendor.mjs",
-    "desktop:setup": "npm install --no-save electron@44.4.5 electron-builder@26"
+    "desktop:setup": "npm install --no-save --package-lock=false electron@44.4.5 electron-builder@26 && node node_modules/electron/install.js"
   },
   "dependencies": {
     "react": "^19.2.3",
@@ -51,12 +51,14 @@
     "appId": "app.offload.desktop",
     "productName": "Offload",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "app": "desktop"
     },
     "files": [
+      "main.cjs",
       "dist/**/*",
-      "desktop/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/**/*"
     ],
     "mac": {
       "category": "public.app-category.productivity",
@@ -64,7 +66,11 @@
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Offload records audio only during a work session you start.",
         "NSScreenCaptureUsageDescription": "Offload shares only the screen or window you select for a work session."
-      }
-    }
+      },
+      "icon": "desktop/icon.icns"
+    },
+    "electronVersion": "44.4.5",
+    "electronDist": "node_modules/electron/dist",
+    "npmRebuild": false
   }
 }
