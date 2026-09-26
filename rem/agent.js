@@ -5,6 +5,7 @@ import { allowedTools, buildLessons, checkGuardrails, completionThresholdOf, rec
 import { commitEffect, runEffect } from "./ledger.js";
 import { costOf, latencyOf, modelFor } from "./models.js";
 import { searchCollection } from "./search.js";
+import { annotate, genomeSummary, traceable } from "./trace.js";
 import { randomUUID } from "node:crypto";
 import { ContextBudgetError } from "../server/context/compaction.js";
 
@@ -303,7 +304,7 @@ export function createAgent({
   ];
   };
 
-  async function plan(cp, h) {
+  async function planImpl(cp, h) {
     const context = await buildContext(cp, h);
     const replanning = cp.context !== null;
     const tier = h.genome.routing.planner,
@@ -346,6 +347,8 @@ export function createAgent({
     } else onEvent({ type: "planned", runId: cp.runId, version: h.version, plan: next.plan, context });
     return next;
   }
+  // Child run: planning (context assembled, recall injected, plan produced).
+  const plan = traceable(planImpl, { name: "plan", run_type: "chain" });
 
   async function authorize(provider) {
     if (chaos?.expireNow()) await setConnection(db, provider, "expired", clock.now());
@@ -378,7 +381,7 @@ export function createAgent({
     return { providers: out };
   }
 
-  async function callTool(cp, call, genome) {
+  async function callToolImpl(cp, call, genome) {
     const args = call.args || {};
     if (compactor && ["context.read", "context.list"].includes(call.name)) {
       try {
@@ -414,6 +417,8 @@ export function createAgent({
     if (call.name === "auth.check") return authCheck(args.providers);
     return world.call(call.name, args);
   }
+  // Child run: a non-effect tool call (memory.search, ask.owner, auth.check, or a read-only world call).
+  const callTool = traceable(callToolImpl, { name: "tool-call", run_type: "tool" });
 
   async function pause(cp, provider, spent, call) {
     await db.withTransaction(async (session) => {
@@ -485,9 +490,14 @@ export function createAgent({
     return task;
   }
 
-  async function driveOnce(runId, { onStep } = {}) {
+  async function driveOnceImpl(runId, { onStep } = {}) {
     let cp = await checkpoints.findOne({ runId });
     const h = await harness();
+    // Parent run: this day run (task id, harness version, genome summary), tagged for filtering.
+    annotate({
+      metadata: { runId, taskKind: cp.kind, week: cp.week, harnessVersion: h.version, genome: genomeSummary(h.genome) },
+      tags: [`harness-v${h.version}`, cp.kind, ...(cp.split ? [cp.split] : [])],
+    });
     if (!cp.context || cp.harnessVersion !== h.version || Boolean(compactor) !== cp.context.tools.includes("context.read")) cp = await plan(cp, h);
     for (;;) {
       if (cp.turns >= h.genome.contextPolicy.stepBudget) return finish(cp, "failed", "Step budget exhausted.", {});
@@ -522,6 +532,7 @@ export function createAgent({
         const guard = checkGuardrails(h.genome, call, cp.transcript);
         if (!guard.ok) Object.assign(entry, { error: guard.message, guardrail: guard.guardrail });
       }
+      if (entry.guardrail) annotate({ tags: ["guardrail-blocked", entry.guardrail] });
       if (!entry.error) {
         try {
           if (spec.provider) await authorize(spec.provider);
@@ -564,6 +575,9 @@ export function createAgent({
       await onStep?.({ runId, step: entry.step, entry, checkpoint: cp });
     }
   }
+  // Parent run: one day run (a startRun or a drive() call after a resume). Planning, tool calls,
+  // effect commits and model calls all nest under it, since they run inside its own call chain.
+  const driveOnce = traceable(driveOnceImpl, { name: "day-run", run_type: "chain" });
 
   // Before a resumed run takes a new step: commit effects the world already has (crash after the
   // effect, before the commit), abandon claims that never executed.

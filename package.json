@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "check": "npm run test && npm run build",
     "rem:demo": "node scripts/rem-demo.mjs",
+    "rem:langsmith": "node --env-file-if-exists=.env scripts/rem-langsmith.mjs",
     "vendor:build": "node scripts/vendor.mjs",
     "desktop:setup": "npm install --no-save --package-lock=false electron@44.4.5 electron-builder@26 && node node_modules/electron/install.js",
     "harness:worker": "node --env-file-if-exists=.env server/harness/worker.js",
@@ -26,7 +27,9 @@
     "local:https": "node scripts/local-https.mjs start",
     "local:https:stop": "node scripts/local-https.mjs stop",
     "local:https:status": "node scripts/local-https.mjs status",
-    "context:benchmark": "node scripts/benchmark-context.mjs"
+    "context:benchmark": "node scripts/benchmark-context.mjs",
+    "activity:collector": "node --env-file-if-exists=.env server/activity/collector.js",
+    "activity:seed": "node --env-file-if-exists=.env server/activity/seed.js"
   },
   "dependencies": {
     "echarts": "^6.1.0",
@@ -34,6 +37,7 @@
     "glimm": "latest",
     "helmet": "^8.1.0",
     "iconoir-react": "latest",
+    "langsmith": "^0.10.5",
     "liveline": "latest",
     "lucide-react": "^0.562.0",
     "mongodb": "^7.6.0",

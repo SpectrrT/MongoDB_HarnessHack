@@ -7,7 +7,9 @@ import { createLocalEmbedder } from "./embed.js";
 import { LIVE_WORKSPACE } from "./fixtures.js";
 import { completionThresholdOf, currentHarness, lineage, recallOf } from "./harness.js";
 import { createScriptedModel } from "./model.js";
+import { costOf } from "./models.js";
 import { memoryMetrics } from "./metrics.js";
+import { traceModel } from "./trace.js";
 import { runNight } from "./night.js";
 import { createCatalogProposer, trackRecord } from "./proposer.js";
 import { OFFLOAD_ALIASES, TASK_KINDS, describeTask, taskParams } from "./tasks.js";
@@ -38,6 +40,9 @@ export async function createRem({
   compactor = process.env.REM_COMPACTION === "jev" ? createContextCompactor({db}) : null,
   onEvent = null,
 } = {}) {
+  // Traced model calls (model id, token usage, cost): a pass-through when tracing is off, so this
+  // touches every model.chat call in the day, gym, evolve validation and skill practice alike.
+  model = traceModel(model, { costOf });
   await ensureIndexes(db, { dims: embedder.dims || 1024 });
   const ctx = { db, model, embedder, clock, workspace, proposer, chaos: null, day: 1, onEvent };
   ctx.world = createWorld(workspace);

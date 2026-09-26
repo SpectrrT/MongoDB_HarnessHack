@@ -24,6 +24,8 @@ export type ToolDetailLine = { text: string; tone?: "add" };
 
 export type ToolStep = {
   icon: string;
+  iconNode?: React.ReactNode;
+  working?: boolean;
   label: string;
   chip: string;
   mono: boolean;
@@ -204,12 +206,12 @@ export default function ToolChips({
                 className="group/row -mx-[3px] flex h-7 w-[calc(100%+6px)] min-w-0 items-center gap-2 rounded-control px-[3px] text-left transition-colors duration-100 hover:bg-hover-2"
               >
                 <span className="relative flex size-4 shrink-0 items-center justify-center text-ink-3">
-                  <svg
+                  {row.iconNode || <svg
                     width="13" height="13" viewBox="0 0 24 24" fill={row.icon === "think" ? "currentColor" : "none"} stroke="currentColor"
                     className={`transition-opacity duration-100 group-hover/row:opacity-0 ${rowOpen ? "opacity-0" : ""}`}
                   >
                     {Icons[row.icon]}
-                  </svg>
+                  </svg>}
                   <svg
                     width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                     className={`absolute transition-[opacity,transform] duration-150 group-hover/row:opacity-100 ${rowOpen ? "opacity-100" : "opacity-0"}`}
@@ -224,7 +226,7 @@ export default function ToolChips({
                     text-[11.5px] text-ink-2 shadow-hairline transition-colors duration-100 hover:bg-hover-2
                     ${row.mono ? "font-mono" : ""}`}
                 >
-                  {row.chip}
+                  {row.working && <span className="tool-live-dot" aria-hidden="true"/>}{row.chip}
                 </span>
               </button>
 

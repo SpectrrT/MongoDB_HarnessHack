@@ -182,3 +182,11 @@ test('profile updates persist and reject remote avatar URLs',()=>{
  assert.throws(()=>transition(s,{type:'profile',payload:{name:'Taylor',avatar:'https://tracker.example/avatar'}}));
  assert.throws(()=>transition(s,{type:'profile',payload:{name:'Taylor',email:'invalid'}}));
 });
+
+test('Sleep replies attach once without fabricating a user message',()=>{
+ let s=createWorkspace();s=transition(s,{type:'new-conversation',payload:{id:'sleep-chat'}});s=transition(s,{type:'conversation-sleep',payload:{id:'sleep-chat',enabled:true}});
+ const action={type:'chat-sleep-start',payload:{id:'sleep-chat',jobId:'sleep-job',model:'model',effort:'low'}};
+ s=transition(s,action);assert.equal(s.conversations[0].messages.length,0);
+ s=transition(s,{type:'chat-finish',payload:{id:'sleep-chat',jobId:'sleep-job',text:'Review ready.'}});
+ s=transition(s,action);assert.equal(s.conversations[0].pending,null);assert.equal(s.conversations[0].messages.length,1);assert.equal(s.conversations[0].messages[0].sleep,true);
+});

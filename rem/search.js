@@ -1,6 +1,7 @@
 // Hybrid search = vector ranking + keyword ranking fused by reciprocal rank fusion (k = 60):
 // the app-side equivalent of Atlas $rankFusion.
 import { cosine, tokenize } from "./embed.js";
+import { traceable } from "./trace.js";
 
 export const RRF_K = 60;
 
@@ -119,7 +120,7 @@ function applyRecall(hits, recall, now) {
 // hybrid, $vectorSearch alone for vector, $search alone for lexical. Elsewhere, the same fusion in
 // process over documents that carry an explicit `embedding`. `recall` (a genome recall policy)
 // picks the mode and applies kinds, recency decay, minScore and k; without it, hybrid top-k.
-export async function searchCollection(db, name, { query, embedder, filter = {}, k = 5, textField = "text", recall = null, now = null }) {
+async function searchCollectionImpl(db, name, { query, embedder, filter = {}, k = 5, textField = "text", recall = null, now = null }) {
   const mode = recall?.mode || "hybrid";
   const depth = recall ? Math.max(recall.k * 4, 20) : k;
   let hits;
@@ -170,6 +171,17 @@ export async function searchCollection(db, name, { query, embedder, filter = {},
   if (!recall) return hits.slice(0, k);
   return applyRecall(hits, recall, now);
 }
+// Child run: recall over one collection (mode, fusion path per hit, injected doc ids and scores).
+export const searchCollection = traceable(searchCollectionImpl, {
+  name: "recall",
+  run_type: "retriever",
+  processInputs: ({ args }) => {
+    const [, name, opts = {}] = args;
+    return { collection: name, query: opts.query, filter: opts.filter, k: opts.k, recall: opts.recall };
+  },
+  processOutputs: (hits) =>
+    Array.isArray(hits) ? hits.map((h) => ({ id: h.doc?._id ? String(h.doc._id) : null, score: h.score, fusion: h.fusion })) : hits,
+});
 
 // autoEmbed indexes sync a few seconds after writes. Wait until every document with the indexed text
 // field is visible to $vectorSearch (or the timeout passes), and report what was waited for.

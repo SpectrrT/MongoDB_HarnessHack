@@ -10,7 +10,7 @@ const ownerKey='offload.capture-owner';
 function tabOwner(){let id=sessionStorage.getItem(ownerKey);if(!id){id=crypto.randomUUID();sessionStorage.setItem(ownerKey,id);}return id;}
 export default function Session({open,onClose}){
  const {state,act}=useWorkspace(),current=state.sessions.find(s=>s.status==='active');
- const [mode,setMode]=useState('screen'),[consent,setConsent]=useState(false),[starting,setStarting]=useState(false),[recording,setRecording]=useState(false),[error,setError]=useState(''),[text,setText]=useState(''),[recordings,setRecordings]=useState([]),[saving,setSaving]=useState(false);
+ const [mode,setMode]=useState('screen'),[starting,setStarting]=useState(false),[recording,setRecording]=useState(false),[error,setError]=useState(''),[text,setText]=useState(''),[recordings,setRecordings]=useState([]),[saving,setSaving]=useState(false);
  const abort=useRef(null),capture=useRef(null),currentRef=useRef(current),actRef=useRef(act),owner=useRef(tabOwner()),busy=useRef(false),mounted=useRef(true);currentRef.current=current;actRef.current=act;
  const refresh=()=>listRecordings().then(rows=>{if(mounted.current)setRecordings(rows)}).catch(()=>{});
  const finish=async id=>{if(currentRef.current?.id===id)await actRef.current('session-end',{id});};
@@ -22,13 +22,13 @@ export default function Session({open,onClose}){
   if(current?.captureOwner===owner.current&&!capture.current&&!busy.current)void finish(current.id).catch(()=>{});
  },[current?.id,current?.captureOwner]);
  const start=async()=>{
-  if(busy.current||current||!consent)return;busy.current=true;setStarting(true);setError('');const id=crypto.randomUUID();let index=0;abort.current=new AbortController();
+  if(busy.current||current)return;busy.current=true;setStarting(true);setError('');const id=crypto.randomUUID();let index=0;abort.current=new AbortController();
   try{
    // Acquire display permission first, in the user's click gesture.
    const handle=await startCapture({mode,signal:abort.current.signal,onChunk:blob=>appendChunk(id,index++,blob),onError:e=>setError(e.name==='QuotaExceededError'?'Storage is full. Recording stopped; saved footage is still available.':e.message),onStopped:()=>{capture.current=null;setRecording(false);void finish(id).catch(e=>setError(e.message));void refresh();}});
    capture.current=handle;
    await beginRecording(id,mode);
-   await act('session-start',{id,mode,consented:true,captureOwner:owner.current,name:mode==='both'?'Screen and microphone':mode==='audio'?'Microphone':'Screen'});
+   await act('session-start',{id,mode,captureOwner:owner.current,name:mode==='both'?'Screen and microphone':mode==='audio'?'Microphone':'Screen'});
    if(!handle.active){await act('session-end',{id});throw Error('Sharing stopped before the session started.');}
    setRecording(true);
   }catch(e){await capture.current?.stop();capture.current=null;setError(e.name==='NotAllowedError'?'Permission was not granted. Nothing is recording.':e.message);}
@@ -40,8 +40,7 @@ export default function Session({open,onClose}){
  return <Modal title={current?'Your work session':'Start a work session'} onClose={onClose} wide>
   {!current?<><p>Choose what to record. Keep working; capture continues until you stop.</p><div className="session-modes">{modes.map(([id,label,Icon])=><button type="button" key={id} aria-pressed={mode===id} className={mode===id?'selected':''} disabled={starting} onClick={()=>setMode(id)}><Icon size={18}/>{label}</button>)}</div>
    <p className="small-copy">{mode==='audio'?'Your microphone stays on until you stop the session.':mode==='screen'?'Record the screen or window you choose. Your model can use its current view when you send a message.':'Record your chosen screen and microphone together until you stop.'}</p>
-   <label className="check-label"><input type="checkbox" checked={consent} disabled={starting} onChange={e=>setConsent(e.target.checked)}/>Everyone involved agrees to this recording.</label>
-   <button className="button" disabled={!consent||starting} onClick={start}>{starting?'Starting…':'Start session'}<Play size={16}/></button></>:<>
+   <button className="button" disabled={starting} onClick={start}>{starting?'Starting…':'Start session'}<Play size={16}/></button></>:<>
    <div className="session-live"><ThinkingOrb state="listening" size={64}/><div><h3>{current.name}</h3><p>{recording?'Recording · You can close this panel.':current.mode==='notes'?'Notes session':'Recording is managed in its original tab.'}</p></div><button className="button secondary small" disabled={saving} onClick={stop}><Square size={14}/>{saving?'Saving…':'Stop session'}</button></div>
    <label>Add a decision or detail<textarea value={text} onChange={e=>setText(e.target.value)} placeholder="What should Offload remember?"/></label><button className="button small" disabled={!text.trim()} onClick={async()=>{try{await act('session-note',{id:current.id,text});setText('');}catch(e){setError(e.message);}}}>Save to memory<Plus size={15}/></button><div className="session-notes">{current.notes.map((note,i)=><p key={i}>{note}</p>)}</div>
   </>}

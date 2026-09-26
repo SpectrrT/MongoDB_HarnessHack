@@ -22,3 +22,5 @@
 .context-provider { border-top: 1px solid #e7e7e7; padding-top: 18px; margin-top: 28px; color: #777; font-size: 13px; }
 @media(max-width: 1400px) { .service-catalog { grid-template-columns: 1fr; } }
 @media(max-width: 600px) { .service-row { gap: 12px; } .brand-tile { width: 42px; height: 42px; } .service-row .button { padding: 9px 12px; } .service-row .button svg { display:none; } .services-heading { margin-top: 5px; } }
+
+.service-logo[data-monochrome]{background:#fff;border-radius:4px;padding:2px;box-sizing:border-box;}

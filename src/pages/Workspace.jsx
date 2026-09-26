@@ -1,8 +1,10 @@
+import {PERSONAL_SUGGESTIONS} from '../../shared/personal-suggestions';
 import Session from "../components/Session";
 import Harness from "./Harness";
 import Adapt from "./Adapt";
 import Sleep from "./Sleep";
 import Rem from "./Rem";
+import HistoryPage from "./History";
 import React, { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -42,6 +44,7 @@ import {
   CalendarDays,
   TimerReset,
   Sparkles,
+  History as HistoryIcon,
 } from "lucide-react";
 import {
   ThinkingOrb,
@@ -69,12 +72,10 @@ import ProfileMenu,{ProfileEditor} from "../components/ProfileMenu";
 const Gallery = lazy(() => import("./Gallery"));
 const nav = [
   ["", "Overview", Home],
-  ["chat", "Conversations", MessageSquare],
   ["tasks", "Tasks", ListTodo],
-  ["harness", "Durable handoff", ListTodo],
-  ["adapt", "Harness sleep", Moon],
   ["rem", "REM", Sparkles],
   ["memory", "Memory", Brain],
+  ["history", "Computer history", HistoryIcon],
   ["sleep", "Sleep", Moon],
   ["connections", "Connections", Plug],
 ];
@@ -83,7 +84,7 @@ const date = (x) =>
 export default function Workspace() {
   const { state, act, error, setError } = useWorkspace();
   const [sidebar, setSidebar] = useState(innerWidth > 900),
-    [suggestions, setSuggestions] = useState(innerWidth > 1250),
+    [suggestions, setSuggestions] = useState(false),
     [session, setSession] = useState(false),
     [search, setSearch] = useState(false),
     [connect, setConnect] = useState(null);
@@ -142,16 +143,16 @@ export default function Workspace() {
     navigate("/app/chat/" + id);
   };
   const run = async (id) => {
-    const suggestion = state.suggestions.find(s => s.id === id);
+    const suggestion = PERSONAL_SUGGESTIONS.find(s=>s.id===id) || state.suggestions.find(s => s.id === id);
     if (!suggestion) return;
-    navigate("/app/chat?prompt=" + encodeURIComponent(suggestion.title + ". Use my saved notes. Ask for missing details; do not invent facts from my accounts."));
+    navigate("/app/chat?prompt=" + encodeURIComponent(suggestion.prompt || suggestion.title + ". Use my saved notes. Ask for missing details; do not invent facts from my accounts."));
     if(innerWidth < 1100) setSuggestions(false);
   };
   return (
     <div
       data-palette={state.settings.theme}
       style={themeStyle(palette)}
-      className={`workspace ${sidebar ? "with-sidebar" : ""} ${suggestions ? "with-suggestions" : ""}`}
+      className={`workspace ${sidebar ? "with-sidebar" : ""}`}
     >
       {sidebar && (
         <>
@@ -191,7 +192,7 @@ export default function Workspace() {
             <span className="breadcrumb">
               Personal <ChevronRight size={13} />{" "}
               <strong>
-                {nav.find((x) => x[0] === page)?.[1] || "Settings"}
+                {nav.find((x) => x[0] === page)?.[1] || (page === "chat" ? "Conversation" : "Settings")}
               </strong>
             </span>
           </div>
@@ -211,19 +212,6 @@ export default function Workspace() {
               {activeSession ? "Session active" : "Start a session"}
               <Plus size={14} />
             </button>
-            <button
-              className={`icon-button ${suggestions ? "selected" : ""}`}
-              aria-label={
-                suggestions ? "Close suggestions" : "Open suggestions"
-              }
-              onClick={() => {
-                setSuggestions((x) => !x);
-                if (innerWidth < 900) setSidebar(false);
-              }}
-            >
-              <PanelRight size={18} />
-              {count > 0 && <span className="count-dot">{count}</span>}
-            </button>
             <ProfileMenu/>
           </div>
         </header>
@@ -240,10 +228,11 @@ export default function Workspace() {
           screenKey={location.pathname}
           className={"app-content page-" + (page || "home")}
         >
-          {page === "" && <LiveChat />}
+          {page === "" && <Overview onRun={run} onSession={()=>setSession(true)} onSuggestions={()=>navigate("/app/chat")} />}
           {page === "chat" && <LiveChat id={route[1]} onNew={newChat} />}
           {page === "tasks" && <Tasks id={route[1]} onConnect={setConnect} />}
           {page === "memory" && <Memory />}
+          {page === "history" && <HistoryPage />}
           {page === "sleep" && <SlowMode><Sleep /></SlowMode>}
           {page === "harness" && <Harness />}
           {page === "adapt" && <Adapt />}
@@ -257,9 +246,7 @@ export default function Workspace() {
           )}
         </ScreenTransition>
       </div>
-      {suggestions && (
-        <Suggestions onClose={() => setSuggestions(false)} onRun={run} />
-      )}
+
       <Session open={session} onClose={() => setSession(false)} />
       {search && <SearchDialog onClose={() => setSearch(false)} onRun={run} />}
       {connect && (
@@ -397,7 +384,7 @@ function Onboarding() {
 function Overview({ onRun, onSession, onSuggestions }) {
   const { state } = useWorkspace();
   const navigate = useNavigate();
-  const pending = activeSuggestions(state);
+  const pending = state.settings.suggestions ? PERSONAL_SUGGESTIONS : [];
   return (
     <div className="overview">
       <div className="greeting">
@@ -409,21 +396,7 @@ function Overview({ onRun, onSession, onSuggestions }) {
               : "Good evening"}
           , {state.profile.name}.
         </p>
-        <h1>
-          Make room for
-          <br />
-          <em>the next thing.</em>
-        </h1>
-      </div>
-      <div className="home-composer beautiful-ui">
-        <PromptBar
-          local={false}
-          tall
-          placeholder="What would you like to work on?"
-          onSend={(text) =>
-            navigate("/app/chat?prompt=" + encodeURIComponent(text))
-          }
-        />
+        <h1>Your workspace,<br/><em>at a glance.</em></h1>
       </div>
       <div className="section-line">
         <h2>Ready when you are</h2>
@@ -864,7 +837,7 @@ function SearchDialog({ onClose, onRun }) {
   const [q, setQ] = useState("");
   const navigate = useNavigate();
   const rows = [
-    ...state.suggestions.map((x) => ({ ...x, type: "Task" })),
+    ...PERSONAL_SUGGESTIONS.map((x) => ({ ...x, type: "Task" })),
     ...state.memory.map((x) => ({ id: x.id, title: x.text, type: "Memory" })),
     ...state.skills.map((x) => ({ id: x.id, title: x.name, type: "Routine" })),
   ]
@@ -915,7 +888,7 @@ function SettingsPage() {
         <label className="setting-row">
           <span>
             <strong>Keep suggestions available</strong>
-            <small>Tasks stay in the side panel until you act.</small>
+            <small>Show rotating task suggestions below new chats.</small>
           </span>
           <input
             type="checkbox"

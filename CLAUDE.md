@@ -40,19 +40,22 @@ authority. It targets Statement One (recursive harnessing) and Statement Two (lo
 - `.mcp.json` gives Claude Code a MongoDB MCP server that reads the same `MONGODB_URI`, read-only unless `.env` sets
   `MDB_MCP_READ_ONLY=false`. It loads when a session starts, so start a new one after editing `.env`.
 
-## Where things stand (Sat Sep 26, about 12:40 PM ET)
+## Where things stand (Sat Sep 26, about 1:30 PM ET)
 
 - Merged and green: the UI and polish pass, Floyd's transitions, ASCII landing, ChatGPT chat through the local Codex
-  CLI and SlowMode's overnight queue, REM, Ryan's durable harness and Sleep v2. 62 unit tests, the build and the 10
-  browser tests pass.
-- Floyd's `MyName` branch is built on the old repo's history. `ba91b95` is on main as `9fae769`. `a5ac38c` (agent
-  tools, image attachments, Atlas workspace storage, OpenRouter chat, local HTTPS) isn't merged yet and conflicts with
-  main in six files. Start new work from main; merging `MyName` directly would delete `rem/`, `server/harness/` and
-  `server/sleep/`.
-- Atlas is connected through `MONGODB_URI` in `.env` (Cluster0, MongoDB 8.0.32, so there is no `$rankFusion`; keep
-  `REM_ATLAS_SEARCH` off). `offload_hackathon` already holds harness runs, memories and a Sleep v2 experiment. Only the
-  `harness:*` and `sleep:*` scripts load `.env`; `npm run dev` and `npm test` don't. OpenRouter and Voyage aren't
-  connected on main yet.
+  CLI and SlowMode's overnight queue, REM, Ryan's durable harness and Sleep v2, Floyd's local agent tools, image
+  attachments, Atlas workspace storage, OpenRouter chat and local HTTPS, and computer history.
+- Floyd's `MyName` branch is built on the old repo's history; its work reaches main as separate commits. Start new work
+  from main; merging `MyName` directly would delete `rem/`, `server/harness/` and `server/sleep/`.
+- Atlas is connected. Cluster0 (MongoDB 8.0.32) has database users `Tensae` (admin), `ryan` and `floyd` (read and
+  write). `$rankFusion`, Atlas Search and Vector Search all work on it (checked through the MCP server). Databases:
+  `offload_hackathon` (harness runs, Sleep v2 memories and experiments, computer history) and `offload` (Floyd's
+  workspace storage, `MONGODB_DB`). Only the `harness:*`, `sleep:*` and `activity:*` scripts load `.env`; `npm run dev`
+  and `npm test` don't. OpenRouter and Voyage keys are not in Tensae's `.env` yet. The project `.mcp.json` MongoDB server
+  and the hosted Atlas connector are both read-only.
+- New: computer history (`server/activity/`, `/app/history`). `npm run activity:collector` records the frontmost app,
+  window and page on macOS; sessions, hybrid search and routines are aggregations on Atlas. `npm run activity:seed`
+  added a sample week to Atlas, labeled `source: "seed"` everywhere.
 - REM's agent uses a scripted model until OpenRouter is configured. Say so if a judge asks.
 - Open decisions: REM's night loop (`rem/`) and Sleep v2 (`server/sleep/`) overlap, so pick one for the demo or combine
   them. REM has no UI panel yet.
