@@ -1,5 +1,5 @@
 {
-  "title": "Measured progress, with the receipts",
+  "title": "Measured progress",
   "scope": "Development benchmark",
   "sourceType": "synthetic",
   "stages": 12,
@@ -10,7 +10,7 @@
   "tokenSavingsPercent": 17.69,
   "answerModel": "openai/gpt-4o-mini",
   "scorer": "typesafe:jev-1.13.0",
-  "description": "Three synthetic tasks, twelve chronological stages, used during development. Both paths use GPT-4o-mini and the same exact checks. Offload totals include Jev selection and archive recovery.",
+  "description": "Three synthetic tasks, twelve chronological stages, used during development. Both paths use GPT-4o-mini and the same exact checks. Offload totals include Jev selection and archive recovery. Selection budget: 3,000 characters.",
   "limitation": "The baseline failed one check by adding an extra JSON field. Its owner and readiness were correct. These cases were used during development. Combined monetary cost is unknown.",
   "receipt": "/evidence/evolving-context.json",
   "repeated": {
@@ -20,9 +20,19 @@
     "offloadPassed": 20,
     "stages": 20,
     "tokenSavingsPercent": 66.02,
-    "description": "Four synthetic snapshots, five answers per path. Both paths use GPT-4o-mini and the same exact checks. All Jev scoring is included. Reusing unchanged context makes its initial selection cost worthwhile.",
+    "description": "Four synthetic snapshots, five answers per path. Both paths use GPT-4o-mini and the same exact checks. All Jev scoring is included. Reusing unchanged context makes its initial selection cost worthwhile. Selection budget: 1,600 characters.",
     "limitation": "Repeated snapshots are an optimistic microbenchmark. First-use compaction costs more; this does not establish savings on every task. Provider-reported cost was $0.000714378 versus $0.0023805.",
-    "receipt": "/evidence/repeated-context.json"
+    "receipt": "/evidence/repeated-context.json",
+    "answerModel": "openai/gpt-4o-mini",
+    "scorer": "openrouter:typesafe/jev-1.13",
+    "mainTokens": 2435,
+    "decisionTokens": 6617,
+    "beforeContextChars": 28898,
+    "afterContextChars": 1207,
+    "contextSnapshots": 4,
+    "selectionBudgetChars": 1600,
+    "baselineLabel": "Same harness, full context",
+    "offloadLabel": "Offload + Jev"
   },
   "reliability": [
     {
@@ -47,5 +57,88 @@
       "receipt": "/evidence/idle-counter.json"
     }
   ],
-  "personal": []
+  "personal": [
+    {
+      "id": "research",
+      "title": "A research session spanning 48.6 hours",
+      "status": "Still incomplete",
+      "quote": "must be a real person's account, not a brand or businesses",
+      "quoteSource": "Actual user instruction before the replay cutoff. Session span is provenance, not replay runtime.",
+      "result": "Earlier frozen trials passed 63/93 and 64/93 research criteria. The latest prompt + model pilot reaches 29/31 on each path. Neither artifact fully passes.",
+      "conditions": "Both paths use the same frozen input and evaluator. Valid files now take one call, but a numeric boundary and a target-app interpretation fail the frozen criteria. This was a development replay; Jev made zero calls.",
+      "receipt": "/evidence/personal-research-development-v3.json"
+    },
+    {
+      "id": "onboarding-full",
+      "title": "145 messages, with every instruction retained",
+      "status": "Default budget blocked",
+      "result": "The original policy protects 31,287 of 67,208 serialized characters, above the 16,000-character selection budget.",
+      "conditions": "The preflight made zero model calls. The harness now checks this floor before scoring, preserving exact archived sources. This is a boundary test, not a successful compaction run.",
+      "receipt": "/evidence/personal-onboarding-full-preflight.json"
+    },
+    {
+      "id": "all-spend",
+      "title": "The failed experiments count, too",
+      "status": "Complete usage ledger",
+      "result": "35 paid calls. 203,997 tokens. $0.0330104 reported cost, across all personal replay experiments recorded so far.",
+      "conditions": "Includes the failed original batch, diagnostic, twelve frozen follow-up artifacts and four development artifacts. No personal history or full artifact contents are in the public receipt.",
+      "receipt": "/evidence/personal-replay-experiment-ledger.json"
+    }
+  ],
+  "mainTokens": 12011,
+  "decisionTokens": 20253,
+  "beforeContextChars": 77545,
+  "afterContextChars": 4112,
+  "contextSnapshots": 12,
+  "selectionBudgetChars": 3000,
+  "baselineLabel": "Same harness, full context",
+  "offloadLabel": "Offload + Jev",
+  "research": {
+    "scope": "Development replay",
+    "title": "Research replay",
+    "baselineTokens": 6318,
+    "offloadTokens": 6420,
+    "baselinePassed": 29,
+    "offloadPassed": 29,
+    "stages": 31,
+    "tokenSavingsPercent": null,
+    "noSelection": true,
+    "answerModel": "openai/gpt-4.1-mini",
+    "scorer": "Not called: history is under budget",
+    "mainTokens": 6420,
+    "decisionTokens": 0,
+    "beforeContextChars": 11575,
+    "afterContextChars": 11575,
+    "contextSnapshots": 1,
+    "selectionBudgetChars": 16000,
+    "baselineLabel": "Full-context Sleep",
+    "offloadLabel": "Sleep + selection",
+    "description": "One paired artifact replay from frozen pre-cutoff personal history, with an independent evaluator kept out of model inputs. Both paths use the same model, task, tools and limits. The prompt and model changed jointly from the earlier failed runs.",
+    "limitation": "Neither artifact fully passes. The two provider requests are identical and Jev is not activated. Differences are generation variation, not compaction benefits. Checks are limited proxies, not overall semantic quality.",
+    "receipt": "/evidence/personal-research-development-v3.json"
+  },
+  "onboarding": {
+    "scope": "Development replay",
+    "title": "Onboarding replay",
+    "baselineTokens": 5998,
+    "offloadTokens": 5821,
+    "baselinePassed": 10,
+    "offloadPassed": 9,
+    "stages": 12,
+    "tokenSavingsPercent": null,
+    "noSelection": true,
+    "answerModel": "openai/gpt-4.1-mini",
+    "scorer": "Not called: history is under budget",
+    "mainTokens": 5821,
+    "decisionTokens": 0,
+    "beforeContextChars": 13549,
+    "afterContextChars": 13549,
+    "contextSnapshots": 1,
+    "selectionBudgetChars": 16000,
+    "baselineLabel": "Full-context Sleep",
+    "offloadLabel": "Sleep + selection",
+    "description": "One paired artifact replay from frozen pre-cutoff personal history, with an independent evaluator kept out of model inputs. Both paths use the same model, task, tools and limits. The prompt and model changed jointly from the earlier failed runs.",
+    "limitation": "Neither artifact fully passes. The two provider requests are identical and Jev is not activated. Differences are generation variation, not compaction benefits. Checks are limited proxies, not overall semantic quality.",
+    "receipt": "/evidence/personal-onboarding-development-v3.json"
+  }
 }

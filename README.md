@@ -58,6 +58,29 @@ establishes universal savings, calibrated probabilities, or billion-token perfor
 [all versions and adverse results](docs/context-evolving-evidence.md), and
 [research and configuration](docs/sleep-context-compaction.md).
 
+### Personal histories: artifact generation improved, task quality still incomplete
+
+Frozen replay tasks use authorized pre-cutoff Codex and Claude messages, actual Sleep file execution and independent
+criteria hidden from the models. The original research attempt produced no artifacts on either path after 18 calls
+and 105,645 tokens. A strict output-format clarification now produces each artifact in one call. However, three
+GPT-4o-mini trials per path still yield **0/3 fully passing research artifacts and 0/3 onboarding artifacts**. Research
+scores 63/93 versus 64/93 criteria; onboarding 19/36 versus 18/36. All twelve files are hash-verified, but valid files
+are not equivalent to completed tasks.
+
+These smaller histories fit under the compaction threshold. Paired provider request hashes are identical and Jev
+makes zero calls, so their small token differences are generation variation, not compaction benefits. Those twelve
+calls consume 67,927 tokens, additional to the failed original batch and a 5,868-token diagnostic. All are retained.
+The full 145-message onboarding variant naturally reaches 67,208 serialized characters. Its original protection
+policy keeps 31,287, exceeding the 16,000-character budget before scoring. The harness now detects that impossible
+floor before spending any Jev calls, while preserving the exact archived source. No successful full-history result
+is claimed from this admission check. [Conditions, failures and receipts](docs/personal-session-evidence.md).
+
+A later one-pair development pilot jointly changes the task contract and answer model to production Sleep's
+GPT-4.1-mini. Research improves to **29/31 on both paths**, onboarding to **10/12 versus 9/12**. Neither fully passes.
+The complete personal experiment ledger is **35 calls, 203,997 tokens and $0.0330104**, including every failed attempt.
+These are measured quality improvements under a joint configuration change, not isolated prompt effects or compaction
+savings. [Raw ledger](docs/evidence/personal-replay-experiment-ledger.json).
+
 ### Bounded memory and actual restart recovery
 
 REM now stores canonical exchanges in indexed MongoDB event/part documents and keeps only a bounded working transcript

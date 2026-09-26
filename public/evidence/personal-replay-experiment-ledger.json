@@ -1,0 +1,78 @@
+{
+  "createdAt": "2026-09-26T18:55:46.443Z",
+  "scope": "Every paid call in this personal replay experiment to this checkpoint, including original schema failures, diagnostic and subsequent failed-quality trials. Synthetic context development benchmarks are separate.",
+  "entries": [
+    {
+      "file": "personal-research-sleep-replay.json",
+      "calls": 18,
+      "measuredTokens": 105645,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.013495200000000004,
+      "summedProviderLatencyMs": 108890
+    },
+    {
+      "file": "personal-research-output-diagnosis.json",
+      "calls": 1,
+      "measuredTokens": 5868,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.0007053,
+      "summedProviderLatencyMs": 7182
+    },
+    {
+      "file": "personal-research-sleep-v2-pilot.json",
+      "calls": 2,
+      "measuredTokens": 11632,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.0016959,
+      "summedProviderLatencyMs": 8695
+    },
+    {
+      "file": "personal-research-sleep-v2-trials-2-3.json",
+      "calls": 4,
+      "measuredTokens": 23276,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.0026118,
+      "summedProviderLatencyMs": 13010
+    },
+    {
+      "file": "personal-onboarding-sleep-v2-pilot.json",
+      "calls": 2,
+      "measuredTokens": 11031,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.002079,
+      "summedProviderLatencyMs": 10454
+    },
+    {
+      "file": "personal-onboarding-sleep-v2-trials-2-3.json",
+      "calls": 4,
+      "measuredTokens": 21988,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.0026160000000000003,
+      "summedProviderLatencyMs": 20119
+    },
+    {
+      "file": "personal-research-development-v3.json",
+      "calls": 2,
+      "measuredTokens": 12738,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.0051144,
+      "summedProviderLatencyMs": 10519
+    },
+    {
+      "file": "personal-onboarding-development-v3.json",
+      "calls": 2,
+      "measuredTokens": 11819,
+      "usageKnown": true,
+      "providerReportedCostUSD": 0.0046928000000000004,
+      "summedProviderLatencyMs": 11237
+    }
+  ],
+  "totals": {
+    "calls": 35,
+    "measuredTokens": 203997,
+    "usageKnown": true,
+    "providerReportedCostUSD": 0.03301040000000001,
+    "summedProviderLatencyMs": 190106
+  },
+  "caveat": "Summed provider latency is not elapsed wall-clock duration; some independent pairs ran concurrently. No Jev calls occurred because curated histories were below the production selector budget. Differences between identical requests are generation variation, not compaction savings."
+}

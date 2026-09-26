@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "at": "2026-09-26T18:33:26.740Z",
+  "at": "2026-09-26T18:50:07.618Z",
   "mode": "scripted provider and retention scores; real local file tools",
   "tasks": 1,
   "criterion": "Return exact ARCHIVE_KEY_7D91 after seven file reads, recovering the archive if the first read was omitted.",
@@ -79,7 +79,8 @@
           "evidenceKey": "b9a39c257d700dd6ef09141d4436d09e6287cf99c4fcb3be363a289e8f4e8e5c",
           "stateChars": 3750,
           "statePartial": true,
-          "unscored": 0
+          "unscored": 0,
+          "protectedChars": 4172
         }
       }
     }

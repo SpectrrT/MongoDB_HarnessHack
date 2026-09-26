@@ -1,45 +1,31 @@
-# Judge-facing description: Sleep
+# Sleep: judge-facing project description
 
-Problem Statement Two is Long Horizon Engineering: coherent memory over long sessions, continued progress toward goals,
-and learning from hard metric signals. Sleep combines bounded working memory, source recovery, verified execution and
-persisted improvement. Jev is actually integrated; it estimates retention probability for each record. The harness
-protects constraints, keeps complete tool exchanges, archives source records and owns the stopping rules.
+Problem Statement Two, **Long Horizon Engineering**, asks for a harness that sustains coherent memory over long sessions, keeps working toward goals, and learns from hard metrics. Offload implements reversible context selection, bounded MongoDB checkpoints, restart recovery, constrained local execution and evidence-based completion. The product section is named **Sleep**.
 
-Current live repeated-context evidence: four synthetic snapshots, five answers per path, GPT-4o-mini on both paths.
-Both score 20/20. Full context uses 26,640 tokens; selected context including Jev uses 15,543, or 41.66% fewer.
-First use costs more. A separate three-task, twelve-stage evolving suite scores 11/12 on both paths and costs 29.95%
-more overall, because rescoring outweighs answer-model savings. Shortening the decision prompt reduces Jev overhead
-19.86% without changing those checks. Both adverse runs are retained. [Raw evidence and conditions](context-evolving-evidence.md).
+Jev is actually integrated. It estimates a retention probability for each candidate record. The harness protects instructions and effects, archives exact source records before omission, preserves tool exchanges and makes omitted evidence recoverable. The probabilities are model estimates, not calibrated guarantees. Identical read results can be deduplicated without another model call; unchanged decisions survive restart. New evidence invalidates stale scores.
 
-The checkpoint no longer contains the whole transcript. In a 300-step deterministic session with interruption and source
-recovery, the maximum working checkpoint is 18,852 bytes versus a reconstructed 1,245,224-byte full-history checkpoint.
-The 1,242,822-byte canonical source remains intact. This is byte evidence, not live token savings. Real local MongoDB
-testing exposed and fixed three stale-worker races. An actual SIGKILL after a fixture send and before ledger commit
-recovers in a different process with exactly one send and one provider receipt. This proves that fixture-provider
-restart case, not generic exactly-once behavior for real Gmail or Drive. [Storage evidence](sleep-transcript-storage.md).
+| Measured workload | Comparison | Current result and boundary |
+| --- | --- | --- |
+| Three evolving synthetic tasks, twelve stages, GPT-4o-mini | 39,196 full-context tokens versus 32,264 including Jev and recovery | **17.69% fewer**; 11/12 versus 12/12 exact JSON checks. Baseline failure was an extra field, not an incorrect owner or readiness. Development cases used during optimization. |
+| Four stable synthetic snapshots, five answers per path | 26,640 versus 9,052 total tokens | **66.02% fewer**, 20/20 checks on both paths. Reuse amortizes selection; first use costs more. |
+| Three live GPT-4.1-mini local drafts | Initial 2/3 artifacts, 7 calls, 1,721 tokens; refined 3/3, 3 calls, 815 tokens | $0.000608 on the refined run. Checks cover exact phrases, minimum size and JSON, not broad semantic quality. |
+| 300-step deterministic session | Maximum reconstructed checkpoint 1,245,224 bytes versus 18,852 | **98.49% smaller**, with all 1,242,822 source bytes retained. Bytes, not live tokens. |
+| One live idle counter prototype | One call, 1,346 tokens, $0.0014084 | Actual offline Chrome passes all 10 declared checks, including Increment and Reset. Restart makes zero extra calls. Injected idle clock, not an overnight-duration study. |
 
-Sleep executes assigned local drafts with persisted budgets, deadlines, approvals and independent file checks. Three
-live GPT-4.1-mini tasks improved from 2/3 checked artifacts with 1,721 tokens and seven calls to 3/3 with 815 tokens and
-three calls. Provider cost for the second run was $0.000608. One approval pause resumed without regenerating its proposal.
-These short synthetic checks verify declared phrases, size and JSON syntax, not broad semantic correctness. An
-eight-attempt scripted task with no progress now pauses after three calls; explicit resume completes on call four.
-[Before/after execution evidence](sleep-task-execution.md).
+The evolving total includes 12,011 answer-model tokens and 20,253 scoring tokens. Direct TypeSafe prices are unavailable, so its combined monetary saving is unknown. The repeated-context run reports $0.000714378 versus $0.0023805. Earlier evolving configurations consumed **59.05%, 29.95%, 6.84% and 3.80% more tokens**; those receipts remain public. Shorter prompts that failed selection were rejected. We did not remove their charges or change the exact answer checker to obtain a positive result.
 
-Opt-in native OpenRouter selection is tested with real local file tools and a scripted provider: one exact archived-key
-task passes on both paths, with 111,805 versus 45,148 cumulative prompt characters. It requires one extra model request
-and 15 scripted decision calls. Those are integration measurements, not live token savings. Images remain intact,
-malformed tool IDs cannot execute, and known usage survives cancellation. [Native evidence](native-context.md).
+Real personal-session replays provide a harder counterexample. In the first three paired research trials, both paths failed to generate artifacts after 18 total calls and 105,645 tokens. An output-format fix produces valid files in one call. On the subsequent frozen small-history cases, however, neither path fully passes any of the three research or three onboarding trials. Research achieves 63/93 versus 64/93 criteria; onboarding 19/36 versus 18/36. These inputs fit below the selector threshold, make zero Jev calls and produce identical request hashes between paths. Their small token differences are ordinary generation variation, **not compaction savings**. Private source histories and artifact contents stay private; public receipts retain hashes, usage and outcomes.
 
-Source-backed next actions can turn a repeated context-recovery habit into a supported task, four durable checkpoints,
-a checked artifact and a tested policy update. Explicitly selected history supplies provenance; import alone does not
-start execution. Five Atlas reads beside 10,000 unrelated rows improved from a 1,474 ms median to 436 ms while examining
-three source documents. [Personal workflow and limits](personal-suggestions.md).
+A subsequent development pilot jointly changes the generic task contract and model to production Sleep's GPT-4.1-mini. Research improves to 29/31 on both paths; onboarding to 10/12 versus 9/12. Neither fully passes. Those pairs also make zero Jev calls. All personal experiments through this milestone total **35 calls, 203,997 tokens and $0.0330104**, including the failures. This is not a causal claim about either intervention alone or a context-compaction gain.
 
-The implementation is local and tested. It does not demonstrate billion-token sessions, weeks of autonomous operation,
-calibrated completion probabilities, or universal savings. Waiting more slowly is not itself a token optimization.
+The full 145-message onboarding history contains 67,208 serialized characters, of which 31,287 are protected under the original policy. That cannot fit the default 16,000-character budget. The harness now rejects an impossible protected-context budget before paying for Jev, while retaining source archives. This is an observed boundary and a concrete waste-prevention fix, not a successful full-history compaction result.
 
-A separate source-interpretation probe improves 2/3 to 3/3 exact answers on the original routing failure and two new
-shipping variants. Tokens increase 5,666 to 7,870, which is retained as an adverse result while the full combined
-optimization is measured. [Probe evidence](evidence/evidence-policy-probe.json).
+Durability checks use actual local MongoDB transactions and independent processes. Three stale-worker races are fenced. An actual SIGKILL after a simulated send and before ledger commit recovers with exactly one fixture-provider send and receipt. This does not establish generic exactly-once behavior for external Gmail or Drive. Legacy TTL records are archived at startup when they still exist, and source pagination works beyond 32 MiB. Already deleted records cannot be reconstructed.
 
-Benchmark receipts now persist after each answer and decision pass. Three accounting checks cover restart/rescore charges, interrupted paid calls and unavailable prices. Missing usage makes savings unknown; failed answers make the benchmark exit unsuccessfully. These are accounting checks, not additional live performance results.
+Source-backed suggestions preserve provenance from explicitly selected history. They can propose a supported task, run four durable checkpoints, produce a checked artifact and record feedback for a versioned policy. Import alone does not start work. Five Atlas reads beside 10,000 unrelated rows improved from a 1,474 ms median to 436 ms while examining three source documents. This small retrieval measurement does not establish long-term suggestion usefulness.
+
+Native OpenRouter selection passes one scripted-provider task with real file tools. Prompt characters fall from 116,021 to 49,891, while calls rise from 8 to 9 and 15 scripted selection calls are counted. This is integration evidence, not a paid-token benchmark. Native turns remain bounded to 40 tool steps; REM supplies separate durable transcript storage.
+
+The homepage displays conditions and receipts immediately after the complete hero. Read [evolving evidence](context-evolving-evidence.md), [personal replay evidence](personal-session-evidence.md), [assigned execution](sleep-task-execution.md), [idle validation](idle-sleep-validation.md), and [transcript recovery](sleep-transcript-storage.md).
+
+This implementation does not yet demonstrate billion-token sessions, weeks of autonomous operation, universally correct semantic completion, or universal savings. Slower execution alone is not a token optimization.
