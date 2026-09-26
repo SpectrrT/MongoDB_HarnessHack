@@ -187,3 +187,44 @@ a time. Bodies are validated with zod.
 - The ScriptedModel's competence is scripted per task kind; real model behavior will differ, which is
   what the gym and the no-regression gate are for.
 - A simulated day compresses one week of notes; TTL retention is two simulated days.
+
+## One Sleep (Sep 26): what was folded into REM, and what runs on Atlas
+
+REM is the single Sleep engine. Sleep v2's recall and lessons ideas and the Sleep Lab's recall scenario
+and adversarial attacks now live here; `server/sleep/` is no longer on REM's paths.
+
+- **Atlas, verified on the event sandbox (8.0.32).** Search runs in Atlas by default (`REM_ATLAS_SEARCH=0`
+  turns it off): `$rankFusion` over the autoEmbed vector index and the Atlas Search index for hybrid recall,
+  `$vectorSearch` or `$search` alone for vector or lexical recall. All 8 autoEmbed indexes reached READY
+  (text 60 to 92 s, vector 72 to 116 s on empty collections); new documents are searchable about 4 s after
+  insert, so Evolve and the night wait for autoEmbed to catch up (`settleSearch`). `REM_VECTOR_MODE=explicit`
+  builds `<collection>_vec` indexes over stored embeddings for clusters without autoEmbed.
+- **Recall policy in the genome.** `contextPolicy.recall` = mode, k, minScore, kinds, recency half-life,
+  budget, with hard bounds (`normalizeRecall`; out-of-bounds edits throw). Gen 0 favors recent memory
+  (7-day half-life). `memory.search` and memory injection both obey it.
+- **Lessons block.** Each run's prompt carries the recalled memories (capped at `budgetChars`, lowest
+  ranked dropped first) and a `Lesson sources:` section: the episodes behind each memory and the edit and
+  night behind each rule. The checkpoint records `injected` (memory ids, dropped ids, searched ids, rule
+  ids, recall policy, block size).
+- **Recall trap (ported from the Sleep Lab's SEC-7 case).** `release-readiness` tasks T9 (train) and H5
+  (held-out): an old blocker is still open but only memory holds it. Gen 0's decay drops it under the floor;
+  weakness mining tags `stale-recall`; the catalog offers `recallNoDecay`, `recallHalfLife30` and
+  `recallLowFloor`. Measured: the first two pass both tasks; the floor edit passes T9 and fails H5, so the
+  held-out split rejects it. Over five simulated days Evolve accepts `recallNoDecay` on night 3.
+- **Adversarial challenge.** After validation accepts an edit, every task it flipped is re-run under six
+  truth-preserving attacks (reorder, distract, duplicate, unknown-state, memory-noise, contradiction,
+  `rem/attacks.js`); any failure rejects the edit. The recall edit held 12/12.
+- **Probabilistic termination.** Before a day run finishes, P(goal satisfied | evidence) comes from Jev
+  (`typesafe/jev-1.13` through OpenRouter's decisions endpoint, `REM_COMPLETION=jev`) or a labeled stub.
+  Evidence = task, plan, last steps, final answer and the end-state checks. Below the genome's
+  `completionThreshold` (0.5; Evolve may tune 0.5 to 0.95) the run gets one more turn, then finishes with the
+  record. Measured Jev on release evidence: 0.60 passing, 0.05 failing, 0.41 without checks; one live
+  blockers run with passing checks scored 0.42 (a false negative to watch).
+- **Morning brief.** `verified` (cost and tokens per verified success: gym before and after, and the day's
+  gate-cleared runs) and `timeline` (each night phase with wall time).
+- **Workers share Atlas safely.** Runs carry a `driver` and a 30 s `leaseUntil`; a paused run can be resumed
+  by any worker, a running one only by its driver or after the lease lapses. Without it, two server processes
+  on the same database both resumed one run after a reconnect event (duplicate steps; the ledger still kept
+  the send exactly once).
+- **Demo on Atlas.** `node --env-file=.env scripts/rem-demo.mjs --atlas` runs the five-day story in database
+  `REM_DEMO_DB` (default `rem_demo`, never the server's `rem`) and writes `docs/DEMO-NUMBERS-ATLAS.md`.

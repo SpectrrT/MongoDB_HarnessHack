@@ -1,7 +1,8 @@
 // npm run rem:demo — the three-minute REM story as a terminal narrative, with real numbers.
 // Deterministic: in-memory MongoDB stand-in, ScriptedModel, local embeddings. Writes docs/DEMO-NUMBERS.md.
-// --atlas: the same story on the Atlas Sandbox (MONGODB_URI, database REM_DB_NAME or "rem"), with
-// search in Atlas; writes docs/DEMO-NUMBERS-ATLAS.md. Clears documents, keeps the search indexes.
+// --atlas: the same story on the Atlas Sandbox (MONGODB_URI, database REM_DEMO_DB or "rem_demo"), with
+// search in Atlas; writes docs/DEMO-NUMBERS-ATLAS.md. It clears that database's documents (keeping the
+// search indexes), so never point REM_DEMO_DB at the database a running server uses ("rem").
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,7 +36,9 @@ const atlas = process.argv.includes("--atlas");
 let atlasDb = null;
 if (atlas) {
   const { createMongoDb } = await import("../rem/db/mongo.js");
-  atlasDb = await createMongoDb({ dbName: process.env.REM_DB_NAME || "rem" });
+  const dbName = process.env.REM_DEMO_DB || "rem_demo";
+  if (dbName === (process.env.REM_DB_NAME || "rem")) throw new Error(`Refusing to clear ${dbName}: the server's REM database. Set REM_DEMO_DB.`);
+  atlasDb = await createMongoDb({ dbName });
   for (const c of await atlasDb.listCollections({}, { nameOnly: true }).toArray())
     if (!c.name.startsWith("system.")) await atlasDb.collection(c.name).deleteMany({});
 }

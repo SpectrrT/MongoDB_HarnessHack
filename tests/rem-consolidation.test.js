@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createRem, createMemoryDb } from "../rem/index.js";
 import { ensureIndexes } from "../rem/db/index.js";
-import { createAgent, seedConnections } from "../rem/agent.js";
+import { createAgent, seedConnections, setConnection } from "../rem/agent.js";
 import { GYM, GYM_EPOCH, runGymTask } from "../rem/gym.js";
 import { GEN0, applyEdit, buildLessons, normalizeRecall, recallOf } from "../rem/harness.js";
 import { EDITS } from "../rem/catalog.js";
@@ -14,6 +14,7 @@ import { createLocalEmbedder } from "../rem/embed.js";
 import { createJevGate, createStubGate } from "../rem/completion.js";
 import { createWorld } from "../rem/world.js";
 import { createClock } from "../rem/util.js";
+import { ATTACKS, attackTask, challenge } from "../rem/attacks.js";
 
 const model = createScriptedModel(),
   embedder = createLocalEmbedder();
@@ -85,9 +86,50 @@ test("Evolve discovers and validates a recall edit on its own", async () => {
   assert.ok(night, "a stale-recall edit is accepted within five nights");
   const edit = night.evolve.edits.find((e) => e.pattern === "stale-recall");
   assert.deepEqual(edit.prediction.flips, ["T9"], "the prediction names the train task it should flip");
+  assert.deepEqual([edit.outcome.challenge.held, edit.outcome.challenge.attacks], [12, 12], "held every attack on T9 and H5");
   assert.ok(night.evolve.fitness.heldOut.passed > night.evolve.baseline.heldOut.passed || night.evolve.fitness.heldOut.passed === night.evolve.fitness.heldOut.tasks);
   assert.equal((await rem.harness()).genome.contextPolicy.recall.recencyHalfLifeDays === 7, false, "the committed harness no longer decays at 7 days");
   await rem.close();
+});
+
+test("two workers racing to resume the same paused run: the lease lets exactly one drive it", async () => {
+  const t = task("T1");
+  const db = createMemoryDb({ name: "lease" });
+  await ensureIndexes(db, { search: false });
+  const clock = createClock(GYM_EPOCH);
+  await seedConnections(db, { now: clock.now() });
+  const world = createWorld(t.workspace);
+  const worker = () => createAgent({ db, world, model, embedder, clock, harness: async () => ({ version: 1, genome: GEN0 }), episodes: false });
+  const a = worker(),
+    b = worker();
+  const paused = await a.startRun({
+    ...t,
+    runId: "shared",
+    onStep: async ({ step }) => step === 2 && setConnection(db, "drive", "revoked", clock.now()),
+  });
+  assert.equal(paused.status, "paused_for_auth");
+  await setConnection(db, "drive", "valid", clock.now());
+  const [ra, rb] = await Promise.all([a.resumeRun("shared"), b.resumeRun("shared")]);
+  const final = await db.collection("checkpoints").findOne({ runId: "shared" });
+  const steps = final.transcript.map((x) => x.step);
+  assert.equal(new Set(steps).size, steps.length, "no step was driven twice");
+  assert.equal(final.status, "done");
+  assert.equal(final.resumes, 1, "only one worker claimed the resume");
+  assert.equal(world.state.sent.filter((m) => m.runId === "shared").length, 1);
+  assert.ok([ra, rb].some((r) => r.status === "done"));
+});
+
+test("adversarial challenge: six truth-preserving attacks; the recall edit holds them, gen 0 does not", async () => {
+  const opts = { model, embedder };
+  for (const name of Object.keys(ATTACKS)) {
+    const attacked = attackTask(task("T9"), name);
+    assert.deepEqual(attacked.workspace.truth, task("T9").workspace.truth, `${name} keeps the ground truth`);
+  }
+  const good = await challenge(applyEdit(GEN0, EDITS.recallNoDecay), ["T9", "H5"], opts);
+  assert.deepEqual([good.attacks, good.held, good.failed.length], [12, 12, 0]);
+  const bad = await challenge(GEN0, ["T9"], opts);
+  assert.deepEqual([bad.attacks, bad.held], [6, 0]);
+  assert.ok(bad.failed.every((f) => f.failures.includes("missing blocker: SEC-7 signing key rotation")));
 });
 
 test("probabilistic termination: a run below threshold keeps working once, then finishes with the record", async () => {

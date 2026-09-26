@@ -5,10 +5,15 @@ import { allowedTools, buildLessons, checkGuardrails, completionThresholdOf, rec
 import { commitEffect, runEffect } from "./ledger.js";
 import { costOf, latencyOf, modelFor } from "./models.js";
 import { searchCollection } from "./search.js";
+import { randomUUID } from "node:crypto";
 
 export const TOOL_LATENCY_MS = 250;
 // A run whose completion check fails gets this many extra executor turns before it finishes anyway.
 export const COMPLETION_RETRIES = 1;
+// A worker drives a run under a lease (real time). Another worker may take a running run over only
+// after the lease lapses; a paused run can be resumed by any worker. Found on the shared Atlas
+// database: two server processes each saw the reconnect event and both drove the same run.
+export const LEASE_MS = 30000;
 export const RECONNECT_WAIT_MS = 90000;
 const GRANTED = {
   drive: ["drive.readonly", "drive.file"],
@@ -132,6 +137,8 @@ export function createAgent({
 }) {
   const checkpoints = db.collection("checkpoints");
   const inflight = new Map();
+  const workerId = randomUUID();
+  const lease = () => new Date(Date.now() + LEASE_MS);
   const now = () => new Date(clock.now());
 
   async function log(cp, docs) {
@@ -399,7 +406,7 @@ export function createAgent({
 
   async function advance(cp, entry, spent) {
     const update = {
-      $set: { step: entry.step, updatedAt: now() },
+      $set: { step: entry.step, updatedAt: now(), leaseUntil: lease() },
       $push: { transcript: entry },
       $inc: { turns: 1, ...spent },
     };
@@ -413,7 +420,17 @@ export function createAgent({
     return checkpoints.findOne({ runId: cp.runId });
   }
 
-  async function drive(runId, { onStep } = {}) {
+  // One drive per run per process. On Atlas, change events arrive late and can overlap a resume
+  // already in progress; a second caller joins the active drive instead of starting another.
+  const driving = new Map();
+  function drive(runId, opts) {
+    if (driving.has(runId)) return driving.get(runId);
+    const task = driveOnce(runId, opts).finally(() => driving.delete(runId));
+    driving.set(runId, task);
+    return task;
+  }
+
+  async function driveOnce(runId, { onStep } = {}) {
     let cp = await checkpoints.findOne({ runId });
     const h = await harness();
     if (!cp.context || cp.harnessVersion !== h.version) cp = await plan(cp, h);
@@ -547,6 +564,8 @@ export function createAgent({
         harnessVersion: h.version,
         startedVersion: h.version,
         versions: [h.version],
+        driver: workerId,
+        leaseUntil: lease(),
         usage: { inputTokens: 0, outputTokens: 0, cost: 0, calls: 0, byTier: {} },
         latencyMs: 0,
         interventions: 0,
@@ -568,8 +587,14 @@ export function createAgent({
           if (conn?.tokenState !== "valid") return current;
         }
         const before = await checkpoints.findOneAndUpdate(
-          { runId, status: { $in: ["paused_for_auth", "running"] } },
-          { $set: { status: "running", resumedAt: now() }, $inc: { resumes: 1 } },
+          {
+            runId,
+            $or: [
+              { status: "paused_for_auth" },
+              { status: "running", $or: [{ driver: workerId }, { driver: { $exists: false } }, { leaseUntil: { $lt: new Date() } }] },
+            ],
+          },
+          { $set: { status: "running", resumedAt: now(), driver: workerId, leaseUntil: lease() }, $inc: { resumes: 1 } },
           { returnDocument: "before" },
         );
         if (!before) return checkpoints.findOne({ runId });
@@ -595,7 +620,7 @@ export function createAgent({
       return task.finally(() => inflight.delete(runId));
     },
     recoverPending,
-    inflight: () => [...inflight.values()],
+    inflight: () => [...inflight.values(), ...driving.values()],
   };
 }
 
@@ -628,14 +653,28 @@ export function watchConnections(db, agent, { onError = (e) => console.error("re
       .finally(() => pending.delete(task));
     pending.add(task);
   });
+  const drain = async () => {
+    for (let i = 0; i < 1000; i++) {
+      await new Promise((resolve) => setImmediate(resolve));
+      const all = [...pending, ...agent.inflight()];
+      if (!all.length) return;
+      await Promise.allSettled(all);
+    }
+  };
   return {
     stream,
-    async settle() {
-      for (let i = 0; i < 1000; i++) {
-        await new Promise((resolve) => setImmediate(resolve));
-        const all = [...pending, ...agent.inflight()];
-        if (!all.length) return;
-        await Promise.allSettled(all);
+    async settle({ timeoutMs = 15000 } = {}) {
+      await drain();
+      if (db.kind !== "mongo") return;
+      // Atlas delivers change events over the network: wait until no paused run is waiting on a
+      // connection that is already valid again (the resume event has arrived and been handled).
+      const deadline = Date.now() + timeoutMs;
+      for (;;) {
+        const valid = (await db.collection("connections").find({ tokenState: "valid" }).toArray()).map((c) => c.provider);
+        const waiting = await db.collection("checkpoints").countDocuments({ status: "paused_for_auth", provider: { $in: valid } });
+        if (!waiting || Date.now() > deadline) return drain();
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        await drain();
       }
     },
     close: () => stream.close(),

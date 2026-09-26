@@ -5,6 +5,7 @@ import { PATTERNS, SEVERITY_RANK } from "./catalog.js";
 import { applyEdit, commitHarness, currentHarness, editSignature } from "./harness.js";
 import { predictionError, trackRecord } from "./proposer.js";
 import { searchCollection, settleSearch } from "./search.js";
+import { challenge } from "./attacks.js";
 import { DAY_MS, round } from "./util.js";
 
 const PATTERN_ORDER = Object.keys(PATTERNS);
@@ -171,8 +172,8 @@ export async function evolve(ctx, { night, proposer, maxEdits = 3 }) {
     const heldOutRegressed = regressed.filter((id) => !TRAIN_IDS.includes(id));
     const trainRegressed = regressed.filter((id) => TRAIN_IDS.includes(id));
     const better = compareFitness(run.fitness.all, acc.fitness.all) === 1;
-    const status = !regressed.length && better ? "accepted" : "rejected";
-    const reason =
+    let status = !regressed.length && better ? "accepted" : "rejected";
+    let reason =
       status === "accepted"
         ? "net-positive with no regressions"
         : heldOutRegressed.length
@@ -180,6 +181,18 @@ export async function evolve(ctx, { night, proposer, maxEdits = 3 }) {
           : trainRegressed.length
             ? `regressed train task ${trainRegressed.join(", ")}`
             : "not net-positive";
+    // Adversarial challenge: every task the edit flipped must still pass under six truth-preserving attacks.
+    let attacked = null;
+    if (status === "accepted") {
+      const flipped = run.results.filter((r) => r.pass && !acc.results.find((b) => b.taskId === r.taskId)?.pass).map((r) => r.taskId);
+      if (flipped.length) {
+        attacked = { tasks: flipped, ...(await challenge(candidate, flipped, { model, embedder, skills })) };
+        if (attacked.failed.length) {
+          status = "rejected";
+          reason = `failed adversarial challenge: ${attacked.failed.map((f) => `${f.taskId} ${f.attack}`).join(", ")}`;
+        } else reason = `net-positive with no regressions; held ${attacked.held}/${attacked.attacks} attacks`;
+      }
+    }
     const train = measure(acc, run, "train");
     const heldOut = measure(acc, run, "heldOut");
     const doc = {
@@ -199,6 +212,7 @@ export async function evolve(ctx, { night, proposer, maxEdits = 3 }) {
         train,
         heldOut: { passDelta: heldOut.passDelta, regressed: heldOutRegressed.length },
         predictionError: predictionError(edit.prediction, train),
+        ...(attacked ? { challenge: attacked } : {}),
       },
       baseVersion: current.version,
       createdAt: new Date(clock.now()),
