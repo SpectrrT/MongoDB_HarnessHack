@@ -38,6 +38,7 @@ const rawChars = units.reduce((n, record) => n + record.text.length, 0);
 const report = {
   schema: 2, createdAt: new Date().toISOString(), id: packet.id, title: packet.title,
   mode: 'Reconstructed offline artifact replay through production Sleep generation, file writing and declared file checks',
+  evaluationPhase: args.includes('--development') ? 'Development configuration after observed failures. Prompt and model changed jointly; no separate causal attribution.' : 'Frozen initial configuration',
   adapter: 'Benchmark-only immutable historical context attachment. Production Sleep has no context compaction/retrieval integration.',
   model, scorerPolicy: createJevScorer().policyVersion, trials, startTrial,
   provenance: {packetSha256: hash(sourceBytes), evaluatorSha256: hash(evaluatorBytes),
